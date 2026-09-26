@@ -95,6 +95,22 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.0;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+// Gespeicherte Qualitaet: auf Touch-Geraeten standardmaessig ausgewogen.
+const grafik = { modus:lesen('grafik', matchMedia('(pointer: coarse)').matches ? 'mittel' : 'hoch') };
+if (!['hoch', 'mittel', 'leicht'].includes(grafik.modus)) grafik.modus = 'hoch';
+function grafikAnwenden(){
+  const hoch = grafik.modus === 'hoch', leicht = grafik.modus === 'leicht';
+  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, hoch ? 2 : leicht ? 1 : 1.5));
+  renderer.shadowMap.enabled = !leicht;
+  const groesse = hoch ? 2048 : 1024;
+  if (sonne.shadow.mapSize.x !== groesse){
+    sonne.shadow.mapSize.set(groesse, groesse);
+    if (sonne.shadow.map){ sonne.shadow.map.dispose(); sonne.shadow.map = null; }
+  }
+  scene.traverse(o => { if (o.material) for (const m of [].concat(o.material)) m.needsUpdate = true; });
+  groesseAnpassen();
+  for (const id of ['grafikWahl', 'pauseGrafik']) $(id).value = grafik.modus;
+}
 $('szene').appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
@@ -117,7 +133,29 @@ const himmel = new THREE.Mesh(new THREE.SphereGeometry(2000, 32, 16), new THREE.
   vertexShader:'varying vec3 vP;\nvoid main(){ vP = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
   fragmentShader:'uniform vec3 oben;\nuniform vec3 horizont;\nvarying vec3 vP;\nvoid main(){\n float h = clamp(vP.y * 1.7, 0.0, 1.0);\n gl_FragColor = vec4(mix(horizont, oben, pow(h, 0.65)), 1.0);\n#include <tonemapping_fragment>\n#include <encodings_fragment>\n}'
 }));
+// Weicher Sonnenhof statt einer gleichmaessig leeren Himmelskugel.
+himmel.material.fragmentShader = himmel.material.fragmentShader.replace(
+  'gl_FragColor = vec4(mix(horizont, oben, pow(h, 0.65)), 1.0);',
+  'vec3 col = mix(horizont, oben, pow(h, 0.65)); float sun = max(0.0, dot(normalize(vP), normalize(vec3(70.0,130.0,45.0)))); col += vec3(1.0,0.78,0.42) * (pow(sun, 28.0)*0.18 + pow(sun, 650.0)*1.3); gl_FragColor = vec4(col, 1.0);');
 himmel.renderOrder = -1;
+
+// Kleine, pro Strecke erzeugte Umgebungsreflexion fuer Lack und Metall.
+const pmrem = new THREE.PMREMGenerator(renderer);
+let umgebung = null;
+function umgebungBauen(th){
+  const welt = new THREE.Scene();
+  const kugel = new THREE.Mesh(new THREE.SphereGeometry(50, 24, 12), new THREE.ShaderMaterial({
+    side:THREE.BackSide,
+    uniforms:{ oben:{value:lin(th.himmel[0])}, unten:{value:lin(th.gras[0])} },
+    vertexShader:'varying vec3 p; void main(){p=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
+    fragmentShader:'uniform vec3 oben;uniform vec3 unten;varying vec3 p;void main(){float h=normalize(p).y;vec3 c=mix(unten,oben,smoothstep(-0.2,0.5,h));c+=vec3(0.8)*pow(max(0.0,dot(normalize(p),normalize(vec3(1.0,2.0,1.0)))),40.0);gl_FragColor=vec4(c,1.0);\n#include <encodings_fragment>\n}'
+  }));
+  welt.add(kugel);
+  if (umgebung) umgebung.dispose();
+  umgebung = pmrem.fromScene(welt, 0.02, 0.1, 100);
+  scene.environment = umgebung.texture;
+  kugel.geometry.dispose(); kugel.material.dispose();
+}
 scene.add(himmel);
 
 function groesseAnpassen(){
@@ -181,12 +219,16 @@ const GEO = {
   kegelGrob:new THREE.ConeGeometry(1, 1, 8),
   rad:new THREE.CylinderGeometry(0.46, 0.46, 0.42, 18),
   radHinten:new THREE.CylinderGeometry(0.52, 0.52, 0.5, 18),
+  schatten:new THREE.PlaneGeometry(3.8, 4.8),
   lenkrad:new THREE.TorusGeometry(0.22, 0.05, 8, 16),
   banane:new THREE.TorusGeometry(0.42, 0.15, 8, 14, Math.PI * 0.95),
   box16:new THREE.BoxGeometry(1.7, 1.7, 1.7)
 };
 const std = (farbe, rau = 0.6, metall = 0) => new THREE.MeshStandardMaterial({ color:lin(farbe), roughness:rau, metalness:metall });
 const MAT = {
+  kontakt:new THREE.MeshBasicMaterial({ map:partikelTex, color:0x080c12, transparent:true, opacity:0.36, depthWrite:false, polygonOffset:true, polygonOffsetFactor:-5 }),
+  licht:new THREE.MeshBasicMaterial({ color:0xffe8bd }),
+  ruecklicht:new THREE.MeshBasicMaterial({ color:0xff3427 }),
   dunkel:std(0x2a2d33, 0.6), metall:std(0xc4cad3, 0.3, 0.8), reifen:std(0x1a1a1e, 0.9), auge:std(0x111111, 0.25),
   weiss:std(0xf6f6f6, 0.6), banane:std(0xffd83a, 0.5), braun:std(0x5a3a1a, 0.8), rot:std(0xe8322a, 0.4),
   laub:new THREE.MeshPhongMaterial({ color:0xffffff, flatShading:true, shininess:0, specular:0x000000 }),
@@ -332,7 +374,7 @@ function kartModell(f){
   const g = new THREE.Group();
   const koerper = new THREE.Group();
   g.add(koerper);
-  const lack = new THREE.MeshStandardMaterial({ color:lin(f.farbe), roughness:0.32, metalness:0.25 });
+  const lack = new THREE.MeshPhysicalMaterial({ color:lin(f.farbe), roughness:0.28, metalness:0.3, clearcoat:0.85, clearcoatRoughness:0.22, envMapIntensity:0.8 });
   const anzug = new THREE.MeshStandardMaterial({ color:new THREE.Color(f.farbe).lerp(new THREE.Color(0xffffff), 0.5).convertSRGBToLinear(), roughness:0.7 });
   teil(GEO.box, MAT.dunkel, koerper, 0, 0.42, 0, 1.7, 0.18, 3.1);
   teil(GEO.box, lack, koerper, 0, 0.68, -0.15, 1.5, 0.42, 2.1);
@@ -348,6 +390,16 @@ function kartModell(f){
   teil(GEO.box, MAT.dunkel, koerper, -0.6, 1.2, -1.5, 0.1, 0.45, 0.12);
   teil(GEO.box, MAT.dunkel, koerper, 0.6, 1.2, -1.5, 0.1, 0.45, 0.12);
   teil(GEO.lenkrad, MAT.dunkel, koerper, 0, 1.12, 0.45).rotation.x = -0.6;
+  // Runde Kotfluegel, Zierstreifen und Leuchten geben dem Kart mehr Tiefe.
+  for (const x of [-0.96, 0.96]){
+    teil(GEO.kugel, lack, koerper, x, 0.77, -1.02, 0.4, 0.2, 0.64);
+    teil(GEO.box, MAT.licht, koerper, x * 0.58, 0.69, 1.74, 0.3, 0.11, 0.07).castShadow = false;
+    teil(GEO.box, MAT.ruecklicht, koerper, x * 0.62, 0.7, -1.24, 0.25, 0.1, 0.08).castShadow = false;
+  }
+  for (const x of [-0.16, 0.16]) teil(GEO.box, MAT.weiss, koerper, x, 0.757, 1.35, 0.09, 0.015, 0.73).castShadow = false;
+  const kontakt = new THREE.Mesh(GEO.schatten, MAT.kontakt);
+  kontakt.rotation.x = -Math.PI / 2; kontakt.position.y = 0.09;
+  g.add(kontakt);
   // Fahrer
   teil(GEO.kugel, anzug, koerper, 0, 1.25, -0.35, 0.5, 0.55, 0.42);
   teil(GEO.zyl, anzug, koerper, -0.33, 1.22, 0.08, 0.1, 0.55, 0.1).rotation.x = 1.2;
@@ -382,7 +434,7 @@ function kartModell(f){
     return fl;
   });
   g.scale.setScalar(0.95);
-  return { gruppe:g, koerper, raeder, vorne, kopf, flammen, lack, anzug };
+  return { gruppe:g, koerper, raeder, vorne, kopf, flammen, lack, anzug, kontakt };
 }
 
 /* =========================================================
@@ -604,15 +656,22 @@ addEventListener('keydown', e => {
   if (e.code === 'KeyM') tonUmschalten();
 });
 addEventListener('keyup', e => tasten.delete(e.code));
-addEventListener('blur', () => { tasten.clear(); if (!online.aktiv && ['countdown', 'rennen'].includes(zustand.phase) && !zustand.pause) pauseUmschalten(); });
+function eingabenLeeren(){
+  tasten.clear(); itemGedrueckt = false; padItemVorher = false; padPauseVorher = false;
+  for (const feld of Object.keys(touch)) touch[feld] = false;
+  for (const el of document.querySelectorAll('.tb.an')) el.classList.remove('an');
+}
+addEventListener('blur', () => { eingabenLeeren(); if (!online.aktiv && ['countdown', 'rennen'].includes(zustand.phase) && !zustand.pause) pauseUmschalten(); });
 addEventListener('pointerdown', () => Ton.start(), { once:false });
+addEventListener('gamepaddisconnected', eingabenLeeren);
+document.addEventListener('visibilitychange', () => { if (document.hidden){ eingabenLeeren(); if (!online.aktiv && ['countdown','rennen'].includes(zustand.phase) && !zustand.pause) pauseUmschalten(); } });
 
 function touchKnopf(id, feld){
   const el = $(id);
-  const an = e => { e.preventDefault(); Ton.start(); if (feld === 'item') itemGedrueckt = true; else touch[feld] = true; el.classList.add('an'); tastaturBenutzt = false; };
+  const an = e => { e.preventDefault(); el.setPointerCapture(e.pointerId); Ton.start(); if (feld === 'item') itemGedrueckt = true; else touch[feld] = true; el.classList.add('an'); tastaturBenutzt = false; };
   const aus = e => { e.preventDefault(); if (feld !== 'item') touch[feld] = false; el.classList.remove('an'); };
   el.addEventListener('pointerdown', an);
-  el.addEventListener('pointerup', aus); el.addEventListener('pointercancel', aus); el.addEventListener('pointerleave', aus);
+  el.addEventListener('pointerup', aus); el.addEventListener('pointercancel', aus); el.addEventListener('lostpointercapture', aus);
 }
 touchKnopf('tLinks', 'links'); touchKnopf('tRechts', 'rechts'); touchKnopf('tDrift', 'drift'); touchKnopf('tBremse', 'bremse'); touchKnopf('tItem', 'item');
 if (touchModus) document.body.classList.add('touch');
@@ -633,7 +692,7 @@ function spielerEingabe(){
     if (!p) continue;
     const knopf = i => p.buttons[i] && p.buttons[i].pressed;
     const achse = p.axes[0] || 0;
-    if (Math.abs(achse) > 0.15) e.lenk = -achse;
+    if (Math.abs(achse) > 0.15) e.lenk = -Math.sign(achse) * Math.min(1, (Math.abs(achse) - 0.15) / 0.85);
     if (knopf(14)) e.lenk = 1; if (knopf(15)) e.lenk = -1;
     if (knopf(0) || knopf(7)) e.gas = true;
     if (knopf(1) || knopf(2)) e.bremse = true;
@@ -774,6 +833,7 @@ function streckeLaden(nr){
   const rnd = zufallsGen(def.saat);
 
   // Himmel, Licht, Nebel
+  umgebungBauen(th);
   himmelUni.oben.value = lin(th.himmel[0]); himmelUni.horizont.value = lin(th.himmel[1]);
   scene.fog = new THREE.Fog(lin(th.nebel), th.nebelWeit[0], th.nebelWeit[1]);
   hemi.color = lin(th.hemi[0]); hemi.groundColor = lin(th.hemi[1]); hemi.intensity = th.hemiKraft;
@@ -810,7 +870,7 @@ function streckeLaden(nr){
     c.fillStyle = 'rgba(255,255,255,.92)'; c.fillRect(12, 0, 7, h); c.fillRect(w - 19, 0, 7, h);
     c.fillStyle = 'rgba(255,255,255,.7)'; c.fillRect(w / 2 - 3, 0, 6, h * 0.42);
   }, true);
-  const strasseMat = new THREE.MeshLambertMaterial({ map:strasseTex, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-2 });
+  const strasseMat = new THREE.MeshStandardMaterial({ map:strasseTex, roughness:th.schnee ? 0.58 : 0.92, metalness:0.02, envMapIntensity:0.25, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-2 });
   gruppe.add(band(S, S.hw, -S.hw, 0.04, 22, strasseMat));
 
   // Startlinie
@@ -902,6 +962,21 @@ function streckeLaden(nr){
   });
 
   dekoBauen(S, th, gruppe, rnd, frei);
+  // Streckenrand mit Grasbuescheln, Steinen oder Eiskristallen, gebuendelt gezeichnet.
+  const details = new Instanzen();
+  for (let n = 0; n < 260; n++){
+    const i = Math.floor(rnd() * S.N), sg = rnd() < 0.5 ? -1 : 1;
+    const [x, z] = punktBei(S, i, sg * (S.hw + S.auslauf + 2.5 + rnd() * 15));
+    if (!frei(x, z, S.hw + S.auslauf + 1.7)) continue;
+    const h = 0.2 + rnd() * 0.65;
+    if (th.deko === 'baeume'){
+      details.add('gras', GEO.kegelGrob, MAT.laub, [x,h/2,z], [0.22,h,0.22], [0,rnd()*TAU,0.1], lin(0x62963e));
+      if (n % 4 === 0) details.add('bluete', GEO.kugelGrob, MAT.bunt, [x,h,z], [0.15,0.1,0.15], [0,0,0], lin(n % 8 ? 0xffdb62 : 0xf8d3ef));
+    } else {
+      details.add('stein', th.schnee ? GEO.kegelGrob : GEO.kugelGrob, MAT.bunt, [x,h/2,z], [h,h,h*0.7], [0,rnd()*TAU,0.18], lin(th.schnee ? 0xafdcea : 0xb98354));
+    }
+  }
+  details.bauen(gruppe, false);
 
   // Minikarte vorberechnen
   S.karte = document.createElement('canvas');
@@ -1089,13 +1164,12 @@ class Kart {
       x:0, z:0, y:0, vy:0, yaw:0, v:0, kx:0, kz:0, idx:0, idxAlt:0, runde:0, maxRunde:0, fortschritt:0, seite:0,
       drift:0, driftZeit:0, driftStufe:0, driftTaste:false, driftVisuell:0, boost:0, stern:0, dreh:0, drehDauer:1, drehWinkel:0,
       item:null, itemNeu:null, itemAnzahl:0, roulette:0, itemTimer:0, fertig:false, zielzeit:Infinity, rundeStart:0, rundenzeiten:[],
-      platz:1, lenkAnzeige:0, offroad:false, falsch:0, steckt:0, wandZeit:0, padZeit:0, hatteStern:false,
+      platz:1, lenkAnzeige:0, lenkSanft:0, offroad:false, falsch:0, steckt:0, wandZeit:0, padZeit:0, hatteStern:false,
       spur:zufall(-0.5, 0.5), spurZiel:zufall(-0.5, 0.5), spurTimer:zufall(1, 3), gummi:1, camYaw:0, autopilot:false
     });
   }
   entfernen(){
-    scene.remove(this.m.gruppe); this.m.lack.dispose(); this.m.anzug.dispose();
-    if (this.schild){ this.schild.material.map.dispose(); this.schild.material.dispose(); }
+    scene.remove(this.m.gruppe); entsorgen(this.m.gruppe);
   }
 }
 
@@ -1161,7 +1235,11 @@ function kartBewegen(k, dt){
   k.boost = Math.max(0, k.boost - dt);
   k.stern = Math.max(0, k.stern - dt);
   k.padZeit -= dt; k.wandZeit -= dt;
-  let lenk = e.lenk, gas = e.gas && aktiv, bremse = e.bremse && aktiv;
+  let lenk = e.lenk, gas = e.gas && !e.bremse && aktiv, bremse = e.bremse && aktiv;
+  if (k.spieler && !k.autopilot && !zustand.autopilot){
+    k.lenkSanft += (lenk - k.lenkSanft) * (1 - Math.exp(-18 * dt));
+    lenk = k.lenkSanft;
+  }
   if (k.dreh > 0){
     k.dreh -= dt;
     k.drehWinkel = (1 - Math.max(0, k.dreh) / k.drehDauer) * 2 * TAU;
@@ -1400,7 +1478,7 @@ function boxenUpdate(dt){
     b.mesh.scale.setScalar(b.wachs);
     b.mesh.rotation.set(0.5, zeit * 1.3 + b.phase, 0.3);
     b.mesh.position.y = 1.4 + Math.sin(zeit * 2.2 + b.phase) * 0.18;
-    if (zustand.phase === 'menue') return;
+    if (!['rennen', 'auslauf'].includes(zustand.phase)) return;
     for (const k of karts){
       if (k.fern) continue;
       const dx = k.x - b.x, dz = k.z - b.z;
@@ -1509,7 +1587,11 @@ function kartDarstellen(k, dt){
   k.driftVisuell += (k.drift * 0.4 - k.driftVisuell) * Math.min(1, dt * 8);
   g.rotation.y = k.yaw + k.driftVisuell + k.drehWinkel;
   const tempo = klemm(Math.abs(k.v) / 20, 0, 1);
-  m.koerper.rotation.z = -k.lenkAnzeige * 0.06 * tempo;
+  m.koerper.rotation.z = -k.lenkAnzeige * 0.09 * tempo;
+  m.koerper.rotation.x += (((k.boost > 0 ? -0.035 : k.eingabe.bremse && k.v > 1 ? 0.045 : 0)) - m.koerper.rotation.x) * (1 - Math.exp(-8 * dt));
+  m.kontakt.position.y = 0.09 - k.y;
+  m.kontakt.scale.setScalar(1 + Math.max(0, k.y) * 0.12);
+  m.kontakt.visible = k.y < 3;
   m.koerper.position.y = Math.sin(zeit * 30 + k.phase) * 0.015 * tempo + (k.offroad ? Math.sin(zeit * 47 + k.phase) * 0.05 * tempo : 0);
   const radDreh = k.v * dt / 0.48;
   for (const r of m.raeder) r.rotation.x += radDreh;
@@ -1525,6 +1607,35 @@ function kartDarstellen(k, dt){
     m.lack.emissive.copy(c); m.anzug.emissive.copy(c).multiplyScalar(0.6);
     k.hatteStern = true;
   } else if (k.hatteStern){ m.lack.emissive.setRGB(0, 0, 0); m.anzug.emissive.setRGB(0, 0, 0); k.hatteStern = false; }
+}
+
+const SPUR_ANZAHL = 900;
+const spurGeo = new THREE.PlaneGeometry(0.22, 1);
+spurGeo.rotateX(-Math.PI / 2);
+const spurMat = new THREE.MeshBasicMaterial({ color:0x171b23, transparent:true, opacity:0.28, depthWrite:false, polygonOffset:true, polygonOffsetFactor:-6 });
+const spuren = new THREE.InstancedMesh(spurGeo, spurMat, SPUR_ANZAHL);
+spuren.instanceMatrix.setUsage(THREE.DynamicDrawUsage); spuren.frustumCulled = false;
+scene.add(spuren);
+let spurNr = 0, spurTimer = 0;
+const spurObj = new THREE.Object3D();
+function spurenLeeren(){ spurNr = 0; spuren.count = 0; spurTimer = 0; }
+spurenLeeren();
+function spurenUpdate(dt){
+  if (!['rennen','auslauf'].includes(zustand.phase) || grafik.modus === 'leicht') return;
+  spurTimer += dt;
+  if (spurTimer < 0.045) return;
+  const intervall = spurTimer; spurTimer = 0;
+  for (const k of karts){
+    if (k.y > 0.1 || k.offroad || Math.abs(k.v) < 7 || !(k.drift || k.eingabe.bremse) || !nahAmSpieler(k.x,k.z,85)) continue;
+    const w = k.yaw + k.driftVisuell, fx = Math.sin(w), fz = Math.cos(w);
+    for (const seite of [-1,1]){
+      spurObj.position.set(k.x - fx + fz * seite, 0.065, k.z - fz - fx * seite);
+      spurObj.rotation.set(0,w,0); spurObj.scale.set(1,1,Math.min(2.8,Math.abs(k.v)*intervall+0.1)); spurObj.updateMatrix();
+      spuren.setMatrixAt(spurNr,spurObj.matrix); spurNr = (spurNr+1) % SPUR_ANZAHL;
+      spuren.count = Math.min(SPUR_ANZAHL,spuren.count+1);
+    }
+  }
+  spuren.instanceMatrix.needsUpdate = true;
 }
 
 function kartEffekte(k){
@@ -1574,6 +1685,8 @@ function vorschauZeigen(){
 
 // opts (nur online): { strecke, stufe, slots:[{ fahrer, name, mensch, ich, fern }] }
 function rennenStarten(opts = null){
+  eingabenLeeren();
+  spurenLeeren();
   rennStufe = opts ? opts.stufe : wahl.stufe;
   const S = streckeLaden(opts ? opts.strecke : wahl.strecke);
   if (vorschau){ vorschau.entfernen(); vorschau = null; }
@@ -1746,6 +1859,7 @@ function pauseUmschalten(){
     if (!$('pause').hidden) $('weiterKnopf').focus();
     return;
   }
+  eingabenLeeren();
   zustand.pause = !zustand.pause;
   $('pause').hidden = !zustand.pause;
   Ton.pause(zustand.pause);
@@ -1790,7 +1904,7 @@ function hudUpdate(){
   const dFarben = ['#fff3c4', '#5aa8ff', '#ff9a1a', '#d85aff'];
   da.style.opacity = k.drift ? 1 : 0;
   if (k.drift) da.style.color = dFarben[k.driftStufe];
-  setzen('driftAnzeige', k.drift ? '✦'.repeat(k.driftStufe + 1) : '');
+  setzen('driftAnzeige', k.drift ? '<span>' + (['DRIFT LADEN', 'MINI-TURBO', 'SUPER-TURBO', 'ULTRA-TURBO'][k.driftStufe]) + '</span><i style="--ladung:' + Math.min(100,k.driftZeit/3*100) + '%"></i>' : '', true);
   // Mitte: Meldungen und Falschfahrer-Warnung
   if (zeit > zustand.meldungBis){
     const text = k.falsch > 1.2 ? '↺ Falsche Richtung!' : online.aktiv && zustand.phase === 'auslauf' && zeit > zustand.warteAb ? 'Warte auf die anderen …' : '';
@@ -1855,9 +1969,10 @@ function kameraUpdate(dt){
     camera.lookAt(k.x, 1.2, k.z);
     zustand.fov = 60;
   } else {
-    k.camYaw += winkelDiff(k.yaw, k.camYaw) * Math.min(1, dt * 5);
+    k.camYaw += winkelDiff(k.yaw, k.camYaw) * (1 - Math.exp(-7 * dt));
     const s = Math.sin(k.camYaw), c = Math.cos(k.camYaw);
-    ziel.set(k.x - s * 7.4, 3.0 + k.y * 0.5, k.z - c * 7.4);
+    const abstand = 7.4 + klemm(k.v / k.werte.maxV, 0, 1.4) * 0.65;
+    ziel.set(k.x - s * abstand, 3.25 + k.y * 0.5, k.z - c * abstand);
     camera.position.lerp(ziel, 1 - Math.exp(-12 * dt));
     blick.set(k.x + s * 6, 1.3 + k.y * 0.3, k.z + c * 6);
     if (zustand.wackeln > 0){
@@ -1919,6 +2034,7 @@ function menueBauen(){
   STUFEN.forEach((s, i) => stw.appendChild(wahlKnopf(`<b>${s.name}</b><small>${s.info}</small>`, i === wahl.stufe, () => { wahl.stufe = i; schreiben('wahl', wahl); })));
 }
 function menueZeigen(ansicht = 'menue'){
+  eingabenLeeren(); spurenLeeren();
   cup.aktiv = false;
   if (ansicht !== 'lobby') online.imRennen = false;
   zustand.phase = 'menue'; zustand.pause = false; Ton.pause(false);
@@ -2260,11 +2376,12 @@ function schritt(dt){
       if (!k.spieler) k.eingabe = { gas:false, bremse:false, lenk:0, drift:false, item:false };
       kartBewegen(k, dt);
     }
-  } else {
+  } else if (zustand.phase === 'rennen' || zustand.phase === 'auslauf'){
     rennenUpdate(dt);
   }
   for (const k of karts){ kartDarstellen(k, dt); kartEffekte(k); }
   boxenUpdate(dt);
+  spurenUpdate(dt);
   for (const b of bananen) b.mesh.rotation.y += dt * 0.5;
   funken.update(dt); staub.update(dt);
   if (S.wolken) S.wolken.rotation.y += dt * 0.004;
@@ -2305,6 +2422,10 @@ window.loewenkart = {
   sim(sekunden, dt = 1 / 60){ for (let t = 0; t < sekunden; t += dt) schritt(dt); renderer.render(scene, camera); }
 };
 
+for (const id of ['grafikWahl','pauseGrafik']) $(id).onchange = e => {
+  grafik.modus = e.target.value; schreiben('grafik',grafik.modus); grafikAnwenden();
+};
 menueZeigen();
+grafikAnwenden();
 requestAnimationFrame(schleife);
 })();

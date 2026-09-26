@@ -153,6 +153,13 @@
     #tLinks{left:12px;width:76px;height:76px}
     #tRechts{left:96px;width:76px;height:76px}
   }
+
+  .grafik-feld{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:16px 0;color:var(--leise)}
+  .grafik-feld select{font:inherit;color:var(--text);background:#302a21;border:1px solid var(--rand);border-radius:8px;padding:8px;max-width:75%}
+  .grafik-feld select:focus-visible{outline:2px solid var(--gelb);outline-offset:3px}
+  #driftAnzeige{min-width:156px;text-align:center;font-size:1rem;letter-spacing:1px}
+  #driftAnzeige i{display:block;height:7px;margin-top:5px;border:1px solid currentColor;border-radius:9px;background:linear-gradient(90deg,currentColor var(--ladung),#15152588 var(--ladung));box-shadow:0 0 12px currentColor}
+  @media(prefers-reduced-motion:reduce){.pop{animation:none!important}}
 </style>
 </head>
 <body>
@@ -196,6 +203,7 @@
       <p id="onlineFehler" class="fehler" role="alert"></p>
     </div>
 
+    <label class="grafik-feld" for="grafikWahl">Grafik <select id="grafikWahl"><option value="hoch">Hoch · volle Details</option><option value="mittel">Ausgewogen</option><option value="leicht">Flüssig · weniger Effekte</option></select></label>
     <details class="steuerung">
       <summary>Steuerung</summary>
       <p><kbd>↑</kbd>/<kbd>W</kbd> Gas · <kbd>↓</kbd>/<kbd>S</kbd> Bremse &amp; rückwärts · <kbd>←</kbd><kbd>→</kbd>/<kbd>A</kbd><kbd>D</kbd> lenken</p>
@@ -236,6 +244,7 @@
 <div id="pause" class="overlay mittig" hidden>
   <div class="fenster">
     <h2>Pause</h2>
+    <label class="grafik-feld" for="pauseGrafik">Grafik <select id="pauseGrafik"><option value="hoch">Hoch · volle Details</option><option value="mittel">Ausgewogen</option><option value="leicht">Flüssig · weniger Effekte</option></select></label>
     <div class="knoepfe">
       <button class="knopf haupt" id="weiterKnopf">Weiter</button>
       <button class="knopf" id="neuKnopf">Neu starten</button>
