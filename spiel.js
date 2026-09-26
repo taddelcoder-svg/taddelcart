@@ -40,7 +40,8 @@ const FAHRER = [
   { id:'hops',  name:'Hops',  tier:'hase',    gesicht:'🐰', farbe:0xef6fa8, tempo:2, beschl:3, lenk:4 },
   { id:'pingo', name:'Pingo', tier:'pinguin', gesicht:'🐧', farbe:0x2c6fd8, tempo:3, beschl:4, lenk:2 },
   { id:'bruno', name:'Bruno', tier:'baer',    gesicht:'🐻', farbe:0x8a4f2a, tempo:5, beschl:2, lenk:2 },
-  { id:'mimi',  name:'Mimi',  tier:'katze',   gesicht:'🐱', farbe:0x9357d4, tempo:2, beschl:5, lenk:2 }
+  { id:'mimi',  name:'Mimi',  tier:'katze',   gesicht:'🐱', farbe:0x9357d4, tempo:2, beschl:5, lenk:2 },
+  { id:'koko',  name:'Koko',  tier:'affe',    gesicht:'🐵', farbe:0x17a89a, tempo:2, beschl:2, lenk:5 }
 ];
 const STUFEN = [
   { name:'50 ccm',  info:'Gemütlich', tempo:0.88, ki:0.86, startTrick:0.25, kurve:0.9 },
@@ -302,6 +303,25 @@ function kopfBauen(tier){
       teil(GEO.kugel, MAT.weiss, k, 0, -0.15, 0.4, 0.23, 0.14, 0.15);
       teil(GEO.kugel, rosa, k, 0, -0.07, 0.52, 0.06, 0.045, 0.045);
       augen(0.12, 0.2, 0.44);
+      break;
+    }
+    case 'affe': {
+      const fell = M(0x6b4226), haut = M(0xe8c39e);
+      teil(GEO.kugel, fell, k, 0, 0, 0, 0.54, 0.52, 0.5);
+      teil(GEO.kugel, fell, k, 0, 0.5, -0.05, 0.12, 0.14, 0.1);
+      // grosse Ohren seitlich
+      teil(GEO.kugel, fell, k, -0.55, 0.05, -0.02, 0.2, 0.22, 0.1);
+      teil(GEO.kugel, fell, k, 0.55, 0.05, -0.02, 0.2, 0.22, 0.1);
+      teil(GEO.kugel, haut, k, -0.57, 0.05, 0.04, 0.12, 0.14, 0.06);
+      teil(GEO.kugel, haut, k, 0.57, 0.05, 0.04, 0.12, 0.14, 0.06);
+      // Gesicht: Herzform aus zwei Augenfeldern und Schnauze
+      teil(GEO.kugel, haut, k, -0.17, 0.1, 0.34, 0.2, 0.22, 0.16);
+      teil(GEO.kugel, haut, k, 0.17, 0.1, 0.34, 0.2, 0.22, 0.16);
+      teil(GEO.kugel, haut, k, 0, -0.17, 0.36, 0.3, 0.21, 0.2);
+      teil(GEO.kugel, MAT.auge, k, -0.06, -0.08, 0.55, 0.03, 0.03, 0.03);
+      teil(GEO.kugel, MAT.auge, k, 0.06, -0.08, 0.55, 0.03, 0.03, 0.03);
+      teil(GEO.box, M(0x7a3b2a), k, 0, -0.24, 0.54, 0.16, 0.035, 0.04);
+      augen(0.13, 0.17, 0.47);
       break;
     }
   }
@@ -1539,7 +1559,7 @@ function kartEffekte(k){
    Rennablauf
    ========================================================= */
 const zustand = { phase:'menue', t:0, rt:0, pause:false, wackeln:0, meldungBis:0, ergebnisIn:0, orbit:0, gasSeit:null, fov:68 };
-const cup = { aktiv:false, nr:0, punkte:{} };
+const cup = { aktiv:false, nr:0, punkte:{}, gegner:null };
 const online = { aktiv:false, imRennen:false, raum:null, ich:null, host:false, sendTimer:0, wegNamen:{} };
 let zeit = 0;
 
@@ -1563,7 +1583,9 @@ function rennenStarten(opts = null){
   for (const b of S.boxen){ b.aus = 0; b.mesh.visible = true; }
   let slots = opts && opts.slots;
   if (!slots){
-    const andere = mischen(FAHRER.map((f, i) => i).filter(i => i !== wahl.fahrer));
+    // Im Cup fahren in allen 3 Rennen dieselben Gegner
+    if (!cup.aktiv || !cup.gegner) cup.gegner = mischen(FAHRER.map((f, i) => i).filter(i => i !== wahl.fahrer)).slice(0, 7);
+    const andere = cup.gegner.slice();
     slots = Array.from({ length:8 }, (x, slot) => slot === SPIELER_STARTPLATZ ? { fahrer:wahl.fahrer, ich:true } : { fahrer:andere.pop() });
   }
   slots.forEach((sl, slot) => {
@@ -1687,7 +1709,7 @@ function ergebnisZeigen(){
     `<tr class="${k.spieler ? 'ich' : ''}"><td>${i + 1}.</td><td>${k.f.gesicht} ${k.f.name}</td><td class="r">${zeitText(k.zielzeit)}</td>${cup.aktiv ? `<td class="r">+${PUNKTE[i]}</td>` : ''}</tr>`).join('') + '</table>';
   html += `<p class="rekord" style="margin-top:10px">Beste Runde: ${zeitText(beste)} · Rekord: ${zeitText(rek.zeit)}</p>` + neu;
   if (cup.aktiv){
-    const stand = FAHRER.slice().sort((a, b) => (cup.punkte[b.id] || 0) - (cup.punkte[a.id] || 0));
+    const stand = karts.map(k => k.f).sort((a, b) => (cup.punkte[b.id] || 0) - (cup.punkte[a.id] || 0));
     html += '<h2 style="font-size:1.1rem;margin:16px 0 6px">Cup-Wertung</h2><table>' + stand.map((f, i) =>
       `<tr class="${f === spieler.f ? 'ich' : ''}"><td>${i + 1}.</td><td>${f.gesicht} ${f.name}</td><td class="r">${cup.punkte[f.id] || 0} P</td></tr>`).join('') + '</table>';
     if (cup.nr >= 2){
@@ -1712,7 +1734,7 @@ function ergebnisZeigen(){
 }
 
 function cupStarten(){
-  cup.aktiv = true; cup.nr = 0; cup.punkte = {};
+  cup.aktiv = true; cup.nr = 0; cup.punkte = {}; cup.gegner = null;
   wahl.strecke = 0;
   rennenStarten();
 }
