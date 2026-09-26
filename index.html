@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#1a1206">
+<title>Löwen-Kart</title>
+<style>
+  @font-face{font-family:"Barlow SC";src:url(/vendor/barlow-semi-condensed-600.woff2) format("woff2");font-weight:600;font-display:swap}
+  @font-face{font-family:"Barlow SC";src:url(/vendor/barlow-semi-condensed-800.woff2) format("woff2");font-weight:800;font-display:swap}
+  :root{
+    --gelb:#ffc629;--orange:#ff7a1a;--rot:#e8322a;--dunkel:#1a1206;--panel:rgba(24,16,6,.86);
+    --text:#fff8ea;--leise:#e6d6b8;--rand:rgba(255,198,41,.35);--gruen:#5fd35a;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;overflow:hidden;background:var(--dunkel);color:var(--text);
+    font:600 16px/1.35 "Barlow SC",system-ui,-apple-system,"Segoe UI",sans-serif;user-select:none;-webkit-user-select:none}
+  #szene{position:fixed;inset:0}
+  #szene canvas{display:block;width:100%;height:100%}
+  button{font:inherit;cursor:pointer}
+  [hidden]{display:none!important}
+
+  /* ---------- Menü ---------- */
+  .overlay{position:fixed;inset:0;display:flex;z-index:20}
+  #menue{align-items:stretch;justify-content:flex-start;pointer-events:none}
+  .menue-karte{pointer-events:auto;width:min(480px,100%);height:100%;overflow-y:auto;padding:28px 24px 24px;
+    background:linear-gradient(90deg,rgba(20,12,4,.94) 70%,rgba(20,12,4,.0));}
+  h1{margin:0;font-weight:800;font-size:3.4rem;line-height:.95;letter-spacing:.5px;text-transform:uppercase;
+    color:var(--gelb);text-shadow:0 3px 0 #b3400b,0 6px 18px rgba(0,0,0,.5);transform:skew(-6deg)}
+  h1 span{color:var(--orange)}
+  .unter{margin:10px 0 18px;color:var(--leise)}
+  h2{margin:18px 0 8px;font-size:.85rem;letter-spacing:2px;text-transform:uppercase;color:var(--gelb)}
+  .raster{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .wahl{border:2px solid transparent;background:rgba(255,255,255,.07);color:var(--text);border-radius:12px;padding:8px 4px;
+    display:flex;flex-direction:column;align-items:center;gap:2px;transition:transform .12s,background .12s}
+  .wahl:hover{background:rgba(255,255,255,.13)}
+  .wahl.aktiv{border-color:var(--gelb);background:rgba(255,198,41,.18);transform:translateY(-2px)}
+  .wahl:focus-visible{outline:3px solid #fff;outline-offset:2px}
+  .wahl .gesicht{font-size:2rem;line-height:1.1}
+  .wahl small{font-size:.8rem;color:var(--leise)}
+  .reihe{display:flex;flex-wrap:wrap;gap:8px}
+  .reihe .wahl{flex:1 1 0;min-width:120px;padding:10px 8px}
+  .reihe .wahl b{font-size:1.05rem}
+  #fahrerinfo{margin-top:10px;display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:.9rem;color:var(--leise)}
+  .balken{height:8px;align-self:center;border-radius:4px;background:rgba(255,255,255,.12);overflow:hidden}
+  .balken i{display:block;height:100%;background:linear-gradient(90deg,var(--orange),var(--gelb));border-radius:4px}
+  .gross{display:block;width:100%;margin:22px 0 12px;padding:14px;border:0;border-radius:14px;font-weight:800;font-size:1.5rem;
+    text-transform:uppercase;letter-spacing:1px;color:var(--dunkel);background:linear-gradient(180deg,#ffd84d,#ff9a1a);
+    box-shadow:0 5px 0 #b3400b;transition:transform .08s}
+  .gross:active{transform:translateY(3px);box-shadow:0 2px 0 #b3400b}
+  .knopf{border:2px solid var(--rand);background:rgba(255,255,255,.08);color:var(--text);border-radius:12px;padding:10px 16px;font-weight:800}
+  .knopf:hover{background:rgba(255,255,255,.16)}
+  details{color:var(--leise);font-size:.95rem}
+  summary{cursor:pointer;color:var(--text)}
+  kbd{display:inline-block;min-width:1.6em;padding:0 5px;border-radius:5px;background:rgba(255,255,255,.14);color:var(--text);text-align:center;font:inherit;font-size:.85em}
+  .fuss{margin-top:18px;font-size:.85rem;color:var(--leise)}
+  .fuss a{color:var(--gelb)}
+  .rekord{font-size:.8rem;color:var(--leise)}
+
+  /* ---------- HUD ---------- */
+  #hud{position:fixed;inset:0;pointer-events:none;z-index:10;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+  .schild{font-weight:800;text-shadow:0 2px 0 rgba(0,0,0,.55),0 0 14px rgba(0,0,0,.4)}
+  #platz{position:absolute;right:22px;bottom:18px;font-size:6rem;line-height:.9;color:var(--gelb);transform:skew(-8deg)}
+  #platz small{font-size:2.2rem;color:var(--text)}
+  #platz.p1{color:#ffd700}#platz.p2{color:#dfe6ee}#platz.p3{color:#f0a060}#platz.hinten{color:#9fd0ff}
+  #runde{position:absolute;right:22px;top:18px;text-align:right;font-size:1.1rem;letter-spacing:1px}
+  #runde b{display:block;font-size:2.6rem;line-height:1}
+  #zeit{position:absolute;right:22px;top:92px;text-align:right;font-size:1.3rem}
+  #rundenzeiten{font-size:.95rem;color:var(--leise);font-weight:600}
+  #itemSlot{position:absolute;left:50%;top:14px;transform:translateX(-50%);width:84px;height:84px;border-radius:18px;
+    background:rgba(20,12,4,.55);border:3px solid rgba(255,255,255,.75);display:grid;place-items:center;font-size:3rem;
+    box-shadow:0 4px 18px rgba(0,0,0,.35)}
+  #itemSlot.dreh{animation:wackel .12s infinite alternate}
+  #itemSlot small{position:absolute;right:4px;bottom:0;font-size:1rem}
+  @keyframes wackel{from{transform:translateX(-50%) scale(1)}to{transform:translateX(-50%) scale(1.07)}}
+  #minikarte{position:absolute;left:14px;bottom:14px;width:190px;height:190px;opacity:.95}
+  #liste{position:absolute;left:14px;top:14px;font-size:.95rem;display:flex;flex-direction:column;gap:2px}
+  #liste div{display:flex;align-items:center;gap:6px;padding:1px 10px 1px 6px;border-radius:8px;background:rgba(20,12,4,.45)}
+  #liste div.ich{background:rgba(255,198,41,.55);color:var(--dunkel)}
+  #liste b{width:1.1em;text-align:right}
+  #tempo{position:absolute;right:26px;bottom:118px;font-size:1.1rem;color:var(--leise)}
+  #mitte{position:absolute;left:0;right:0;top:32%;text-align:center;font-size:6rem;color:#fff;line-height:1}
+  #mitte.klein{font-size:2.6rem}
+  #mitte.pop{animation:pop .5s ease-out}
+  @keyframes pop{from{transform:scale(1.8);opacity:0}to{transform:scale(1);opacity:1}}
+  #driftAnzeige{position:absolute;left:50%;bottom:24%;transform:translateX(-50%);font-size:1.4rem;opacity:0;transition:opacity .15s}
+  #oben{position:fixed;top:10px;right:50%;transform:translateX(160px);z-index:30;display:flex;gap:8px}
+  .rund{pointer-events:auto;width:44px;height:44px;border-radius:50%;border:2px solid rgba(255,255,255,.6);background:rgba(20,12,4,.5);color:#fff;font-size:1.2rem;display:grid;place-items:center}
+
+  /* ---------- Touch ---------- */
+  #touch{position:fixed;inset:auto 0 0 0;height:190px;z-index:15;pointer-events:none}
+  .tb{position:absolute;pointer-events:auto;border-radius:50%;border:3px solid rgba(255,255,255,.55);background:rgba(20,12,4,.35);
+    color:#fff;font-weight:800;display:grid;place-items:center;touch-action:none;font-size:1.1rem}
+  .tb.an{background:rgba(255,198,41,.55)}
+  #tLinks{left:18px;bottom:40px;width:86px;height:86px;font-size:2rem}
+  #tRechts{left:116px;bottom:40px;width:86px;height:86px;font-size:2rem}
+  #tDrift{right:18px;bottom:30px;width:104px;height:104px;font-size:1.2rem}
+  #tBremse{right:134px;bottom:22px;width:66px;height:66px;font-size:.85rem}
+  #tItem{right:34px;bottom:148px;width:74px;height:74px;font-size:1.8rem}
+  body.touch #minikarte{width:130px;height:130px;left:auto;right:12px;top:150px;bottom:auto}
+  body.touch #platz{bottom:auto;top:auto;right:auto;left:22px;bottom:150px;font-size:4rem}
+  body.touch #platz small{font-size:1.5rem}
+  body.touch #tempo{display:none}
+  body.touch #liste{display:none}
+
+  /* ---------- Pause / Ergebnis ---------- */
+  .mittig{align-items:center;justify-content:center;background:rgba(10,6,2,.6);padding:16px}
+  .fenster{width:min(520px,100%);max-height:100%;overflow-y:auto;background:var(--panel);border:2px solid var(--rand);border-radius:18px;padding:22px}
+  .fenster h2{font-size:2.2rem;letter-spacing:0;text-transform:none;margin:0 0 12px;color:var(--gelb)}
+  .knoepfe{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+  .knoepfe .knopf{flex:1 1 140px}
+  .knoepfe .knopf.haupt{background:var(--gelb);color:var(--dunkel);border-color:var(--gelb)}
+  table{width:100%;border-collapse:collapse;font-size:1.05rem}
+  td{padding:5px 6px;border-bottom:1px solid rgba(255,255,255,.08)}
+  td:first-child{width:2.2em;font-weight:800;color:var(--gelb)}
+  td.r{text-align:right;font-variant-numeric:tabular-nums;color:var(--leise)}
+  tr.ich td{background:rgba(255,198,41,.2)}
+  .neu{color:var(--gruen);font-weight:800}
+  .feld{display:block;color:var(--leise);font-size:.9rem}
+  input{font:inherit;font-size:1.1rem;width:100%;margin-top:4px;padding:10px 12px;border-radius:10px;border:2px solid var(--rand);
+    background:rgba(255,255,255,.08);color:var(--text);user-select:text;-webkit-user-select:text}
+  input:focus{outline:none;border-color:var(--gelb)}
+  .oder{text-align:center;color:var(--leise);margin:0 0 8px}
+  .codezeile{display:flex;gap:8px}
+  .codezeile input{margin:0;text-transform:uppercase;letter-spacing:4px;font-weight:800;text-align:center}
+  .codezeile .knopf{flex:0 0 auto}
+  .fehler{color:#ff8a80;min-height:1.3em;margin:8px 0 0}
+  .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  .raumzeile{margin:0;color:var(--leise);text-transform:uppercase;letter-spacing:2px;font-size:.8rem}
+  .fenster h2.code{font-size:3.4rem;letter-spacing:10px;margin:0 0 4px;user-select:text;-webkit-user-select:text}
+  .fenster h3{margin:16px 0 6px;font-size:.8rem;letter-spacing:2px;text-transform:uppercase;color:var(--gelb)}
+  .leise{color:var(--leise);margin:6px 0}
+  .lobbyliste{display:flex;flex-direction:column;gap:4px}
+  .lobbyliste div{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:10px;background:rgba(255,255,255,.07)}
+  .lobbyliste small{margin-left:auto;color:var(--gelb)}
+  .raster.klein .wahl{padding:4px}
+  .raster.klein .gesicht{font-size:1.5rem}
+  .knopf:disabled{opacity:.45;cursor:default}
+  #lobbyEinst .reihe{margin-bottom:8px}
+  .schalter{display:flex;align-items:center;gap:8px;color:var(--leise)}
+  .schalter input{width:auto;margin:0;accent-color:var(--gelb)}
+
+  @media (max-width:700px){
+    h1{font-size:2.6rem}
+    .menue-karte{width:100%;background:rgba(20,12,4,.9)}
+    #mitte{font-size:4.2rem}
+    #itemSlot{width:68px;height:68px;font-size:2.4rem}
+    #runde b{font-size:2rem}
+    #oben{right:auto;left:12px;transform:none;top:auto;bottom:210px}
+  }
+  @media (max-width:420px){
+    #tLinks{left:12px;width:76px;height:76px}
+    #tRechts{left:96px;width:76px;height:76px}
+  }
+</style>
+</head>
+<body>
+<div id="szene"></div>
+
+<div id="menue" class="overlay">
+  <div class="menue-karte">
+    <h1>Löwen-<span>Kart</span></h1>
+    <p class="unter">Driften, Items werfen, als Erste oder Erster ins Ziel.</p>
+
+    <h2>Fahrer</h2>
+    <div id="fahrerwahl" class="raster" role="radiogroup" aria-label="Fahrer"></div>
+    <div id="fahrerinfo"></div>
+
+    <h2>Modus</h2>
+    <div id="moduswahl" class="reihe" role="radiogroup" aria-label="Modus"></div>
+
+    <div id="streckenBlock">
+      <h2>Strecke</h2>
+      <div id="streckenwahl" class="reihe" role="radiogroup" aria-label="Strecke"></div>
+    </div>
+
+    <div id="stufenBlock">
+      <h2>Klasse</h2>
+      <div id="stufenwahl" class="reihe" role="radiogroup" aria-label="Klasse"></div>
+      <button id="losknopf" class="gross">Los geht's!</button>
+    </div>
+
+    <div id="onlineBlock" hidden>
+      <h2>Online mit Freunden</h2>
+      <label class="feld">Dein Spitzname
+        <input id="nameFeld" maxlength="16" autocomplete="nickname" placeholder="z. B. Turbo-Tom">
+      </label>
+      <button id="raumNeu" class="gross">Raum erstellen</button>
+      <p class="oder">oder mit Code beitreten</p>
+      <div class="codezeile">
+        <label class="sr" for="codeFeld">Raum-Code</label>
+        <input id="codeFeld" maxlength="4" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="CODE">
+        <button id="raumRein" class="knopf haupt">Beitreten</button>
+      </div>
+      <p id="onlineFehler" class="fehler" role="alert"></p>
+    </div>
+
+    <details class="steuerung">
+      <summary>Steuerung</summary>
+      <p><kbd>↑</kbd>/<kbd>W</kbd> Gas · <kbd>↓</kbd>/<kbd>S</kbd> Bremse &amp; rückwärts · <kbd>←</kbd><kbd>→</kbd>/<kbd>A</kbd><kbd>D</kbd> lenken</p>
+      <p><kbd>Leertaste</kbd> oder <kbd>Shift</kbd> halten + lenken = <b>Driften</b>. Je länger, desto besser: blaue, orange, dann lila Funken geben beim Loslassen einen Turbo.</p>
+      <p><kbd>E</kbd> oder <kbd>Strg</kbd> Item benutzen · <kbd>Esc</kbd> Pause · <kbd>M</kbd> Ton an/aus</p>
+      <p>Starttrick: Gib genau bei der <b>2</b> im Countdown Gas!</p>
+      <p>Items: ⚡ Turbo · ⚡³ Dreifach-Turbo · 🍌 Banane (fällt hinter dich) · 🚀 Rakete (sucht den Kart vor dir) · ⭐ Stern (unverwundbar &amp; schnell)</p>
+    </details>
+    <p class="fuss"><a href="/datenschutz">Datenschutz</a> · Ein Spiel der Swimming Lions</p>
+  </div>
+</div>
+
+<div id="hud" hidden>
+  <div id="liste" class="schild"></div>
+  <div id="runde" class="schild">RUNDE <b id="rundeZahl">1/3</b></div>
+  <div id="zeit" class="schild"><span id="zeitGesamt">0:00.00</span><div id="rundenzeiten"></div></div>
+  <div id="itemSlot" aria-label="Item"><span id="itemIcon"></span><small id="itemAnzahl"></small></div>
+  <canvas id="minikarte" width="380" height="380"></canvas>
+  <div id="tempo" class="schild"></div>
+  <div id="platz" class="schild">1<small>.</small></div>
+  <div id="mitte" class="schild"></div>
+  <div id="driftAnzeige" class="schild">✦</div>
+</div>
+
+<div id="oben" hidden>
+  <button id="tonKnopf" class="rund" title="Ton an/aus (M)" aria-label="Ton an/aus">🔊</button>
+  <button id="pauseKnopf" class="rund" title="Pause (Esc)" aria-label="Pause">⏸</button>
+</div>
+
+<div id="touch" hidden>
+  <div id="tLinks" class="tb">◀</div>
+  <div id="tRechts" class="tb">▶</div>
+  <div id="tDrift" class="tb">DRIFT</div>
+  <div id="tBremse" class="tb">BREMS</div>
+  <div id="tItem" class="tb">🎁</div>
+</div>
+
+<div id="pause" class="overlay mittig" hidden>
+  <div class="fenster">
+    <h2>Pause</h2>
+    <div class="knoepfe">
+      <button class="knopf haupt" id="weiterKnopf">Weiter</button>
+      <button class="knopf" id="neuKnopf">Neu starten</button>
+      <button class="knopf" id="menueKnopf">Menü</button>
+    </div>
+  </div>
+</div>
+
+<div id="lobby" class="overlay mittig" hidden>
+  <div class="fenster">
+    <p class="raumzeile">Raum-Code</p>
+    <h2 id="raumCode" class="code">----</h2>
+    <p class="leise">Schick diesen Code deinen Freunden. Sie wählen im Menü „Online“ und treten bei.</p>
+    <h3>Fahrer im Raum</h3>
+    <div id="lobbySpieler" class="lobbyliste"></div>
+    <h3>Dein Kart</h3>
+    <div id="lobbyFahrer" class="raster klein"></div>
+    <h3>Rennen</h3>
+    <div id="lobbyEinst"></div>
+    <p id="lobbyInfo" class="leise"></p>
+    <div class="knoepfe">
+      <button class="knopf haupt" id="lobbyStart">Rennen starten</button>
+      <button class="knopf" id="lobbyRaus">Raum verlassen</button>
+    </div>
+  </div>
+</div>
+
+<div id="ergebnis" class="overlay mittig" hidden>
+  <div class="fenster">
+    <h2 id="ergebnisTitel">Ziel!</h2>
+    <div id="ergebnisText"></div>
+    <div class="knoepfe" id="ergebnisKnoepfe"></div>
+  </div>
+</div>
+
+<script src="/vendor/three.min.js"></script>
+<script src="/spiel.js"></script>
+</body>
+</html>
