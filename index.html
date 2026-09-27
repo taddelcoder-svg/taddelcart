@@ -89,20 +89,41 @@
   .rund{pointer-events:auto;width:44px;height:44px;border-radius:50%;border:2px solid rgba(255,255,255,.6);background:rgba(20,12,4,.5);color:#fff;font-size:1.2rem;display:grid;place-items:center}
 
   /* ---------- Touch ---------- */
-  #touch{position:fixed;inset:auto 0 0 0;height:190px;z-index:15;pointer-events:none}
-  .tb{position:absolute;pointer-events:auto;border-radius:50%;border:3px solid rgba(255,255,255,.55);background:rgba(20,12,4,.35);
-    color:#fff;font-weight:800;display:grid;place-items:center;touch-action:none;font-size:1.1rem}
-  .tb.an{background:rgba(255,198,41,.55)}
-  #tLinks{left:18px;bottom:40px;width:86px;height:86px;font-size:2rem}
-  #tRechts{left:116px;bottom:40px;width:86px;height:86px;font-size:2rem}
-  #tDrift{right:18px;bottom:30px;width:104px;height:104px;font-size:1.2rem}
-  #tBremse{right:134px;bottom:22px;width:66px;height:66px;font-size:.85rem}
-  #tItem{right:34px;bottom:148px;width:74px;height:74px;font-size:1.8rem}
-  body.touch #minikarte{width:130px;height:130px;left:auto;right:12px;top:150px;bottom:auto}
-  body.touch #platz{bottom:auto;top:auto;right:auto;left:22px;bottom:150px;font-size:4rem}
-  body.touch #platz small{font-size:1.5rem}
+  /* Die ganze Fläche fängt die Finger ab (kein Zoom, kein Scrollen); die Knöpfe sind nur Anzeige. */
+  html{touch-action:manipulation}
+  #touch{position:fixed;inset:0;z-index:15;touch-action:none;-webkit-touch-callout:none}
+  .tb{position:absolute;pointer-events:none;border-radius:50%;border:3px solid rgba(255,255,255,.55);background:rgba(20,12,4,.38);
+    color:#fff;font-weight:800;display:grid;place-items:center;font-size:1.05rem;letter-spacing:.5px;transition:background .08s,transform .08s}
+  .tb.an{background:rgba(255,198,41,.6);transform:scale(.94)}
+  #tLenk{left:calc(14px + env(safe-area-inset-left));bottom:calc(14px + env(safe-area-inset-bottom));width:min(42vw,330px);height:104px;
+    border-radius:52px;display:flex;justify-content:space-between;align-items:center;padding:0 20px;font-size:1.9rem;background:rgba(20,12,4,.22)}
+  #tLenk.an{background:rgba(20,12,4,.38);transform:none}
+  #tLenk i{position:absolute;left:50%;top:50%;width:64px;height:64px;margin:-32px 0 0 -32px;border-radius:50%;
+    background:rgba(255,198,41,.55);border:2px solid rgba(255,255,255,.8);transform:translateX(var(--x,0px));opacity:.35}
+  #tLenk.an i{opacity:1}
+  #tDrift{right:calc(16px + env(safe-area-inset-right));bottom:calc(14px + env(safe-area-inset-bottom));width:112px;height:112px;font-size:1.25rem}
+  #tBremse{right:calc(142px + env(safe-area-inset-right));bottom:calc(14px + env(safe-area-inset-bottom));width:90px;height:90px;font-size:.95rem}
+  #tItem{right:calc(32px + env(safe-area-inset-right));bottom:calc(140px + env(safe-area-inset-bottom));width:80px;height:80px;font-size:2.2rem}
+  #tItem.leer{opacity:.45}
+  #tItem small{position:absolute;right:6px;bottom:2px;font-size:.9rem}
+  body.touch #itemSlot{display:none}
+  body.touch #minikarte{width:118px;height:118px;left:calc(10px + env(safe-area-inset-left));top:10px;right:auto;bottom:auto}
+  body.touch #platz{top:auto;right:auto;left:calc(24px + env(safe-area-inset-left));bottom:calc(126px + env(safe-area-inset-bottom));font-size:3.6rem}
+  body.touch #platz small{font-size:1.4rem}
   body.touch #tempo{display:none}
   body.touch #liste{display:none}
+  body.touch #oben{top:10px;bottom:auto;left:50%;right:auto;transform:translateX(-50%)}
+  body.touch #driftAnzeige{bottom:auto;top:54%}
+  #querHinweis{display:none;position:absolute;left:50%;top:40%;transform:translateX(-50%);width:max-content;max-width:90vw;padding:8px 14px;
+    border-radius:12px;background:rgba(20,12,4,.7);font-size:1.1rem;text-align:center;opacity:0}
+  @keyframes hinweis{0%,80%{opacity:1}100%{opacity:0}}
+  @media (orientation:portrait){
+    body.touch #tLenk{width:calc(100vw - 150px)}
+    body.touch #tDrift{width:100px;height:100px}
+    body.touch #tBremse{right:calc(24px + env(safe-area-inset-right));bottom:calc(128px + env(safe-area-inset-bottom));width:84px;height:84px}
+    body.touch #tItem{right:calc(28px + env(safe-area-inset-right));bottom:calc(226px + env(safe-area-inset-bottom));width:76px;height:76px}
+    body.touch #querHinweis{display:block;animation:hinweis 6s forwards}
+  }
 
   /* ---------- Pause / Ergebnis ---------- */
   .mittig{align-items:center;justify-content:center;background:rgba(10,6,2,.6);padding:16px}
@@ -148,10 +169,6 @@
     #itemSlot{width:68px;height:68px;font-size:2.4rem}
     #runde b{font-size:2rem}
     #oben{right:auto;left:12px;transform:none;top:auto;bottom:210px}
-  }
-  @media (max-width:420px){
-    #tLinks{left:12px;width:76px;height:76px}
-    #tRechts{left:96px;width:76px;height:76px}
   }
 
   .grafik-feld{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:16px 0;color:var(--leise)}
@@ -210,6 +227,7 @@
       <p><kbd>Leertaste</kbd> oder <kbd>Shift</kbd> halten + lenken = <b>Driften</b>. Je länger, desto besser: blaue, orange, dann lila Funken geben beim Loslassen einen Turbo.</p>
       <p><kbd>E</kbd> oder <kbd>Strg</kbd> Item benutzen · <kbd>Esc</kbd> Pause · <kbd>M</kbd> Ton an/aus</p>
       <p>Starttrick: Gib genau bei der <b>2</b> im Countdown Gas!</p>
+      <p><b>Handy/Tablet:</b> Gas geht von allein. Links den Daumen auf den Lenkbalken legen – je weiter nach außen, desto stärker lenkst du. Rechts: <b>DRIFT</b> halten + lenken, <b>BREMSE</b> (gehalten = rückwärts), darüber das Item. Du kannst den Daumen zwischen den Knöpfen hin- und herrutschen lassen. Starttrick: bei der <b>2</b> DRIFT drücken.</p>
       <p>Items: ⚡ Turbo · ⚡³ Dreifach-Turbo · 🍌 Banane (fällt hinter dich) · 🚀 Rakete (sucht den Kart vor dir) · ⭐ Stern (unverwundbar &amp; schnell)</p>
     </details>
     <p class="fuss"><a href="/datenschutz">Datenschutz</a> · Ein Spiel der Swimming Lions</p>
@@ -226,6 +244,7 @@
   <div id="platz" class="schild">1<small>.</small></div>
   <div id="mitte" class="schild"></div>
   <div id="driftAnzeige" class="schild">✦</div>
+  <div id="querHinweis" class="schild">📱↻ Handy quer halten – dann siehst du mehr</div>
 </div>
 
 <div id="oben" hidden>
@@ -234,11 +253,10 @@
 </div>
 
 <div id="touch" hidden>
-  <div id="tLinks" class="tb">◀</div>
-  <div id="tRechts" class="tb">▶</div>
+  <div id="tLenk" class="tb"><span>◀</span><i></i><span>▶</span></div>
   <div id="tDrift" class="tb">DRIFT</div>
-  <div id="tBremse" class="tb">BREMS</div>
-  <div id="tItem" class="tb">🎁</div>
+  <div id="tBremse" class="tb">BREMSE</div>
+  <div id="tItem" class="tb leer"><span id="tItemIcon">🎁</span></div>
 </div>
 
 <div id="pause" class="overlay mittig" hidden>

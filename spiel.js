@@ -636,7 +636,7 @@ const Ton = (() => {
    Eingabe: Tastatur, Gamepad, Touch
    ========================================================= */
 const tasten = new Set();
-const touch = { links:false, rechts:false, drift:false, bremse:false };
+const touch = { lenk:0, drift:false, bremse:false };
 const touchModus = matchMedia('(pointer: coarse)').matches;
 let tastaturBenutzt = !touchModus, itemGedrueckt = false, padItemVorher = false, padPauseVorher = false;
 const TASTE = {
@@ -658,23 +658,83 @@ addEventListener('keydown', e => {
 addEventListener('keyup', e => tasten.delete(e.code));
 function eingabenLeeren(){
   tasten.clear(); itemGedrueckt = false; padItemVorher = false; padPauseVorher = false;
-  for (const feld of Object.keys(touch)) touch[feld] = false;
-  for (const el of document.querySelectorAll('.tb.an')) el.classList.remove('an');
+  zeiger.clear(); touchAuswerten();
 }
 addEventListener('blur', () => { eingabenLeeren(); if (!online.aktiv && ['countdown', 'rennen'].includes(zustand.phase) && !zustand.pause) pauseUmschalten(); });
 addEventListener('pointerdown', () => Ton.start(), { once:false });
 addEventListener('gamepaddisconnected', eingabenLeeren);
 document.addEventListener('visibilitychange', () => { if (document.hidden){ eingabenLeeren(); if (!online.aktiv && ['countdown','rennen'].includes(zustand.phase) && !zustand.pause) pauseUmschalten(); } });
 
-function touchKnopf(id, feld){
-  const el = $(id);
-  const an = e => { e.preventDefault(); el.setPointerCapture(e.pointerId); Ton.start(); if (feld === 'item') itemGedrueckt = true; else touch[feld] = true; el.classList.add('an'); tastaturBenutzt = false; };
-  const aus = e => { e.preventDefault(); if (feld !== 'item') touch[feld] = false; el.classList.remove('an'); };
-  el.addEventListener('pointerdown', an);
-  el.addEventListener('pointerup', aus); el.addEventListener('pointercancel', aus); el.addEventListener('lostpointercapture', aus);
+// Touch: Die ganze Fläche nimmt die Finger an. Jeder Finger links ist Lenken (analog, je weiter
+// von der Mitte des Lenkbalkens, desto stärker), rechts gilt der nächstgelegene Knopf. So kann der
+// Daumen zwischen DRIFT und BREMSE rutschen, ohne dass ein Knopf „hängen“ bleibt.
+const touchFlaeche = $('touch');
+const zeiger = new Map();
+const KNOEPFE = ['tDrift', 'tBremse', 'tItem'];
+function knopfBei(x, y){
+  let best = null, bestAbstand = 1.35;
+  for (const id of KNOEPFE){
+    const r = $(id).getBoundingClientRect(), rad = r.width / 2;
+    if (!rad) continue;
+    const d = Math.hypot(x - r.left - rad, y - r.top - r.height / 2) / rad;
+    if (d < bestAbstand){ bestAbstand = d; best = id; }
+  }
+  return best;
 }
-touchKnopf('tLinks', 'links'); touchKnopf('tRechts', 'rechts'); touchKnopf('tDrift', 'drift'); touchKnopf('tBremse', 'bremse'); touchKnopf('tItem', 'item');
+function touchAuswerten(){
+  const lenkEl = $('tLenk'), r = lenkEl.getBoundingClientRect();
+  const weg = Math.max(40, r.width * 0.34), knopfWeg = Math.max(0, r.width / 2 - 40);
+  let lenk = 0, lenkFinger = false, knopfX = 0;
+  touch.drift = touch.bremse = false;
+  for (const z of zeiger.values()){
+    if (z.art === 'lenk'){
+      const dx = z.x - (r.left + r.width / 2);
+      lenk = -Math.sign(dx) * klemm((Math.abs(dx) - 10) / weg, 0, 1) ** 1.25;
+      lenkFinger = true; knopfX = klemm(dx, -knopfWeg, knopfWeg);
+    }
+    else if (z.knopf === 'tDrift') touch.drift = true;
+    else if (z.knopf === 'tBremse') touch.bremse = true;
+  }
+  touch.lenk = lenk;
+  lenkEl.classList.toggle('an', lenkFinger);
+  lenkEl.style.setProperty('--x', knopfX + 'px');
+  $('tDrift').classList.toggle('an', touch.drift);
+  $('tBremse').classList.toggle('an', touch.bremse);
+  $('tItem').classList.toggle('an', [...zeiger.values()].some(z => z.knopf === 'tItem'));
+}
+touchFlaeche.addEventListener('pointerdown', e => {
+  e.preventDefault(); Ton.start(); tastaturBenutzt = false;
+  try { touchFlaeche.setPointerCapture(e.pointerId); } catch (err) { /* egal */ }
+  const lr = $('tLenk').getBoundingClientRect();
+  const z = { x:e.clientX, y:e.clientY, art:e.clientX < lr.right + 24 ? 'lenk' : 'knopf', knopf:null };
+  if (z.art === 'knopf'){ z.knopf = knopfBei(z.x, z.y); if (z.knopf === 'tItem') itemGedrueckt = true; }
+  zeiger.set(e.pointerId, z);
+  touchAuswerten();
+});
+touchFlaeche.addEventListener('pointermove', e => {
+  const z = zeiger.get(e.pointerId);
+  if (!z) return;
+  z.x = e.clientX; z.y = e.clientY;
+  // Beim Rutschen wechseln nur DRIFT und BREMSE, Items gibt es nur per Antippen
+  if (z.art === 'knopf'){ const neu = knopfBei(z.x, z.y); z.knopf = neu === 'tItem' && z.knopf !== 'tItem' ? null : neu; }
+  touchAuswerten();
+});
+const zeigerWeg = e => { if (zeiger.delete(e.pointerId)) touchAuswerten(); };
+for (const typ of ['pointerup', 'pointercancel', 'lostpointercapture']) touchFlaeche.addEventListener(typ, zeigerWeg);
+touchFlaeche.addEventListener('contextmenu', e => e.preventDefault());
+// iOS ignoriert user-scalable=no: Zoom-Gesten selbst abfangen
+document.addEventListener('gesturestart', e => e.preventDefault());
+document.addEventListener('dblclick', e => e.preventDefault());
 if (touchModus) document.body.classList.add('touch');
+const vibrieren = ms => { if (touchModus && navigator.vibrate && (!navigator.userActivation || navigator.userActivation.hasBeenActive)) try { navigator.vibrate(ms); } catch (e) { /* egal */ } };
+// Auf Handys beim Rennstart Vollbild und Querformat versuchen (klappt nur nach einem Tipp, nicht auf dem iPhone)
+function vollbild(){
+  const el = document.documentElement;
+  if (!touchModus || document.fullscreenElement || !el.requestFullscreen) return;
+  el.requestFullscreen({ navigationUI:'hide' })
+    .then(() => screen.orientation && screen.orientation.lock ? screen.orientation.lock('landscape') : null)
+    .catch(() => {});
+}
 
 function spielerEingabe(){
   const e = { gas:false, bremse:false, lenk:0, drift:false, item:false };
@@ -682,9 +742,12 @@ function spielerEingabe(){
   e.bremse = gedrueckt('bremse');
   e.lenk = (gedrueckt('links') ? 1 : 0) - (gedrueckt('rechts') ? 1 : 0);
   e.drift = gedrueckt('drift');
-  // Touch: Gas geht automatisch
-  if (touchModus && !tastaturBenutzt){ e.gas = !touch.bremse; e.bremse = touch.bremse; }
-  if (touch.links || touch.rechts) e.lenk = (touch.links ? 1 : 0) - (touch.rechts ? 1 : 0);
+  // Touch: Gas geht automatisch, im Countdown gibt DRIFT Gas (für den Starttrick)
+  if (touchModus && !tastaturBenutzt){
+    if (zustand.phase === 'countdown') e.gas = touch.drift;
+    else { e.gas = !touch.bremse; e.bremse = touch.bremse; }
+  }
+  if (touch.lenk) e.lenk = touch.lenk;
   if (touch.drift) e.drift = true;
   // Gamepad
   const pads = navigator.getGamepads ? navigator.getGamepads() : [];
@@ -1164,7 +1227,7 @@ class Kart {
       x:0, z:0, y:0, vy:0, yaw:0, v:0, kx:0, kz:0, idx:0, idxAlt:0, runde:0, maxRunde:0, fortschritt:0, seite:0,
       drift:0, driftZeit:0, driftStufe:0, driftTaste:false, driftVisuell:0, boost:0, stern:0, dreh:0, drehDauer:1, drehWinkel:0,
       item:null, itemNeu:null, itemAnzahl:0, roulette:0, itemTimer:0, fertig:false, zielzeit:Infinity, rundeStart:0, rundenzeiten:[],
-      platz:1, lenkAnzeige:0, lenkSanft:0, offroad:false, falsch:0, steckt:0, wandZeit:0, padZeit:0, hatteStern:false,
+      platz:1, lenkAnzeige:0, lenkSanft:0, stand:0, offroad:false, falsch:0, steckt:0, wandZeit:0, padZeit:0, hatteStern:false,
       spur:zufall(-0.5, 0.5), spurZiel:zufall(-0.5, 0.5), spurTimer:zufall(1, 3), gummi:1, camYaw:0, autopilot:false
     });
   }
@@ -1196,7 +1259,7 @@ function treffer(k, art){
     const w = Math.random() * TAU;
     funken.neu(k.x, 1.5, k.z, Math.cos(w) * 5, zufall(3, 7), Math.sin(w) * 5, 0.6, 1, 0.95, 0.5, 0.7, 10);
   }
-  if (k.spieler){ Ton.effekt('treffer'); zustand.wackeln = 0.5; }
+  if (k.spieler){ Ton.effekt('treffer'); vibrieren(120); zustand.wackeln = 0.5; }
 }
 
 function streckeFolgen(k){
@@ -1258,7 +1321,9 @@ function kartBewegen(k, dt){
     if (k.v < 0) k.v += w.beschl * 2.2 * dt;
     else if (k.v < maxV) k.v = Math.min(maxV, k.v + w.beschl * (1 - 0.55 * (k.v / maxV) ** 2) * dt * (k.boost > 0 ? 3 : 1));
   } else if (bremse){
-    if (k.v > 0.5) k.v -= 36 * dt; else k.v = Math.max(-9, k.v - 12 * dt);
+    // Erst bis zum Stillstand bremsen, rückwärts geht es erst nach einer kurzen Pause
+    if (k.v > 0.5){ k.v -= 38 * dt; k.stand = 0; }
+    else { k.stand += dt; k.v = k.stand > 0.35 ? Math.max(-9, k.v - 12 * dt) : Math.min(k.v, 0); }
   } else {
     const r = 7 * dt;
     k.v = Math.abs(k.v) <= r ? 0 : k.v - Math.sign(k.v) * r;
@@ -1276,7 +1341,7 @@ function kartBewegen(k, dt){
   let rate;
   if (k.drift){
     const t = (lenk * k.drift + 1) / 2;
-    rate = k.drift * w.lenk * (0.12 + 0.88 * t);
+    rate = k.drift * w.lenk * (0.25 + 0.6 * t);
     k.driftZeit += dt * (0.55 + 0.9 * t) * (k.offroad ? 0.4 : 1);
     k.driftStufe = k.driftZeit > 3.0 ? 3 : k.driftZeit > 1.9 ? 2 : k.driftZeit > 0.9 ? 1 : 0;
   } else {
@@ -1289,7 +1354,7 @@ function kartBewegen(k, dt){
   // Bewegung (beim Driften rutscht das Kart leicht nach außen)
   const fx = Math.sin(k.yaw), fz = Math.cos(k.yaw);
   let vx = fx * k.v, vz = fz * k.v;
-  if (k.drift){ const r = -k.drift * k.v * 0.16; vx += fz * r; vz -= fx * r; }
+  if (k.drift){ const r = -k.drift * k.v * 0.1; vx += fz * r; vz -= fx * r; }
   k.x += (vx + k.kx) * dt; k.z += (vz + k.kz) * dt;
   const daempf = Math.exp(-5 * dt);
   k.kx *= daempf; k.kz *= daempf;
@@ -1304,7 +1369,7 @@ function kartBewegen(k, dt){
     const hinein = (fx * lx + fz * lz) * sg * (k.v < 0 ? -1 : 1);
     if (hinein > 0.1 && Math.abs(k.v) > 4){
       if (k.wandZeit <= 0){
-        if (k.spieler){ Ton.effekt('wand'); zustand.wackeln = Math.max(zustand.wackeln, 0.25 * hinein); }
+        if (k.spieler){ Ton.effekt('wand'); vibrieren(25); zustand.wackeln = Math.max(zustand.wackeln, 0.25 * hinein); }
         for (let n = 0; n < 8; n++) funken.neu(k.x + lx * sg, 0.7, k.z + lz * sg, zufall(-3, 3), zufall(1, 4), zufall(-3, 3), 0.4, 1, 0.85, 0.4, 0.45, 12);
       }
       k.v *= 1 - 0.45 * hinein;
@@ -1710,6 +1775,7 @@ function rennenStarten(opts = null){
   Object.assign(zustand, { phase:'countdown', t:0, rt:0, pause:false, wackeln:0, meldungBis:0, ergebnisIn:0, orbit:0, gasSeit:null, fov:68, cdSchritt:0 });
   $('menue').hidden = true; $('ergebnis').hidden = true; $('pause').hidden = true;
   $('hud').hidden = false; $('oben').hidden = false; $('touch').hidden = !touchModus;
+  eingabenLeeren(); vollbild();
   $('mitte').textContent = '';
   $('lobby').hidden = true;
   $('neuKnopf').hidden = online.aktiv;
@@ -1895,6 +1961,10 @@ function hudUpdate(){
   if (k.roulette > 0){ const alle = Object.values(ITEM_ICON); icon = alle[Math.floor(zeit * 14) % alle.length]; }
   else if (k.item){ icon = ITEM_ICON[k.item]; if (k.item === 'turbo3') anzahl = '×' + k.itemAnzahl; }
   setzen('itemIcon', icon); setzen('itemAnzahl', anzahl);
+  if (touchModus){
+    setzen('tItemIcon', (icon || '🎁') + (anzahl ? `<small>${anzahl}</small>` : ''), true);
+    $('tItem').classList.toggle('leer', !icon);
+  }
   $('itemSlot').classList.toggle('dreh', k.roulette > 0);
   // Rangliste
   const rang = rangliste();
