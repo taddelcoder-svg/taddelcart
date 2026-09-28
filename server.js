@@ -143,7 +143,8 @@ function olympMelden(raum, rang){
   if (!o || o.gemeldet) return;
   o.gemeldet = true;
   const liste = rang.filter(r => raum.slots[r.slot] && raum.slots[r.slot].olympId).map(r => ({
-    s:raum.slots[r.slot].olympId, text:r.zeit != null ? zeitText(r.zeit) : r.weg ? 'ausgestiegen' : 'nicht im Ziel'
+    s:raum.slots[r.slot].olympId, text:r.zeit != null ? zeitText(r.zeit) : r.weg ? 'ausgestiegen' : 'nicht im Ziel',
+    wert:r.zeit != null ? -Math.round(r.zeit * 1000) : null   // schneller = besser; für den Vergleich zwischen Vorläufen
   }));
   olymp.rangMelden(o.t, liste);
 }
