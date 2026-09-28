@@ -8,6 +8,7 @@ const path = require('path');
 const crypto = require('crypto');
 const { WebSocketServer } = require('ws');
 const zugang = require('./zugang')({ titel:'Löwen-Kart' });
+const olymp = require('./olymp')({ spiel:'loewenkart' });
 
 const PORT = Number(process.env.PORT) || 10100;
 const MAX_RAEUME = 200;
@@ -50,6 +51,7 @@ const server = http.createServer((req, res) => {
 /* ---------- Online-Räume ---------- */
 const RAUM_ZEICHEN = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const raeume = new Map();
+const olympRaeume = new Map();   // Olympiade: "lauf:gruppe" -> Raumcode
 const wss = new WebSocketServer({ server, path:'/ws', maxPayload:4096, verifyClient:({ req }) => zugang.hatZugang(req) });
 
 function sende(ws, m){ if (ws.readyState === 1) ws.send(typeof m === 'string' ? m : JSON.stringify(m)); }
@@ -60,7 +62,8 @@ function anAlle(raum, m, ausser){
 function raumSenden(raum){
   const m = {
     t:'raum', code:raum.code, host:raum.host, phase:raum.phase, strecke:raum.strecke, stufe:raum.stufe, bots:raum.bots,
-    spieler:[...raum.spieler.values()].map(s => ({ id:s.id, name:s.name, fahrer:s.fahrer }))
+    spieler:[...raum.spieler.values()].map(s => ({ id:s.id, name:s.name, fahrer:s.fahrer })),
+    olymp:raum.olymp ? olympInfo(raum) : null
   };
   for (const sp of raum.spieler.values()) sende(sp.ws, { ...m, du:sp.id });
 }
@@ -81,9 +84,68 @@ function darf(ws, raum, slot){
 }
 
 function beitreten(ws, raum, m){
-  raum.spieler.set(ws.id, { id:ws.id, ws, name:nameOk(m.name), fahrer:ganz(m.fahrer, 0, ANZAHL_FAHRER - 1, 0) });
+  raum.spieler.set(ws.id, { id:ws.id, ws, name:nameOk(m.name), fahrer:ganz(m.fahrer, 0, ANZAHL_FAHRER - 1, 0), olympId:ws.olympId || null });
   ws.raum = raum.code;
+  olympPruefen(raum);
   raumSenden(raum);
+}
+
+/* ---------- Olympiade ----------
+   Wer mit einem Olympia-Ticket kommt, landet im Raum seiner Disziplin (ein Raum pro Lauf und Gruppe).
+   Sind alle Erwarteten da, startet das Rennen nach kurzem Countdown von selbst; der Host kann auch
+   früher starten. Es gibt genau ein Rennen, dessen Reihenfolge an die Olympiade geht. */
+const OLYMP_START_MS = 6000;
+function olympInfo(raum){
+  const o = raum.olymp, da = new Set([...raum.spieler.values()].map(s => s.olympId));
+  return {
+    ...olymp.fuerBrowser(o.t), erwartet:o.t.m.map(e => ({ n:e.n, da:da.has(e.s) })), gestartet:o.gestartet, vorbei:o.gemeldet,
+    startIn:o.startBis ? Math.max(0, o.startBis - Date.now()) : null
+  };
+}
+function olympPruefen(raum){
+  const o = raum.olymp;
+  if (!o) return;
+  const da = [...raum.spieler.values()].map(s => s.olympId).filter(Boolean);
+  olymp.status(o.t, da, raum.phase === 'rennen' ? 'laeuft' : 'warten');
+  const alle = o.t.m.every(e => da.includes(e.s));
+  if (raum.phase === 'lobby' && !o.gestartet && alle){
+    if (!o.startUhr){
+      o.startBis = Date.now() + OLYMP_START_MS;
+      o.startUhr = setTimeout(() => { o.startUhr = null; if (raeume.get(raum.code) === raum && raum.phase === 'lobby' && !o.gestartet) rennenStarten(raum); }, OLYMP_START_MS);
+    }
+  } else if (o.startUhr){ clearTimeout(o.startUhr); o.startUhr = null; o.startBis = 0; }
+}
+function olympBeitreten(ws, raum, m){
+  const t = olymp.ticketPruefen(m.ticket);
+  if (!t) return sende(ws, { t:'fehler', text:'Das Olympia-Ticket ist ungültig oder abgelaufen. Geh zurück zur Olympiade.', olymp:true });
+  const schluessel = t.l + ':' + t.g;
+  let ziel = raeume.get(olympRaeume.get(schluessel));
+  if (!ziel){
+    if (raeume.size >= MAX_RAEUME) return sende(ws, { t:'fehler', text:'Gerade sind zu viele Räume offen. Versuch es gleich nochmal.' });
+    ziel = { code:neuerCode(), host:ws.id, spieler:new Map(), phase:'lobby', strecke:ganz(t.c.strecke, 0, ANZAHL_STRECKEN - 1, 0),
+      stufe:ganz(t.c.stufe, 0, ANZAHL_STUFEN - 1, 1), bots:true, slots:[], olymp:{ t, gestartet:false, gemeldet:false, startUhr:null, startBis:0, schluessel } };
+    raeume.set(ziel.code, ziel);
+    olympRaeume.set(schluessel, ziel.code);
+  }
+  if (ziel.olymp.gemeldet) return sende(ws, { t:'fehler', text:'Dieses Olympia-Rennen ist schon vorbei.', olymp:true });
+  // Derselbe Spieler kommt wieder (z. B. neu geladen): alte Verbindung ersetzen
+  for (const sp of [...ziel.spieler.values()]) if (sp.olympId === t.s && sp.ws !== ws){ raumVerlassen(sp.ws); try { sp.ws.close(); } catch (e) { /* egal */ } }
+  if (!raeume.has(ziel.code)){ raeume.set(ziel.code, ziel); olympRaeume.set(schluessel, ziel.code); if (!ziel.spieler.size) ziel.host = ws.id; }
+  if (ziel === raum) return raumSenden(raum);
+  if (ziel.spieler.size >= MAX_SPIELER) return sende(ws, { t:'fehler', text:'Der Raum ist voll (8 Fahrer).' });
+  if (raum) raumVerlassen(ws);
+  ws.olympId = t.s;
+  beitreten(ws, ziel, { name:t.n, fahrer:m.fahrer });
+}
+function zeitText(s){ const m = Math.floor(s / 60), r = s - m * 60; return `${m}:${r < 10 ? '0' : ''}${r.toFixed(2).replace('.', ',')}`; }
+function olympMelden(raum, rang){
+  const o = raum.olymp;
+  if (!o || o.gemeldet) return;
+  o.gemeldet = true;
+  const liste = rang.filter(r => raum.slots[r.slot] && raum.slots[r.slot].olympId).map(r => ({
+    s:raum.slots[r.slot].olympId, text:r.zeit != null ? zeitText(r.zeit) : r.weg ? 'ausgestiegen' : 'nicht im Ziel'
+  }));
+  olymp.rangMelden(o.t, liste);
 }
 
 function raumVerlassen(ws){
@@ -91,8 +153,13 @@ function raumVerlassen(ws){
   ws.raum = null;
   if (!raum) return;
   raum.spieler.delete(ws.id);
-  if (raum.spieler.size === 0){ timerAus(raum); raeume.delete(raum.code); return; }
+  if (raum.spieler.size === 0){
+    timerAus(raum); raeume.delete(raum.code);
+    if (raum.olymp){ clearTimeout(raum.olymp.startUhr); raum.olymp.startUhr = null; raum.olymp.startBis = 0; olymp.status(raum.olymp.t, [], 'warten'); }
+    return;
+  }
   if (raum.host === ws.id) raum.host = raum.spieler.keys().next().value;
+  olympPruefen(raum);
   if (raum.phase === 'rennen'){
     const slot = raum.slots.findIndex(s => s.id === ws.id);
     if (slot >= 0){ raum.slots[slot].weg = true; anAlle(raum, { t:'weg', slot }); }
@@ -111,11 +178,12 @@ function rennenStarten(raum){
   const genommen = new Set(menschen.map(s => s.fahrer));
   const botFahrer = mischen([...Array(ANZAHL_FAHRER).keys()].filter(f => !genommen.has(f)));
   raum.slots = new Array(anzahl);
-  menschen.forEach((s, i) => { raum.slots[plaetze[i]] = { id:s.id, name:s.name, fahrer:s.fahrer }; });
+  menschen.forEach((s, i) => { raum.slots[plaetze[i]] = { id:s.id, name:s.name, fahrer:s.fahrer, olympId:s.olympId }; });
   for (const slot of plaetze.slice(menschen.length)){
     raum.slots[slot] = { id:null, name:null, fahrer:botFahrer.length ? botFahrer.shift() : crypto.randomInt(ANZAHL_FAHRER) };
   }
   raum.phase = 'rennen';
+  if (raum.olymp){ raum.olymp.gestartet = true; clearTimeout(raum.olymp.startUhr); raum.olymp.startUhr = null; raum.olymp.startBis = 0; olymp.status(raum.olymp.t, menschen.map(s => s.olympId).filter(Boolean), 'laeuft'); }
   raum.ziele = new Map();
   raum.fort = new Array(anzahl).fill(0);
   timerAus(raum);
@@ -143,6 +211,7 @@ function rennenEnde(raum){
       return b.fort - a.fort;
     })
     .map(({ slot, zeit, weg }) => ({ slot, zeit, weg }));
+  olympMelden(raum, rang);
   anAlle(raum, { t:'ende', rang });
   raumSenden(raum);
 }
@@ -179,6 +248,9 @@ wss.on('connection', ws => {
         beitreten(ws, ziel, m);
         break;
       }
+      case 'olymp':
+        olympBeitreten(ws, raum, m);
+        break;
       case 'verlassen':
         if (raum) raumVerlassen(ws);
         break;
@@ -186,7 +258,7 @@ wss.on('connection', ws => {
         if (raum){ raum.spieler.get(ws.id).fahrer = ganz(m.fahrer, 0, ANZAHL_FAHRER - 1, 0); raumSenden(raum); }
         break;
       case 'einst':
-        if (istHost && raum.phase !== 'rennen'){
+        if (istHost && raum.phase !== 'rennen' && !raum.olymp){
           raum.strecke = ganz(m.strecke, 0, ANZAHL_STRECKEN - 1, raum.strecke);
           raum.stufe = ganz(m.stufe, 0, ANZAHL_STUFEN - 1, raum.stufe);
           raum.bots = m.bots !== false;
@@ -194,10 +266,11 @@ wss.on('connection', ws => {
         }
         break;
       case 'start':
-        if (istHost && raum.phase !== 'rennen') rennenStarten(raum);
+        // In der Olympiade gibt es genau ein Rennen
+        if (istHost && raum.phase !== 'rennen' && !(raum.olymp && raum.olymp.gestartet)) rennenStarten(raum);
         break;
       case 'lobby':
-        if (istHost && raum.phase === 'ergebnis'){ raum.phase = 'lobby'; raumSenden(raum); }
+        if (istHost && raum.phase === 'ergebnis' && !raum.olymp){ raum.phase = 'lobby'; raumSenden(raum); }
         break;
       case 'z': {
         if (!raum || raum.phase !== 'rennen' || !Array.isArray(m.k)) return;

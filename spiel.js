@@ -1737,6 +1737,23 @@ function kartEffekte(k){
 const zustand = { phase:'menue', t:0, rt:0, pause:false, wackeln:0, meldungBis:0, ergebnisIn:0, orbit:0, gasSeit:null, fov:68 };
 const cup = { aktiv:false, nr:0, punkte:{}, gegner:null };
 const online = { aktiv:false, imRennen:false, raum:null, ich:null, host:false, sendTimer:0, wegNamen:{} };
+// Olympiade: Mit ?olymp=… im Link geht es direkt in den Raum der Disziplin (Ticket prüft der Server)
+const olympia = (() => {
+  let ticket = new URLSearchParams(location.search).get('olymp');
+  try {
+    if (ticket) sessionStorage.setItem('loewenkart:olymp', ticket);
+    else ticket = sessionStorage.getItem('loewenkart:olymp');
+  } catch (e) { /* egal */ }
+  if (!ticket) return null;
+  if (location.search) history.replaceState(null, '', location.pathname);
+  return { ticket, info:null, startBis:0 };
+})();
+function olympiaBeenden(){ try { sessionStorage.removeItem('loewenkart:olymp'); } catch (e) { /* egal */ } }
+function zurOlympiade(){
+  const ziel = olympia && olympia.info && olympia.info.zurueck;
+  olympiaBeenden();
+  if (ziel) location.href = ziel; else location.reload();
+}
 let zeit = 0;
 
 function vorschauZeigen(){
@@ -2229,6 +2246,7 @@ function onlineZuruecksetzen(){
   Object.assign(online, { aktiv:false, imRennen:false, raum:null, ich:null, host:false });
 }
 function raumVerlassen(){
+  if (olympia){ Netz.senden({ t:'verlassen' }); Netz.trennen(); zurOlympiade(); return; }
   Netz.senden({ t:'verlassen' });
   Netz.trennen();
   onlineZuruecksetzen();
@@ -2239,6 +2257,7 @@ Netz.on('raum', m => {
   const warHost = online.host;
   Object.assign(online, { aktiv:true, raum:m, ich:m.du, host:m.host === m.du });
   $('onlineFehler').textContent = '';
+  if (olympia && m.olymp){ olympia.info = m.olymp; olympia.startBis = m.olymp.startIn != null ? Date.now() + m.olymp.startIn : 0; }
   if (online.imRennen){
     if (m.phase === 'lobby'){ menueZeigen('lobby'); return; }
     if (!warHost && online.host) botsUebernehmen();
@@ -2250,11 +2269,19 @@ Netz.on('raum', m => {
 
 Netz.on('fehler', m => {
   const text = String(m.text || 'Das hat nicht geklappt.');
+  if (m.olymp && olympia){
+    // Ticket ungültig oder Rennen vorbei: normales Menü, mit Weg zurück zur Olympiade
+    olympiaBeenden();
+    $('onlineFehler').textContent = text;
+    menueZeigen();
+    return;
+  }
   if (!$('lobby').hidden) $('lobbyInfo').textContent = text; else $('onlineFehler').textContent = text;
 });
 
 Netz.on('getrennt', () => {
   if (!online.aktiv) return;
+  if (olympia && !online.imRennen){ onlineZuruecksetzen(); setTimeout(olympLos, 1500); return; }
   onlineZuruecksetzen();
   menueZeigen();
   $('onlineFehler').textContent = 'Die Verbindung zum Server ist abgebrochen.';
@@ -2362,12 +2389,17 @@ function ergebnisKnoepfeOnline(){
   const knoepfe = $('ergebnisKnoepfe');
   knoepfe.innerHTML = '';
   const knopf = (text, haupt, fn) => { const b = document.createElement('button'); b.className = 'knopf' + (haupt ? ' haupt' : ''); b.textContent = text; b.onclick = () => { Ton.effekt('klick'); fn(); }; knoepfe.appendChild(b); };
+  const hinweis = $('ergebnisHinweis');
+  if (olympia){
+    knopf('Zurück zur Olympiade', true, raumVerlassen);
+    if (hinweis) hinweis.textContent = 'Dein Platz ist bei der Olympiade eingetragen.';
+    return;
+  }
   if (online.host){
     knopf('Nochmal', true, () => Netz.senden({ t:'start' }));
     knopf('Zur Lobby', false, () => Netz.senden({ t:'lobby' }));
   }
   knopf('Raum verlassen', false, raumVerlassen);
-  const hinweis = $('ergebnisHinweis');
   if (hinweis) hinweis.textContent = online.host ? 'Du bist Host: Starte das nächste Rennen oder geh zurück in die Lobby.' : 'Der Host startet gleich das nächste Rennen.';
 }
 
@@ -2402,6 +2434,9 @@ function lobbyBauen(){
   }
   $('lobbyStart').hidden = !online.host;
   $('lobbyStart').disabled = m.phase === 'rennen';
+  if (m.olymp) return olympLobby(m);
+  $('olympBanner').hidden = true; $('raumKopf').hidden = false;
+  $('lobbyStart').textContent = 'Rennen starten'; $('lobbyRaus').textContent = 'Raum verlassen';
   $('lobbyInfo').textContent = m.phase === 'rennen' ? 'Gerade läuft ein Rennen. Beim nächsten bist du dabei.'
     : m.phase === 'ergebnis' ? 'Das Rennen ist gerade vorbei, gleich geht es weiter.'
     : online.host ? (m.spieler.length > 1 ? 'Starte, wenn alle da sind.' : 'Warte auf Freunde oder starte schon mal allein.')
@@ -2409,6 +2444,34 @@ function lobbyBauen(){
   // Hintergrund: Strecke des Raums und eigener Fahrer
   if (!strecke || strecke.nr !== m.strecke){ streckeLaden(m.strecke); vorschauZeigen(); }
   else if (vorschau && vorschau.f !== FAHRER[meinFahrer]){ wahl.fahrer = meinFahrer; vorschauZeigen(); }
+}
+
+// Lobby im Olympia-Raum: wer fehlt noch, Start-Countdown, keine Einstellungen
+function olympLobby(m){
+  const o = m.olymp;
+  $('raumKopf').hidden = true;
+  const b = $('olympBanner');
+  b.hidden = false;
+  b.innerHTML = `🏅 <b>${esc(o.titel)}</b> · Disziplin ${o.nr} von ${o.von}<div class="erwartet">${o.erwartet.map(e => `<span class="${e.da ? 'da' : ''}">${e.da ? '✓' : '…'} ${esc(e.n)}</span>`).join('')}</div>`;
+  $('lobbyEinst').innerHTML = `<p class="leise">${esc(STRECKEN[m.strecke].name)} · ${esc(STUFEN[m.stufe].name)} · freie Plätze fahren Computer</p>`;
+  $('lobbyStart').hidden = !online.host || o.gestartet;
+  $('lobbyStart').textContent = 'Ohne die anderen starten';
+  $('lobbyRaus').textContent = 'Zurück zur Olympiade';
+  olympInfoText();
+}
+function olympInfoText(){
+  const m = online.raum;
+  if (!olympia || !m || !m.olymp || $('lobby').hidden) return;
+  const fehlt = m.olymp.erwartet.filter(e => !e.da).length;
+  $('lobbyInfo').textContent = m.phase === 'rennen' ? 'Das Rennen läuft schon – du bist leider zu spät.'
+    : olympia.startBis ? `Alle da! Start in ${Math.max(0, Math.ceil((olympia.startBis - Date.now()) / 1000))} …`
+    : `Warte auf ${fehlt} Mitspieler – es geht los, sobald alle da sind.`;
+}
+setInterval(olympInfoText, 250);
+async function olympLos(){
+  $('onlineFehler').textContent = 'Verbinde mit dem Olympia-Rennen …';
+  try { await Netz.verbinden(); } catch (e) { $('onlineFehler').textContent = 'Keine Verbindung zum Server – neuer Versuch …'; setTimeout(olympLos, 3000); return; }
+  Netz.senden({ t:'olymp', ticket:olympia.ticket, fahrer:wahl.fahrer });
 }
 
 $('nameFeld').value = lesen('name', '');
@@ -2498,4 +2561,5 @@ for (const id of ['grafikWahl','pauseGrafik']) $(id).onchange = e => {
 menueZeigen();
 grafikAnwenden();
 requestAnimationFrame(schleife);
+if (olympia) olympLos();
 })();

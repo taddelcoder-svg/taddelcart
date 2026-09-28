@@ -161,6 +161,11 @@
   #lobbyEinst .reihe{margin-bottom:8px}
   .schalter{display:flex;align-items:center;gap:8px;color:var(--leise)}
   .schalter input{width:auto;margin:0;accent-color:var(--gelb)}
+  .olymp-banner{margin:0 0 12px;padding:10px 12px;border-radius:12px;background:rgba(255,198,41,.16);border:2px solid var(--gelb)}
+  .olymp-banner b{color:var(--gelb)}
+  .olymp-banner .erwartet{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .olymp-banner .erwartet span{padding:2px 8px;border-radius:99px;background:rgba(255,255,255,.08);font-size:.9rem}
+  .olymp-banner .erwartet span.da{background:rgba(95,211,90,.25)}
 
   @media (max-width:700px){
     h1{font-size:2.6rem}
@@ -273,9 +278,12 @@
 
 <div id="lobby" class="overlay mittig" hidden>
   <div class="fenster">
-    <p class="raumzeile">Raum-Code</p>
-    <h2 id="raumCode" class="code">----</h2>
-    <p class="leise">Schick diesen Code deinen Freunden. Sie wählen im Menü „Online“ und treten bei.</p>
+    <div id="olympBanner" class="olymp-banner" hidden></div>
+    <div id="raumKopf">
+      <p class="raumzeile">Raum-Code</p>
+      <h2 id="raumCode" class="code">----</h2>
+      <p class="leise">Schick diesen Code deinen Freunden. Sie wählen im Menü „Online“ und treten bei.</p>
+    </div>
     <h3>Fahrer im Raum</h3>
     <div id="lobbySpieler" class="lobbyliste"></div>
     <h3>Dein Kart</h3>
