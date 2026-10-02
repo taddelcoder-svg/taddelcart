@@ -2242,6 +2242,14 @@ function botsUebernehmen(){
   }
 }
 
+// Hat ein anderer übernommen (z. B. weil dieser Tab im Hintergrund war), kommen die Computerfahrer von dort
+function botsAbgeben(){
+  for (const k of karts){
+    if (k.mensch || k.fern) continue;
+    k.fern = true; k.netz = null;
+  }
+}
+
 function onlineZuruecksetzen(){
   Object.assign(online, { aktiv:false, imRennen:false, raum:null, ich:null, host:false });
 }
@@ -2253,14 +2261,18 @@ function raumVerlassen(){
   menueZeigen();
 }
 
+function sichtMelden(){ if (online.aktiv) Netz.senden({ t:'sicht', v:!document.hidden }); }
+document.addEventListener('visibilitychange', sichtMelden);
 Netz.on('raum', m => {
   const warHost = online.host;
+  if (!online.aktiv) setTimeout(sichtMelden, 0);
   Object.assign(online, { aktiv:true, raum:m, ich:m.du, host:m.host === m.du });
   $('onlineFehler').textContent = '';
   if (olympia && m.olymp){ olympia.info = m.olymp; olympia.startBis = m.olymp.startIn != null ? Date.now() + m.olymp.startIn : 0; }
   if (online.imRennen){
     if (m.phase === 'lobby'){ menueZeigen('lobby'); return; }
     if (!warHost && online.host) botsUebernehmen();
+    if (warHost && !online.host) botsAbgeben();
     if (zustand.phase === 'ergebnis') ergebnisKnoepfeOnline();
     return;
   }

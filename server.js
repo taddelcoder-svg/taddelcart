@@ -166,7 +166,7 @@ function raumVerlassen(ws){
     if (raum.olymp){ clearTimeout(raum.olymp.startUhr); raum.olymp.startUhr = null; raum.olymp.startBis = 0; olymp.status(raum.olymp.t, [], 'warten'); }
     return;
   }
-  if (raum.host === ws.id) raum.host = raum.spieler.keys().next().value;
+  if (raum.host === ws.id) raum.host = (sichtbarerSpieler(raum) || raum.spieler.values().next().value).id;
   olympPruefen(raum);
   if (raum.phase === 'rennen'){
     const slot = raum.slots.findIndex(s => s.id === ws.id);
@@ -174,6 +174,28 @@ function raumVerlassen(ws){
     endePruefen(raum);
   }
   raumSenden(raum);
+}
+
+/* ---------- Gastgeber-Wechsel ----------
+   Der Host rechnet die Computerfahrer. Legt er sein Handy weg oder wechselt den Tab, stehen sie still.
+   Deshalb übernimmt nach kurzer Zeit jemand, dessen Spiel sichtbar ist (der Browser meldet 'sicht'). */
+const HOST_VERSTECKT_MS = 2000;
+function sichtbarerSpieler(raum, ausser){
+  return [...raum.spieler.values()].find(s => s.id !== ausser && !s.ws.versteckt);
+}
+function hostPruefen(raum){
+  const host = raum.spieler.get(raum.host);
+  if (raum.phase !== 'rennen' || !host || !host.ws.versteckt){ clearTimeout(raum.hostUhr); raum.hostUhr = null; return; }
+  if (raum.hostUhr) return;
+  raum.hostUhr = setTimeout(() => {
+    raum.hostUhr = null;
+    const alt = raum.spieler.get(raum.host);
+    if (raeume.get(raum.code) !== raum || raum.phase !== 'rennen' || !alt || !alt.ws.versteckt) return;
+    const neu = sichtbarerSpieler(raum, alt.id);
+    if (!neu) return;
+    raum.host = neu.id;
+    raumSenden(raum);
+  }, HOST_VERSTECKT_MS);
 }
 
 function timerAus(raum){ clearTimeout(raum.endeTimer); clearTimeout(raum.zielTimer); raum.endeTimer = raum.zielTimer = null; }
@@ -196,6 +218,7 @@ function rennenStarten(raum){
   raum.fort = new Array(anzahl).fill(0);
   timerAus(raum);
   raum.endeTimer = setTimeout(() => rennenEnde(raum), MAX_RENNDAUER);
+  hostPruefen(raum);
   anAlle(raum, { t:'start', strecke:raum.strecke, stufe:raum.stufe, slots:raum.slots.map(s => ({ id:s.id, name:s.name, fahrer:s.fahrer, bot:!s.id })) });
   raumSenden(raum);
 }
@@ -261,6 +284,10 @@ wss.on('connection', ws => {
         break;
       case 'verlassen':
         if (raum) raumVerlassen(ws);
+        break;
+      case 'sicht':
+        ws.versteckt = m.v === false;
+        if (raum) hostPruefen(raum);
         break;
       case 'fahrer':
         if (raum){ raum.spieler.get(ws.id).fahrer = ganz(m.fahrer, 0, ANZAHL_FAHRER - 1, 0); raumSenden(raum); }
