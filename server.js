@@ -93,8 +93,10 @@ function beitreten(ws, raum, m){
 /* ---------- Olympiade ----------
    Wer mit einem Olympia-Ticket kommt, landet im Raum seiner Disziplin (ein Raum pro Lauf und Gruppe).
    Sind alle Erwarteten da, startet das Rennen nach kurzem Countdown von selbst; der Host kann auch
-   früher starten. Es gibt genau ein Rennen, dessen Reihenfolge an die Olympiade geht. */
+   früher starten. Fehlt jemand, geht es spätestens OLYMP_WARTEN_MS nach dem Öffnen des Raums los.
+   Es gibt genau ein Rennen, dessen Reihenfolge an die Olympiade geht. */
 const OLYMP_START_MS = 6000;
+const OLYMP_WARTEN_MS = 90_000;
 function olympInfo(raum){
   const o = raum.olymp, da = new Set([...raum.spieler.values()].map(s => s.olympId));
   return {
@@ -108,12 +110,17 @@ function olympPruefen(raum){
   const da = [...raum.spieler.values()].map(s => s.olympId).filter(Boolean);
   olymp.status(o.t, da, raum.phase === 'rennen' ? 'laeuft' : 'warten');
   const alle = o.t.m.every(e => da.includes(e.s));
-  if (raum.phase === 'lobby' && !o.gestartet && alle){
-    if (!o.startUhr){
-      o.startBis = Date.now() + OLYMP_START_MS;
-      o.startUhr = setTimeout(() => { o.startUhr = null; if (raeume.get(raum.code) === raum && raum.phase === 'lobby' && !o.gestartet) rennenStarten(raum); }, OLYMP_START_MS);
-    }
-  } else if (o.startUhr){ clearTimeout(o.startUhr); o.startUhr = null; o.startBis = 0; }
+  // Startzeit: spätestens nach der Wartezeit, sind alle da, nach dem kurzen Countdown
+  let ziel = 0;
+  if (raum.phase === 'lobby' && !o.gestartet && da.length){
+    ziel = o.spaetestens;
+    if (alle) ziel = Math.min(ziel, o.startUhr && o.startBis < o.spaetestens ? o.startBis : Date.now() + OLYMP_START_MS);
+  }
+  if (ziel === o.startBis && (o.startUhr || !ziel)) return;
+  clearTimeout(o.startUhr); o.startUhr = null; o.startBis = 0;
+  if (!ziel) return;
+  o.startBis = ziel;
+  o.startUhr = setTimeout(() => { o.startUhr = null; if (raeume.get(raum.code) === raum && raum.phase === 'lobby' && !o.gestartet) rennenStarten(raum); }, Math.max(0, ziel - Date.now()));
 }
 function olympBeitreten(ws, raum, m){
   const t = olymp.ticketPruefen(m.ticket);
@@ -123,7 +130,7 @@ function olympBeitreten(ws, raum, m){
   if (!ziel){
     if (raeume.size >= MAX_RAEUME) return sende(ws, { t:'fehler', text:'Gerade sind zu viele Räume offen. Versuch es gleich nochmal.' });
     ziel = { code:neuerCode(), host:ws.id, spieler:new Map(), phase:'lobby', strecke:ganz(t.c.strecke, 0, ANZAHL_STRECKEN - 1, 0),
-      stufe:ganz(t.c.stufe, 0, ANZAHL_STUFEN - 1, 1), bots:true, slots:[], olymp:{ t, gestartet:false, gemeldet:false, startUhr:null, startBis:0, schluessel } };
+      stufe:ganz(t.c.stufe, 0, ANZAHL_STUFEN - 1, 1), bots:true, slots:[], olymp:{ t, gestartet:false, gemeldet:false, startUhr:null, startBis:0, spaetestens:Date.now() + OLYMP_WARTEN_MS, schluessel } };
     raeume.set(ziel.code, ziel);
     olympRaeume.set(schluessel, ziel.code);
   }

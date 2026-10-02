@@ -2464,8 +2464,9 @@ function olympInfoText(){
   if (!olympia || !m || !m.olymp || $('lobby').hidden) return;
   const fehlt = m.olymp.erwartet.filter(e => !e.da).length;
   $('lobbyInfo').textContent = m.phase === 'rennen' ? 'Das Rennen läuft schon – du bist leider zu spät.'
-    : olympia.startBis ? `Alle da! Start in ${Math.max(0, Math.ceil((olympia.startBis - Date.now()) / 1000))} …`
-    : `Warte auf ${fehlt} Mitspieler – es geht los, sobald alle da sind.`;
+    : !olympia.startBis ? `Warte auf ${fehlt} Mitspieler – es geht los, sobald alle da sind.`
+    : fehlt ? `Warte auf ${fehlt} Mitspieler – spätestens in ${Math.max(0, Math.ceil((olympia.startBis - Date.now()) / 1000))} s geht es los.`
+    : `Alle da! Start in ${Math.max(0, Math.ceil((olympia.startBis - Date.now()) / 1000))} …`;
 }
 setInterval(olympInfoText, 250);
 async function olympLos(){
