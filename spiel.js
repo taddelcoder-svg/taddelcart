@@ -63,6 +63,21 @@ const THEMEN = {
     himmel:['#7aa5d8', '#eef4fb'], nebel:'#e4edf6', nebelWeit:[130, 820], sonne:'#f4f8ff', sonnenKraft:1.7,
     hemi:['#eef5ff', '#9aa9ba'], hemiKraft:1.15, gras:['#f1f5fa', '#e3eaf2', '#fbfdff'], auslauf:'#c3d2e2',
     strasse:'#4a4f57', wand:[0x2f7fd8, 0xf4f8ff], berge:0xdbe5f0, staub:[0.95, 0.97, 1], deko:'tannen', wolken:true, schnee:true
+  },
+  strand: {
+    himmel:['#1f8fe0', '#c4ecff'], nebel:'#cdeefa', nebelWeit:[260, 1200], sonne:'#fff4dc', sonnenKraft:2.3,
+    hemi:['#e2f4ff', '#c9a66b'], hemiKraft:1.0, gras:['#e9d29a', '#dfc386', '#f3e0b0'], auslauf:'#c9a46a',
+    strasse:'#5c6068', wand:[0x1fb5c9, 0xfff6e0], berge:0x4f9a5a, staub:[0.92, 0.84, 0.62], deko:'palmen', wolken:true, meer:true
+  },
+  vulkan: {
+    himmel:['#2a1416', '#c4502a'], nebel:'#6a3424', nebelWeit:[160, 950], sonne:'#ffb07a', sonnenKraft:1.7,
+    hemi:['#ffa070', '#2a1a18'], hemiKraft:0.95, gras:['#2f2a2a', '#3a3232', '#262222'], auslauf:'#4f413a',
+    strasse:'#3c3d42', wand:[0xff5a1a, 0x2a2a2e], berge:0x3a2a26, staub:[0.32, 0.28, 0.26], deko:'vulkan', wolken:false, glut:true
+  },
+  nacht: {
+    himmel:['#060b24', '#2d3d72'], nebel:'#1b2550', nebelWeit:[150, 950], sonne:'#b9c8ff', sonnenKraft:1.2,
+    hemi:['#8090d8', '#1d2a3a'], hemiKraft:0.9, gras:['#2c5a3a', '#264f33', '#336843'], auslauf:'#5a5a66',
+    strasse:'#3d4250', wand:[0xb35cff, 0xf0f0ff], berge:0x1f2c4a, staub:[0.4, 0.42, 0.5], deko:'laternen', wolken:false, sterne:true
   }
 };
 const STRECKEN = [
@@ -71,18 +86,31 @@ const STRECKEN = [
   { id:'wueste', name:'Kaktus-Canyon', info:'Heiße Haarnadelkurve', thema:'wueste', skala:1.3, breite:16, saat:22,
     punkte:[[0,0],[100,0],[160,-20],[200,-70],[190,-130],[140,-150],[100,-120],[110,-80],[80,-55],[30,-70],[-10,-120],[-60,-140],[-110,-110],[-120,-50],[-80,-10]] },
   { id:'frost', name:'Frostgipfel', info:'Schnee und enge Schikanen', thema:'frost', skala:1.3, breite:16, saat:33,
-    punkte:[[0,0],[90,0],[130,30],[120,80],[70,90],[40,130],[60,180],[20,220],[-50,215],[-70,170],[-40,130],[-80,90],[-130,80],[-140,30],[-90,0]] }
+    punkte:[[0,0],[90,0],[130,30],[120,80],[70,90],[40,130],[60,180],[20,220],[-50,215],[-70,170],[-40,130],[-80,90],[-130,80],[-140,30],[-90,0]] },
+  { id:'strand', name:'Palmenbucht', info:'Lange Bögen direkt am Meer', thema:'strand', skala:1.3, breite:17, saat:44,
+    punkte:[[0,0],[110,0],[170,25],[190,80],[160,120],[100,115],[60,90],[20,110],[0,160],[-50,180],[-110,160],[-140,110],[-120,50],[-70,15]] },
+  { id:'vulkan', name:'Vulkankrater', info:'Lava, Glut und Serpentinen', thema:'vulkan', skala:1.3, breite:16, saat:55,
+    punkte:[[0,0],[90,0],[150,30],[160,90],[120,120],[70,100],[40,60],[0,70],[-20,120],[10,170],[-30,210],[-90,200],[-120,150],[-130,80],[-100,30],[-50,0]] },
+  { id:'nacht', name:'Sternenpark', info:'Nachtrennen unter Laternen', thema:'nacht', skala:1.3, breite:16, saat:66,
+    punkte:[[0,0],[120,0],[180,40],[170,110],[110,140],[50,130],[20,170],[-40,190],[-100,170],[-140,120],[-110,80],[-130,40],[-90,0]] }
 ];
-const ITEM_ICON = { turbo:'⚡', turbo3:'⚡', banane:'🍌', rakete:'🚀', stern:'⭐' };
+const CUPS = [
+  { id:'loewe',  name:'Löwen-Cup',  info:'Wiese, Canyon, Frost',    strecken:[0, 1, 2] },
+  { id:'vulkan', name:'Vulkan-Cup', info:'Bucht, Krater, Nacht',    strecken:[3, 4, 5] },
+  { id:'meister', name:'Meister-Cup', info:'Alle 6 Strecken am Stück', strecken:[0, 3, 1, 4, 2, 5] }
+];
+const ITEM_ICON = { turbo:'⚡', turbo3:'⚡', banane:'🍌', rakete:'🚀', stern:'⭐', blitz:'🌩️' };
 const RUNDEN = 3;
 const PUNKTE = [15, 12, 10, 8, 6, 4, 2, 1];
 const SPIELER_STARTPLATZ = 5;
 
-const wahl = Object.assign({ fahrer:0, strecke:0, stufe:1, modus:'einzel' }, lesen('wahl', {}));
+const wahl = Object.assign({ fahrer:0, strecke:0, stufe:1, modus:'einzel', cup:0 }, lesen('wahl', {}));
 if (!FAHRER[wahl.fahrer]) wahl.fahrer = 0;
 if (!STRECKEN[wahl.strecke]) wahl.strecke = 0;
 if (!STUFEN[wahl.stufe]) wahl.stufe = 1;
+if (!CUPS[wahl.cup]) wahl.cup = 0;
 const rekorde = lesen('rekorde', {});
+const pokale = lesen('pokale', {});
 let rennStufe = wahl.stufe;
 
 /* =========================================================
@@ -237,7 +265,11 @@ const MAT = {
   bunt:new THREE.MeshLambertMaterial({ color:0xffffff }),
   itemBox:new THREE.MeshStandardMaterial({ map:boxTex, transparent:true, opacity:0.92, roughness:0.2, metalness:0.1, emissive:new THREE.Color(0x000000), side:THREE.DoubleSide, depthWrite:false }),
   flamme:new THREE.MeshBasicMaterial({ color:0xffa020, transparent:true, opacity:0.85, blending:THREE.AdditiveBlending, depthWrite:false }),
-  pad:new THREE.MeshBasicMaterial({ map:pfeilTex, transparent:true, depthWrite:false, polygonOffset:true, polygonOffsetFactor:-4 })
+  pad:new THREE.MeshBasicMaterial({ map:pfeilTex, transparent:true, depthWrite:false, polygonOffset:true, polygonOffsetFactor:-4 }),
+  lava:new THREE.MeshBasicMaterial({ color:lin(0xff6a10) }),
+  glut:new THREE.MeshBasicMaterial({ color:lin(0xff3a08) }),
+  lampe:new THREE.MeshBasicMaterial({ color:lin(0xffe6a8) }),
+  lichtkegel:new THREE.MeshBasicMaterial({ map:partikelTex, color:0xffb84a, transparent:true, opacity:0.9, blending:THREE.AdditiveBlending, depthWrite:false, polygonOffset:true, polygonOffsetFactor:-6, polygonOffsetUnits:-6 })
 };
 function teil(geo, mat, eltern, x, y, z, sx = 1, sy = 1, sz = 1){
   const m = new THREE.Mesh(geo, mat);
@@ -522,7 +554,10 @@ const Ton = (() => {
     menue:  { bpm:112, akkorde:[[60, 64, 67], [57, 60, 64], [53, 57, 60], [55, 59, 62]] },
     wiese:  { bpm:140, akkorde:[[60, 64, 67], [55, 59, 62], [57, 60, 64], [53, 57, 60]] },
     wueste: { bpm:128, akkorde:[[62, 65, 69], [60, 64, 67], [58, 62, 65], [57, 61, 64]] },
-    frost:  { bpm:134, akkorde:[[53, 57, 60], [62, 65, 69], [58, 62, 65], [60, 64, 67]] }
+    frost:  { bpm:134, akkorde:[[53, 57, 60], [62, 65, 69], [58, 62, 65], [60, 64, 67]] },
+    strand: { bpm:126, akkorde:[[65, 69, 72], [62, 65, 69], [58, 62, 65], [60, 64, 67]] },
+    vulkan: { bpm:150, akkorde:[[57, 60, 64], [53, 57, 60], [55, 58, 62], [52, 56, 59]] },
+    nacht:  { bpm:118, akkorde:[[57, 60, 64], [60, 64, 67], [55, 59, 62], [53, 57, 60]] }
   };
   const MELODIE = [0, -1, 2, -1, 1, -1, 2, 3, -1, 2, -1, 1, 0, -1, -1, -1];
 
@@ -587,7 +622,9 @@ const Ton = (() => {
     runde:() => [523, 659, 784].forEach((f, i) => ton(f, 0.16, 'square', 0.12, null, i * 0.1)),
     letzte:() => [784, 784, 784, 1047].forEach((f, i) => ton(f, i === 3 ? 0.4 : 0.12, 'square', 0.13, null, i * 0.13)),
     ziel:() => [523, 659, 784, 1047, 784, 1047].forEach((f, i) => ton(f, i === 5 ? 0.8 : 0.16, 'square', 0.14, null, [0, .12, .24, .36, .6, .72][i])),
-    klick:() => ton(900, 0.05, 'triangle', 0.08)
+    klick:() => ton(900, 0.05, 'triangle', 0.08),
+    blitz:() => { geraeusch(0.9, 2400, 0.4, 0, 'highpass'); ton(1800, 0.5, 'sawtooth', 0.08, 120); geraeusch(1.2, 120, 0.5, 0.15, 'lowpass'); },
+    windschatten:() => { geraeusch(0.5, 2600, 0.18, 0, 'bandpass', sfx, 2); ton(520, 0.35, 'triangle', 0.08, 1040); }
   };
   function planen(){
     if (!ctx || !lied || ctx.state !== 'running') return;
@@ -861,7 +898,7 @@ class Instanzen {
       const im = new THREE.InstancedMesh(t.geo, t.mat, t.liste.length);
       const mitFarbe = t.liste.some(d => d.c);
       t.liste.forEach((d, i) => {
-        p.set(...d.p); s.set(...d.s); e.set(...d.r); q.setFromEuler(e); m4.compose(p, q, s);
+        p.set(...d.p); s.set(...d.s); e.set(d.r[0], d.r[1], d.r[2], d.r[3] || 'XYZ'); q.setFromEuler(e); m4.compose(p, q, s);
         im.setMatrixAt(i, m4);
         if (mitFarbe) im.setColorAt(i, d.c || weiss);
       });
@@ -886,7 +923,7 @@ function entsorgen(obj){
 
 function streckeLaden(nr){
   if (strecke && strecke.nr === nr) return strecke;
-  if (strecke){ scene.remove(strecke.gruppe); entsorgen(strecke.gruppe); if (strecke.schnee){ scene.remove(strecke.schnee); strecke.schnee.geometry.dispose(); } }
+  if (strecke){ scene.remove(strecke.gruppe); entsorgen(strecke.gruppe); if (strecke.schnee){ scene.remove(strecke.schnee); strecke.schnee.geometry.dispose(); strecke.schnee.material.dispose(); } }
   const def = STRECKEN[nr], th = THEMEN[def.thema];
   const S = streckeRechnen(def);
   S.nr = nr; S.th = th;
@@ -915,6 +952,7 @@ function streckeLaden(nr){
   const boden = new THREE.Mesh(new THREE.PlaneGeometry(4000, 4000), new THREE.MeshLambertMaterial({ map:grasTex }));
   boden.rotation.x = -Math.PI / 2; boden.receiveShadow = true;
   gruppe.add(boden);
+  if (th.meer) meerBauen(S, gruppe);
 
   // Auslaufzone, Randsteine, Straße
   const auslaufTex = canvasTex(128, 128, (c, w, h) => { c.fillStyle = th.auslauf; c.fillRect(0, 0, w, h); koernung(c, w, h, 3000, 0.18); }, true);
@@ -1030,13 +1068,14 @@ function streckeLaden(nr){
   for (let n = 0; n < 260; n++){
     const i = Math.floor(rnd() * S.N), sg = rnd() < 0.5 ? -1 : 1;
     const [x, z] = punktBei(S, i, sg * (S.hw + S.auslauf + 2.5 + rnd() * 15));
-    if (!frei(x, z, S.hw + S.auslauf + 1.7)) continue;
+    if (!frei(x, z, S.hw + S.auslauf + 1.7) || imMeer(S, x, z)) continue;
     const h = 0.2 + rnd() * 0.65;
-    if (th.deko === 'baeume'){
+    if (th.deko === 'baeume' || th.deko === 'laternen'){
       details.add('gras', GEO.kegelGrob, MAT.laub, [x,h/2,z], [0.22,h,0.22], [0,rnd()*TAU,0.1], lin(0x62963e));
       if (n % 4 === 0) details.add('bluete', GEO.kugelGrob, MAT.bunt, [x,h,z], [0.15,0.1,0.15], [0,0,0], lin(n % 8 ? 0xffdb62 : 0xf8d3ef));
     } else {
-      details.add('stein', th.schnee ? GEO.kegelGrob : GEO.kugelGrob, MAT.bunt, [x,h/2,z], [h,h,h*0.7], [0,rnd()*TAU,0.18], lin(th.schnee ? 0xafdcea : 0xb98354));
+      const steinFarbe = th.schnee ? 0xafdcea : th.deko === 'vulkan' ? 0x1e1a1a : th.deko === 'palmen' ? 0xf4e6cf : 0xb98354;
+      details.add('stein', th.schnee ? GEO.kegelGrob : GEO.kugelGrob, MAT.bunt, [x,h/2,z], [h,h,h*0.7], [0,rnd()*TAU,0.18], lin(steinFarbe));
     }
   }
   details.bauen(gruppe, false);
@@ -1056,32 +1095,156 @@ function streckeLaden(nr){
   kc.strokeStyle = '#111'; kc.lineWidth = 5; kc.lineCap = 'butt';
   kc.beginPath(); kc.moveTo(sx1 * S.kSkala + S.kOx, sz1 * S.kSkala + S.kOz); kc.lineTo(sx2 * S.kSkala + S.kOx, sz2 * S.kSkala + S.kOz); kc.stroke();
 
-  // Schneefall
-  if (th.schnee){
-    const n = 1500, pos = new Float32Array(n * 3);
+  // Schneefall, im Vulkan aufsteigende Glut
+  if (th.schnee || th.glut){
+    const n = th.glut ? 700 : 1500, pos = new Float32Array(n * 3);
     for (let i = 0; i < n; i++) pos.set([zufall(-70, 70), zufall(0, 45), zufall(-70, 70)], i * 3);
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    S.schnee = new THREE.Points(g, new THREE.PointsMaterial({ color:0xffffff, size:0.35, map:partikelTex, transparent:true, depthWrite:false, opacity:0.9 }));
+    const mat = th.glut
+      ? new THREE.PointsMaterial({ color:0xff7a22, size:0.3, map:partikelTex, transparent:true, depthWrite:false, opacity:0.95, blending:THREE.AdditiveBlending })
+      : new THREE.PointsMaterial({ color:0xffffff, size:0.35, map:partikelTex, transparent:true, depthWrite:false, opacity:0.9 });
+    S.schnee = new THREE.Points(g, mat);
     S.schnee.frustumCulled = false;
+    S.glut = !!th.glut;
     scene.add(S.schnee);
   }
+  if (th.sterne) himmelNacht(S, gruppe, rnd);
   strecke = S;
   return S;
+}
+
+// Palmenbucht: das Meer liegt hinter der Start-Zielgeraden
+const imMeer = (S, x, z) => !!S.th.meer && z < S.minZ - 36;
+function meerBauen(S, gruppe){
+  const tex = canvasTex(256, 256, (c, w, h) => {
+    c.fillStyle = '#1f93c8'; c.fillRect(0, 0, w, h);
+    c.strokeStyle = 'rgba(255,255,255,.18)'; c.lineWidth = 3;
+    for (let y = 8; y < h; y += 24){ c.beginPath(); for (let x = 0; x <= w; x += 8) c.lineTo(x, y + Math.sin(x / w * TAU * 2 + y) * 5); c.stroke(); }
+  }, true);
+  tex.repeat.set(60, 30);
+  const wasser = new THREE.Mesh(new THREE.PlaneGeometry(4000, 2000), new THREE.MeshStandardMaterial({ map:tex, roughness:0.18, metalness:0.15, envMapIntensity:0.9 }));
+  wasser.rotation.x = -Math.PI / 2;
+  wasser.position.set((S.minX + S.maxX) / 2, 0.35, S.minZ - 40 - 1000);
+  gruppe.add(wasser);
+  const gischt = new THREE.Mesh(new THREE.PlaneGeometry(4000, 3), new THREE.MeshBasicMaterial({ color:0xffffff, transparent:true, opacity:0.75 }));
+  gischt.rotation.x = -Math.PI / 2;
+  gischt.position.set(wasser.position.x, 0.4, S.minZ - 40);
+  gruppe.add(gischt);
+  S.meer = { tex, gischt };
+}
+function palmeSetzen(inst, x, z, s, dreh, rnd, farbe){
+  const neig = 0.12 + rnd() * 0.12, dx = Math.sin(dreh), dz = Math.cos(dreh);
+  let px = x, py = 0, pz = z;
+  for (let i = 0; i < 5; i++){
+    const w = neig * (i + 1), l = 1.35 * s;
+    px += dx * Math.sin(w) * l / 2; py += Math.cos(w) * l / 2; pz += dz * Math.sin(w) * l / 2;
+    inst.add('palmstamm', GEO.zylGrob, MAT.bunt, [px, py, pz], [(0.3 - i * 0.03) * s, l * 1.05, (0.3 - i * 0.03) * s], [w, dreh, 0, 'YXZ'], lin(i % 2 ? 0x8a6a44 : 0x9b7a50));
+    px += dx * Math.sin(w) * l / 2; py += Math.cos(w) * l / 2; pz += dz * Math.sin(w) * l / 2;
+  }
+  const gruen = farbe(0.28 + rnd() * 0.05, 0.6, 0.3);
+  for (let n = 0; n < 7; n++){
+    const a = n / 7 * TAU + rnd() * 0.3, p = 0.35 + rnd() * 0.3, l = 1.6 * s;
+    inst.add('wedel', GEO.kugelGrob, MAT.laub, [px + Math.sin(a) * Math.cos(p) * l, py - Math.sin(p) * l + 0.1, pz + Math.cos(a) * Math.cos(p) * l], [0.45 * s, 0.07 * s, 1.8 * s], [p, a, 0, 'YXZ'], gruen);
+  }
+  for (let n = 0; n < 3; n++) inst.add('nuss', GEO.kugelGrob, MAT.bunt, [px + Math.sin(n * 2.1) * 0.3 * s, py - 0.25 * s, pz + Math.cos(n * 2.1) * 0.3 * s], [0.2 * s, 0.2 * s, 0.2 * s], [0, 0, 0], lin(0x5a3a1a));
+}
+// Sternenpark: Laternen an der Absperrung mit Lichtkegel auf der Straße
+function laternenBauen(S, gruppe, frei){
+  const inst = new Instanzen(), kegel = new Instanzen();
+  const kegelGeo = new THREE.PlaneGeometry(1, 1); kegelGeo.rotateX(-Math.PI / 2);
+  const abstand = S.hw + S.auslauf + 2.2;
+  let n = 0;
+  for (let i = 0; i < S.N; i += Math.max(1, Math.round(26 / S.ds))){
+    const sg = n++ % 2 ? 1 : -1;
+    const [x, z] = punktBei(S, i, sg * abstand);
+    if (!frei(x, z, abstand - 0.5, 2)) continue;
+    const [lx, lz] = punktBei(S, i, sg * (abstand - 2.4));
+    const [kx, kz] = punktBei(S, i, sg * (S.hw - 1));
+    const yaw = yawBei(S, i);
+    inst.add('mast', GEO.zylGrob, MAT.dunkel, [x, 2.6, z], [0.14, 5.2, 0.14]);
+    inst.add('arm', GEO.box, MAT.dunkel, [(x + lx) / 2, 5.2, (z + lz) / 2], [2.6, 0.12, 0.12], [0, yaw + Math.PI / 2, 0]);
+    inst.add('lampe', GEO.kugelGrob, MAT.lampe, [lx, 4.95, lz], [0.6, 0.42, 0.6]);
+    kegel.add('kegel', kegelGeo, MAT.lichtkegel, [kx, 0.1, kz], [15, 1, 15]);
+  }
+  inst.bauen(gruppe);
+  kegel.bauen(gruppe, false);
+}
+function himmelNacht(S, gruppe, rnd){
+  const n = 1400, pos = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++){
+    const w = rnd() * TAU, h = 0.08 + rnd() * 0.92, r = 1500, q = Math.sqrt(1 - h * h);
+    pos.set([Math.cos(w) * q * r, h * r, Math.sin(w) * q * r], i * 3);
+  }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  const sterne = new THREE.Points(g, new THREE.PointsMaterial({ color:0xffffff, size:2.2, sizeAttenuation:false, fog:false, transparent:true, opacity:0.9, depthWrite:false }));
+  sterne.position.set((S.minX + S.maxX) / 2, 0, (S.minZ + S.maxZ) / 2);
+  sterne.frustumCulled = false;
+  gruppe.add(sterne);
+  const mond = new THREE.Mesh(new THREE.SphereGeometry(45, 24, 16), new THREE.MeshBasicMaterial({ color:0xf4f1dc, fog:false }));
+  mond.position.copy(SONNE_VERSATZ).normalize().multiplyScalar(1300).add(sterne.position);
+  gruppe.add(mond);
+}
+function grosserVulkan(S, gruppe, cx, cz, R){
+  const w = 2.3, x = cx + Math.cos(w) * (R + 520), z = cz + Math.sin(w) * (R + 520);
+  const hangMat = new THREE.MeshPhongMaterial({ color:lin(0x2a1c1a), flatShading:true, fog:false, shininess:0, specular:0x000000 });
+  const berg = new THREE.Mesh(new THREE.CylinderGeometry(120, 620, 340, 12, 1, true), hangMat);
+  berg.position.set(x, 170, z);
+  gruppe.add(berg);
+  const krater = new THREE.Mesh(new THREE.CylinderGeometry(118, 118, 4, 12), new THREE.MeshBasicMaterial({ color:lin(0xff7a1a), fog:false }));
+  krater.position.set(x, 340, z);
+  gruppe.add(krater);
+  // Lavaströme auf der Seite, die zur Strecke zeigt
+  const zurStrecke = Math.atan2(cz - z, cx - x), neigung = Math.atan2(340, 500);
+  for (let n = 0; n < 5; n++){
+    const a = zurStrecke + (n - 2) * 0.32;
+    const strom = new THREE.Mesh(GEO.box, new THREE.MeshBasicMaterial({ color:lin(n % 2 ? 0xff5a10 : 0xff8a20), fog:false }));
+    strom.position.set(x + Math.cos(a) * 372, 176, z + Math.sin(a) * 372);
+    strom.scale.set(14, 3, 600);
+    strom.rotation.order = 'YXZ'; strom.rotation.set(neigung, Math.PI / 2 - a, 0);
+    gruppe.add(strom);
+  }
+  S.vulkanRauch = [];
+  for (let n = 0; n < 6; n++){
+    const r = new THREE.Mesh(GEO.kugelGrob, new THREE.MeshLambertMaterial({ color:0x3a3030, transparent:true, opacity:0.55, fog:false, depthWrite:false }));
+    r.position.set(x, 360 + n * 45, z); r.scale.setScalar(70 + n * 18);
+    gruppe.add(r); S.vulkanRauch.push(r);
+  }
 }
 
 function dekoBauen(S, th, gruppe, rnd, frei){
   const inst = new Instanzen();
   const rand = 150;
-  const ziel = th.deko === 'kakteen' ? 170 : 280;
+  const ziel = th.deko === 'kakteen' ? 170 : th.deko === 'palmen' ? 150 : th.deko === 'vulkan' ? 190 : 280;
+  const lava = new Instanzen();
   const farbe = (h, s, l) => new THREE.Color().setHSL(h, s, l).convertSRGBToLinear();
   let gesetzt = 0;
   for (let versuch = 0; versuch < ziel * 6 && gesetzt < ziel; versuch++){
     const x = S.minX - rand + rnd() * (S.maxX - S.minX + 2 * rand);
     const z = S.minZ - rand + rnd() * (S.maxZ - S.minZ + 2 * rand);
-    if (!frei(x, z, S.hw + S.auslauf + 4)) continue;
+    if (!frei(x, z, S.hw + S.auslauf + 4) || imMeer(S, x, z)) continue;
     gesetzt++;
     const s = 0.7 + rnd() * 0.9, dreh = rnd() * TAU;
-    if (th.deko === 'baeume'){
+    if (th.deko === 'palmen'){
+      if (rnd() < 0.25){
+        inst.add('busch', GEO.kugelGrob, MAT.laub, [x, 0.45 * s, z], [1.3 * s, 0.9 * s, 1.3 * s], [0, dreh, 0], farbe(0.27 + rnd() * 0.05, 0.5, 0.32));
+      } else palmeSetzen(inst, x, z, s, dreh, rnd, farbe);
+    } else if (th.deko === 'vulkan'){
+      const r = rnd();
+      if (r < 0.22){
+        // Lavasee mit dunklem Rand
+        const w = (2 + rnd() * 4) * s;
+        lava.add('lavarand', GEO.zylGrob, MAT.bunt, [x, 0.05, z], [w + 1.2, 0.1, w * 0.8 + 1.2], [0, dreh, 0], lin(0x1a1414));
+        lava.add('lava', GEO.zylGrob, MAT.lava, [x, 0.09, z], [w, 0.1, w * 0.8], [0, dreh, 0]);
+      } else if (r < 0.75){
+        inst.add('fels', GEO.kugelGrob, MAT.laub, [x, 0.5 * s, z], [2 * s, 1.5 * s, 1.7 * s], [rnd(), dreh, rnd()], farbe(0.02, 0.1, 0.08 + rnd() * 0.07));
+        if (rnd() < 0.4) inst.add('glutfels', GEO.kugelGrob, MAT.glut, [x, 0.25 * s, z], [1.1 * s, 0.5 * s, 1 * s], [0, dreh, 0]);
+      } else {
+        // Verkohlter Baum
+        inst.add('stamm', GEO.zylGrob, MAT.bunt, [x, 1.8 * s, z], [0.25 * s, 3.6 * s, 0.25 * s], [0, 0, (rnd() - 0.5) * 0.3], lin(0x231a16));
+        inst.add('stamm', GEO.zylGrob, MAT.bunt, [x + 0.5 * s, 3 * s, z], [0.12 * s, 1.6 * s, 0.12 * s], [0, 0, -0.8], lin(0x231a16));
+        inst.add('stamm', GEO.zylGrob, MAT.bunt, [x - 0.4 * s, 2.6 * s, z], [0.1 * s, 1.3 * s, 0.1 * s], [0, 0, 0.9], lin(0x231a16));
+      }
+    } else if (th.deko === 'baeume' || th.deko === 'laternen'){
       if (rnd() < 0.3){
         inst.add('busch', GEO.kugelGrob, MAT.laub, [x, 0.5 * s, z], [1.5 * s, 1.1 * s, 1.5 * s], [0, dreh, 0], farbe(0.28 + rnd() * 0.06, 0.55, 0.3 + rnd() * 0.1));
       } else {
@@ -1133,6 +1296,8 @@ function dekoBauen(S, th, gruppe, rnd, frei){
     }
   }
   inst.bauen(gruppe);
+  lava.bauen(gruppe, false);
+  if (th.deko === 'laternen') laternenBauen(S, gruppe, frei);
 
   // Berge ringsum
   const berge = new Instanzen();
@@ -1144,15 +1309,22 @@ function dekoBauen(S, th, gruppe, rnd, frei){
     const x = cx + Math.cos(w) * r, z = cz + Math.sin(w) * r;
     const h = 90 + rnd() * 150, b = h * (0.9 + rnd() * 0.5);
     const c = new THREE.Color(th.berge).offsetHSL(rnd() * 0.03, 0, (rnd() - 0.5) * 0.1).convertSRGBToLinear();
+    if (th.meer && z < S.minZ){
+      // Auf der Meerseite kleine Inseln statt Berge
+      if (n % 3) continue;
+      berge.add('insel', GEO.kugelGrob, bergMat, [x, -h * 0.05, z], [b * 0.6, h * 0.25, b * 0.5], [0, rnd(), 0], c);
+      continue;
+    }
     if (th.deko === 'kakteen'){
       berge.add('mesa', GEO.zylGrob, bergMat, [x, h * 0.25, z], [b * 0.7, h * 0.5, b * 0.7], [0, rnd(), 0], c);
       berge.add('mesa', GEO.zylGrob, bergMat, [x, h * 0.53, z], [b * 0.55, h * 0.06, b * 0.55], [0, rnd(), 0], c.clone().multiplyScalar(0.8));
     } else {
       berge.add('berg', GEO.kegelGrob, bergMat, [x, h / 2, z], [b, h, b], [0, rnd(), 0], c);
-      if (th.deko === 'tannen' || h > 190) berge.add('gipfel', GEO.kegelGrob, bergMat, [x, h - h * 0.16, z], [b * 0.32, h * 0.32, b * 0.32], [0, 0, 0], lin(0xffffff));
+      if (th.deko === 'tannen' || (h > 190 && th.deko !== 'vulkan')) berge.add('gipfel', GEO.kegelGrob, bergMat, [x, h - h * 0.16, z], [b * 0.32, h * 0.32, b * 0.32], [0, 0, 0], lin(0xffffff));
     }
   }
   berge.bauen(gruppe, false);
+  if (th.deko === 'vulkan') grosserVulkan(S, gruppe, cx, cz, R);
 
   // Wolken
   if (th.wolken){
@@ -1228,7 +1400,8 @@ class Kart {
       drift:0, driftZeit:0, driftStufe:0, driftTaste:false, driftVisuell:0, boost:0, stern:0, dreh:0, drehDauer:1, drehWinkel:0,
       item:null, itemNeu:null, itemAnzahl:0, roulette:0, itemTimer:0, fertig:false, zielzeit:Infinity, rundeStart:0, rundenzeiten:[],
       platz:1, lenkAnzeige:0, lenkSanft:0, stand:0, offroad:false, falsch:0, steckt:0, wandZeit:0, padZeit:0, hatteStern:false,
-      spur:zufall(-0.5, 0.5), spurZiel:zufall(-0.5, 0.5), spurTimer:zufall(1, 3), gummi:1, camYaw:0, autopilot:false
+      spur:zufall(-0.5, 0.5), spurZiel:zufall(-0.5, 0.5), spurTimer:zufall(1, 3), gummi:1, camYaw:0, autopilot:false,
+      klein:0, kleinSkala:1, windschatten:0
     });
   }
   entfernen(){
@@ -1252,7 +1425,7 @@ function boost(k, dauer){
 
 function treffer(k, art){
   if (k.stern > 0 || k.dreh > 0) return;
-  k.dreh = k.drehDauer = art === 'rakete' ? 1.4 : art === 'stoss' ? 0.8 : 1.1;
+  k.dreh = k.drehDauer = art === 'rakete' ? 1.4 : art === 'stoss' ? 0.8 : art === 'blitz' ? 0.7 : 1.1;
   if (art === 'rakete') k.vy = 7;
   k.drift = 0; k.boost = 0; k.driftStufe = 0;
   for (let n = 0; n < 14; n++){
@@ -1297,6 +1470,7 @@ function kartBewegen(k, dt){
   const aktiv = zustand.phase !== 'countdown' && zustand.phase !== 'menue';
   k.boost = Math.max(0, k.boost - dt);
   k.stern = Math.max(0, k.stern - dt);
+  k.klein = Math.max(0, k.klein - dt);
   k.padZeit -= dt; k.wandZeit -= dt;
   let lenk = e.lenk, gas = e.gas && !e.bremse && aktiv, bremse = e.bremse && aktiv;
   if (k.spieler && !k.autopilot && !zustand.autopilot){
@@ -1314,6 +1488,7 @@ function kartBewegen(k, dt){
   k.offroad = Math.abs(k.seite) > S.hw + 1.3;
   let maxV = w.maxV * k.gummi;
   if (k.offroad && k.boost <= 0 && k.stern <= 0) maxV *= 0.48;
+  if (k.klein > 0) maxV *= 0.72;
   if (k.stern > 0) maxV = w.maxV * 1.2;
   if (k.boost > 0) maxV = w.maxV * 1.4;
   // Gas und Bremse
@@ -1411,7 +1586,8 @@ function itemZiehen(k){
   const f = karts.length > 1 ? (k.platz - 1) / (karts.length - 1) : 0;
   const tabelle = [
     ['banane', 0.55 - 0.45 * f], ['rakete', 0.3], ['turbo', 0.15 + 0.15 * f],
-    ['turbo3', Math.max(0, f - 0.3) * 0.6], ['stern', Math.max(0, f - 0.45) * 0.5]
+    ['turbo3', Math.max(0, f - 0.3) * 0.6], ['stern', Math.max(0, f - 0.45) * 0.5],
+    ['blitz', karts.length > 2 ? Math.max(0, f - 0.6) * 0.35 : 0]
   ];
   let summe = tabelle.reduce((s, [, w]) => s + w, 0), r = Math.random() * summe;
   for (const [n, w] of tabelle){ r -= w; if (r <= 0) return n; }
@@ -1425,8 +1601,9 @@ function itemBenutzen(k){
     case 'turbo': boost(k, 1.2); break;
     case 'turbo3': boost(k, 1.2); if (--k.itemAnzahl > 0) return; break;
     case 'banane': bananeLegen(k.x - fx * 2.8, k.z - fz * 2.8, k.idx); if (k.spieler) Ton.effekt('banane'); break;
-    case 'rakete': raketeStarten(k); break;
+    case 'rakete': raketeStarten(k, !!k.eingabe.rueck || (k.mensch && k.eingabe.bremse)); break;
     case 'stern': k.stern = 7; if (k.spieler) Ton.effekt('stern'); break;
+    case 'blitz': blitzAusloesen(k); break;
   }
   k.item = null; k.itemAnzahl = 0; k.itemTimer = 0;
 }
@@ -1453,13 +1630,52 @@ function bananeWeg(n, senden = false){
   scene.remove(bananen[n].mesh); bananen.splice(n, 1);
 }
 
-function raketeStarten(k){
+// rueck: nach hinten auf den Verfolger schießen
+function raketeStarten(k, rueck = false){
   const rang = rangliste(), pos = rang.indexOf(k);
-  const ziel = pos > 0 ? rang[pos - 1] : null;
-  const fx = Math.sin(k.yaw), fz = Math.cos(k.yaw);
-  const r = { id:neueId(), x:k.x + fx * 2.8, z:k.z + fz * 2.8, yaw:k.yaw, idx:k.idx, seite:k.seite, besitzer:k, ziel, t:0 };
+  const ziel = rueck ? rang[pos + 1] || null : pos > 0 ? rang[pos - 1] : null;
+  const yaw = k.yaw + (rueck ? Math.PI : 0), fx = Math.sin(yaw), fz = Math.cos(yaw);
+  const r = { id:neueId(), x:k.x + fx * 2.8, z:k.z + fz * 2.8, yaw, idx:k.idx, seite:k.seite, besitzer:k, ziel, t:0, rueck };
   raketeBauen(r);
-  ereignis({ a:'r', id:r.id, von:k.slot, ziel:ziel ? ziel.slot : -1, x:rund(r.x), z:rund(r.z), yaw:rund(r.yaw, 1000), idx:r.idx, seite:rund(r.seite) });
+  ereignis({ a:'r', id:r.id, von:k.slot, ziel:ziel ? ziel.slot : -1, x:rund(r.x), z:rund(r.z), yaw:rund(r.yaw, 1000), idx:r.idx, seite:rund(r.seite), rueck:rueck ? 1 : 0 });
+}
+
+// Blitz: alle vor dem Werfer schrumpfen kurz. Jeder trifft nur die Karts, die er selbst steuert.
+function blitzAusloesen(k){
+  blitzTreffen(k);
+  ereignis({ a:'l', von:k.slot });
+}
+function blitzTreffen(werfer){
+  for (const k of karts){
+    if (k === werfer || k.fertig || k.fortschritt <= werfer.fortschritt || k.stern > 0) continue;
+    k.klein = 4;
+    if (!k.fern) treffer(k, 'blitz');
+  }
+  $('blitzFlash').classList.remove('an'); void $('blitzFlash').offsetWidth; $('blitzFlash').classList.add('an');
+  Ton.effekt('blitz');
+  if (werfer.spieler) meldung('🌩️ Blitz!', 1, true);
+  else if (spieler && spieler.klein > 0) vibrieren(160);
+}
+
+// Windschatten: dicht hinter einem anderen Kart gibt es nach kurzer Zeit einen kleinen Turbo
+function windschattenPruefen(k, dt){
+  if (k.v < 16 || k.dreh > 0 || k.boost > 0){ k.windschatten = Math.max(0, k.windschatten - dt * 2); return; }
+  const fx = Math.sin(k.yaw), fz = Math.cos(k.yaw);
+  let drin = false;
+  for (const o of karts){
+    if (o === k || o.v < 12) continue;
+    const dx = o.x - k.x, dz = o.z - k.z, vor = dx * fx + dz * fz, quer = Math.abs(dx * fz - dz * fx);
+    if (vor > 2.5 && vor < 14 && quer < 2.2){ drin = true; break; }
+  }
+  if (!drin){ k.windschatten = Math.max(0, k.windschatten - dt * 2); return; }
+  k.windschatten += dt;
+  if (k.spieler && Math.random() < 0.6)
+    staub.neu(k.x + fx * 3 + zufall(-1.2, 1.2), zufall(0.6, 1.6), k.z + fz * 3 + zufall(-1.2, 1.2), -fx * 14, 0, -fz * 14, 0.25, 0.9, 0.95, 1, 0.25, 0, 0.5, 0.4);
+  if (k.windschatten > 1.4){
+    k.windschatten = 0;
+    boost(k, 0.8);
+    if (k.spieler){ meldung('Windschatten!', 0.9, true); Ton.effekt('windschatten'); }
+  }
 }
 function raketeBauen(r){
   const g = new THREE.Group();
@@ -1489,7 +1705,7 @@ function raketenUpdate(dt){
     if (z){ zielAbstand = Math.hypot(z.x - r.x, z.z - r.z); }
     if (z && zielAbstand < 45){ zx = z.x; zz = z.z; }
     else {
-      const j = (r.idx + Math.round(14 / S.ds)) % S.N;
+      const j = (r.idx + (r.rueck ? -1 : 1) * Math.round(14 / S.ds) + S.N) % S.N;
       r.seite *= Math.exp(-dt * 1.2);
       [zx, zz] = punktBei(S, j, r.seite);
     }
@@ -1587,7 +1803,7 @@ function bananenPruefen(k){
 /* ---------- Computergegner ---------- */
 function kiSteuern(k, dt){
   const S = strecke, e = k.eingabe, st = STUFEN[rennStufe];
-  e.gas = true; e.bremse = false; e.drift = false; e.item = false;
+  e.gas = true; e.bremse = false; e.drift = false; e.item = false; e.rueck = false;
   k.spurTimer -= dt;
   if (k.spurTimer < 0){ k.spurTimer = zufall(1.5, 4); k.spurZiel = zufall(-0.55, 0.55); }
   k.spur += (k.spurZiel - k.spur) * Math.min(1, dt * 1.5);
@@ -1630,7 +1846,13 @@ function kiSteuern(k, dt){
     switch (k.item){
       case 'turbo': case 'turbo3': if (k.itemTimer > 0.7 && maxKr < 0.02) e.item = true; break;
       case 'stern': if (k.itemTimer > 0.5) e.item = true; break;
-      case 'rakete': if ((vor && vor.fortschritt - k.fortschritt < 45 && k.itemTimer > 0.8) || k.itemTimer > 7) e.item = true; break;
+      case 'blitz': if (k.itemTimer > 1.2) e.item = true; break;
+      case 'rakete': {
+        const nahHinten = hinter && k.fortschritt - hinter.fortschritt < 25;
+        if (!vor && nahHinten && k.itemTimer > 0.8){ e.item = true; e.rueck = true; }
+        else if ((vor && vor.fortschritt - k.fortschritt < 45 && k.itemTimer > 0.8) || k.itemTimer > 7) e.item = true;
+        break;
+      }
       case 'banane': if ((hinter && k.fortschritt - hinter.fortschritt < 16 && k.itemTimer > 0.6) || k.itemTimer > 6) e.item = true; break;
     }
   }
@@ -1649,6 +1871,8 @@ const nahAmSpieler = (x, z, r) => { const f = spieler || vorschau; if (!f) retur
 function kartDarstellen(k, dt){
   const m = k.m, g = m.gruppe;
   g.position.set(k.x, k.y, k.z);
+  k.kleinSkala += ((k.klein > 0 ? 0.55 : 1) - k.kleinSkala) * Math.min(1, dt * 6);
+  g.scale.setScalar(k.kleinSkala);
   k.driftVisuell += (k.drift * 0.4 - k.driftVisuell) * Math.min(1, dt * 8);
   g.rotation.y = k.yaw + k.driftVisuell + k.drehWinkel;
   const tempo = klemm(Math.abs(k.v) / 20, 0, 1);
@@ -1735,7 +1959,7 @@ function kartEffekte(k){
    Rennablauf
    ========================================================= */
 const zustand = { phase:'menue', t:0, rt:0, pause:false, wackeln:0, meldungBis:0, ergebnisIn:0, orbit:0, gasSeit:null, fov:68 };
-const cup = { aktiv:false, nr:0, punkte:{}, gegner:null };
+const cup = { aktiv:false, nr:0, punkte:{}, gegner:null, def:CUPS[0] };
 const online = { aktiv:false, imRennen:false, raum:null, ich:null, host:false, sendTimer:0, wegNamen:{} };
 // Olympiade: Mit ?olymp=… im Link geht es direkt in den Raum der Disziplin (Ticket prüft der Server)
 const olympia = (() => {
@@ -1778,7 +2002,7 @@ function rennenStarten(opts = null){
   for (const b of S.boxen){ b.aus = 0; b.mesh.visible = true; }
   let slots = opts && opts.slots;
   if (!slots){
-    // Im Cup fahren in allen 3 Rennen dieselben Gegner
+    // Im Cup fahren in allen Rennen dieselben Gegner
     if (!cup.aktiv || !cup.gegner) cup.gegner = mischen(FAHRER.map((f, i) => i).filter(i => i !== wahl.fahrer)).slice(0, 7);
     const andere = cup.gegner.slice();
     slots = Array.from({ length:8 }, (x, slot) => slot === SPIELER_STARTPLATZ ? { fahrer:wahl.fahrer, ich:true } : { fahrer:andere.pop() });
@@ -1866,6 +2090,7 @@ function rennenUpdate(dt){
     }
     if (k.eingabe.item) itemBenutzen(k);
     kartBewegen(k, dt);
+    windschattenPruefen(k, dt);
     padsPruefen(k);
     bananenPruefen(k);
   }
@@ -1900,7 +2125,8 @@ function ergebnisZeigen(){
   const platz = rang.indexOf(spieler) + 1;
   if (cup.aktiv) rang.forEach((k, i) => { cup.punkte[k.f.id] = (cup.punkte[k.f.id] || 0) + PUNKTE[i]; });
   const titel = platz === 1 ? '🏆 Sieg!' : platz <= 3 ? `${platz}. Platz – Podium!` : `${platz}. Platz`;
-  $('ergebnisTitel').textContent = cup.aktiv ? `Rennen ${cup.nr + 1}/3 · ${titel}` : titel;
+  const cupLetztes = cup.aktiv && cup.nr >= cup.def.strecken.length - 1;
+  $('ergebnisTitel').textContent = cup.aktiv ? `${cup.def.name} · Rennen ${cup.nr + 1}/${cup.def.strecken.length} · ${titel}` : titel;
   let html = '<table>' + rang.map((k, i) =>
     `<tr class="${k.spieler ? 'ich' : ''}"><td>${i + 1}.</td><td>${k.f.gesicht} ${k.f.name}</td><td class="r">${zeitText(k.zielzeit)}</td>${cup.aktiv ? `<td class="r">+${PUNKTE[i]}</td>` : ''}</tr>`).join('') + '</table>';
   html += `<p class="rekord" style="margin-top:10px">Beste Runde: ${zeitText(beste)} · Rekord: ${zeitText(rek.zeit)}</p>` + neu;
@@ -1908,16 +2134,21 @@ function ergebnisZeigen(){
     const stand = karts.map(k => k.f).sort((a, b) => (cup.punkte[b.id] || 0) - (cup.punkte[a.id] || 0));
     html += '<h2 style="font-size:1.1rem;margin:16px 0 6px">Cup-Wertung</h2><table>' + stand.map((f, i) =>
       `<tr class="${f === spieler.f ? 'ich' : ''}"><td>${i + 1}.</td><td>${f.gesicht} ${f.name}</td><td class="r">${cup.punkte[f.id] || 0} P</td></tr>`).join('') + '</table>';
-    if (cup.nr >= 2){
+    if (cupLetztes){
       const cupPlatz = stand.indexOf(spieler.f) + 1;
-      $('ergebnisTitel').textContent = cupPlatz === 1 ? '🏆 Cup gewonnen!' : cupPlatz === 2 ? '🥈 Cup: 2. Platz' : cupPlatz === 3 ? '🥉 Cup: 3. Platz' : `Cup: ${cupPlatz}. Platz`;
+      $('ergebnisTitel').textContent = cupPlatz === 1 ? `🏆 ${cup.def.name} gewonnen!` : cupPlatz === 2 ? `🥈 ${cup.def.name}: 2. Platz` : cupPlatz === 3 ? `🥉 ${cup.def.name}: 3. Platz` : `${cup.def.name}: ${cupPlatz}. Platz`;
+      const pk = `${cup.def.id}|${wahl.stufe}`;
+      if (!(pokale[pk] <= cupPlatz)){
+        pokale[pk] = cupPlatz; schreiben('pokale', pokale);
+        if (cupPlatz <= 3) html += `<p class="neu">Neuer Pokal: ${POKAL[cupPlatz]} im ${esc(cup.def.name)} (${STUFEN[wahl.stufe].name})</p>`;
+      }
     }
   }
   $('ergebnisText').innerHTML = html;
   const knoepfe = $('ergebnisKnoepfe');
   knoepfe.innerHTML = '';
   const knopf = (text, haupt, fn) => { const b = document.createElement('button'); b.className = 'knopf' + (haupt ? ' haupt' : ''); b.textContent = text; b.onclick = () => { Ton.effekt('klick'); fn(); }; knoepfe.appendChild(b); };
-  if (cup.aktiv && cup.nr < 2) knopf('Nächstes Rennen', true, () => { cup.nr++; wahl.strecke = cup.nr; rennenStarten(); });
+  if (cup.aktiv && !cupLetztes) knopf('Nächstes Rennen', true, () => { cup.nr++; wahl.strecke = cup.def.strecken[cup.nr]; rennenStarten(); });
   else if (cup.aktiv) knopf('Cup nochmal', true, cupStarten);
   else {
     knopf('Nochmal', true, rennenStarten);
@@ -1929,9 +2160,10 @@ function ergebnisZeigen(){
   knoepfe.querySelector('button').focus();
 }
 
+const POKAL = { 1:'🏆', 2:'🥈', 3:'🥉' };
 function cupStarten(){
-  cup.aktiv = true; cup.nr = 0; cup.punkte = {}; cup.gegner = null;
-  wahl.strecke = 0;
+  cup.aktiv = true; cup.nr = 0; cup.punkte = {}; cup.gegner = null; cup.def = CUPS[wahl.cup];
+  wahl.strecke = cup.def.strecken[0];
   rennenStarten();
 }
 
@@ -1976,7 +2208,7 @@ function hudUpdate(){
   // Item
   let icon = '', anzahl = '';
   if (k.roulette > 0){ const alle = Object.values(ITEM_ICON); icon = alle[Math.floor(zeit * 14) % alle.length]; }
-  else if (k.item){ icon = ITEM_ICON[k.item]; if (k.item === 'turbo3') anzahl = '×' + k.itemAnzahl; }
+  else if (k.item){ icon = ITEM_ICON[k.item]; if (k.item === 'turbo3') anzahl = '×' + k.itemAnzahl; else if (k.item === 'rakete' && k.eingabe.bremse) anzahl = '↩'; }
   setzen('itemIcon', icon); setzen('itemAnzahl', anzahl);
   if (touchModus){
     setzen('tItemIcon', (icon || '🎁') + (anzahl ? `<small>${anzahl}</small>` : ''), true);
@@ -2104,9 +2336,18 @@ function menueBauen(){
   const balken = w => `<div class="balken"><i style="width:${w * 20}%"></i></div>`;
   $('fahrerinfo').innerHTML = `<span>Tempo</span>${balken(f.tempo)}<span>Beschleunigung</span>${balken(f.beschl)}<span>Kurven</span>${balken(f.lenk)}`;
   const mw = $('moduswahl'); mw.innerHTML = '';
-  [['einzel', 'Einzelrennen', 'Gegen den Computer'], ['cup', 'Löwen-Cup', 'Alle 3 Strecken, Punkte'], ['online', 'Online', 'Mit Freunden fahren']].forEach(([id, name, info]) =>
+  [['einzel', 'Einzelrennen', 'Gegen den Computer'], ['cup', 'Cups', 'Mehrere Rennen, Punkte'], ['online', 'Online', 'Mit Freunden fahren']].forEach(([id, name, info]) =>
     mw.appendChild(wahlKnopf(`<b>${name}</b><small>${info}</small>`, wahl.modus === id, () => { wahl.modus = id; schreiben('wahl', wahl); })));
   $('streckenBlock').hidden = wahl.modus !== 'einzel';
+  $('cupBlock').hidden = wahl.modus !== 'cup';
+  const cw = $('cupwahl'); cw.innerHTML = '';
+  CUPS.forEach((c, i) => {
+    const pokal = pokale[`${c.id}|${wahl.stufe}`];
+    cw.appendChild(wahlKnopf(`<b>${c.name}</b><small>${c.info} · ${c.strecken.length} Rennen</small><small class="rekord">${pokal <= 3 ? POKAL[pokal] + ' gewonnen' : pokal ? 'Bestes: ' + pokal + '. Platz' : 'Noch kein Pokal'}</small>`, i === wahl.cup, () => {
+      if (wahl.cup === i) return;
+      wahl.cup = i; schreiben('wahl', wahl); streckeLaden(c.strecken[0]); vorschauZeigen();
+    }));
+  });
   $('stufenBlock').hidden = wahl.modus === 'online';
   $('onlineBlock').hidden = wahl.modus !== 'online';
   const sw = $('streckenwahl'); sw.innerHTML = '';
@@ -2141,7 +2382,7 @@ $('losknopf').onclick = () => {
   if (wahl.modus === 'cup') cupStarten(); else { cup.aktiv = false; rennenStarten(); }
 };
 $('weiterKnopf').onclick = pauseUmschalten;
-$('neuKnopf').onclick = () => { pauseUmschalten(); if (cup.aktiv) wahl.strecke = cup.nr; rennenStarten(); };
+$('neuKnopf').onclick = () => { pauseUmschalten(); if (cup.aktiv) wahl.strecke = cup.def.strecken[cup.nr]; rennenStarten(); };
 $('menueKnopf').onclick = () => { if (online.aktiv){ raumVerlassen(); return; } pauseUmschalten(); menueZeigen(); };
 $('tonKnopf').onclick = tonUmschalten;
 $('pauseKnopf').onclick = pauseUmschalten;
@@ -2200,6 +2441,7 @@ function netzSenden(dt){
 
 // Ferngesteuertes Kart: zur zuletzt gemeldeten Position gleiten und dazwischen weiterrechnen
 function fernBewegen(k, dt){
+  k.klein = Math.max(0, k.klein - dt);
   const n = k.netz;
   if (!n) return;
   // Nur kurz weiterrechnen – bei Aussetzern bleibt das Kart stehen statt durch die Bande zu fahren
@@ -2343,9 +2585,10 @@ Netz.on('e', m => {
     case 'r': {
       if (![m.x, m.z, m.yaw, m.seite].every(zahlOk) || !Number.isInteger(m.idx) || typeof m.id !== 'string') break;
       const von = karts.find(k => k.slot === m.von) || null, ziel = karts.find(k => k.slot === m.ziel) || null;
-      raketeBauen({ id:m.id, x:m.x, z:m.z, yaw:m.yaw, idx:klemm(m.idx, 0, S.N - 1), seite:m.seite, besitzer:von, ziel, t:0 });
+      raketeBauen({ id:m.id, x:m.x, z:m.z, yaw:m.yaw, idx:klemm(m.idx, 0, S.N - 1), seite:m.seite, besitzer:von, ziel, t:0, rueck:!!m.rueck });
       break;
     }
+    case 'l': { const von = karts.find(k => k.slot === m.von); if (von) blitzTreffen(von); break; }
     case 'rw': { const i = raketen.findIndex(r => r.id === m.id); if (i >= 0) raketeWeg(i); break; }
     case 'x': { const b = S.boxen[m.i]; if (b && b.aus <= 0) boxWeg(b); break; }
   }
@@ -2533,12 +2776,16 @@ function schritt(dt){
   if (S.wolken) S.wolken.rotation.y += dt * 0.004;
   if (S.schnee){
     const p = S.schnee.geometry.attributes.position, a = p.array, cx = camera.position.x, cz = camera.position.z;
+    const richtung = S.glut ? -0.6 : 1;
     for (let i = 0; i < a.length; i += 3){
-      a[i + 1] -= dt * (4 + (i % 7) * 0.4); a[i] += Math.sin(zeit + i) * dt * 0.6;
-      if (a[i + 1] < 0 || Math.abs(a[i] - cx) > 70 || Math.abs(a[i + 2] - cz) > 70){ a[i] = cx + zufall(-70, 70); a[i + 1] = zufall(20, 45); a[i + 2] = cz + zufall(-70, 70); }
+      a[i + 1] -= dt * (4 + (i % 7) * 0.4) * richtung; a[i] += Math.sin(zeit + i) * dt * 0.6;
+      if (a[i + 1] < 0 || a[i + 1] > 45 || Math.abs(a[i] - cx) > 70 || Math.abs(a[i + 2] - cz) > 70){ a[i] = cx + zufall(-70, 70); a[i + 1] = S.glut ? zufall(0, 6) : zufall(20, 45); a[i + 2] = cz + zufall(-70, 70); }
     }
     p.needsUpdate = true;
   }
+  if (S.meer){ S.meer.tex.offset.y = (zeit * 0.02) % 1; S.meer.gischt.material.opacity = 0.55 + Math.sin(zeit * 1.4) * 0.25; }
+  if (S.vulkanRauch) S.vulkanRauch.forEach((r, n) => { r.position.y = 360 + ((n * 45 + zeit * 6) % 270); r.material.opacity = 0.55 * (1 - (r.position.y - 360) / 270); });
+  if (S.th.glut) MAT.lava.color.setRGB(1, 0.32 + Math.sin(zeit * 2.2) * 0.06, 0.04).convertSRGBToLinear();
   if (zustand.phase !== 'menue'){
     const k = spieler;
     Ton.motor(k.v, k.boost > 0, zustand.phase !== 'ergebnis');

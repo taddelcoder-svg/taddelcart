@@ -13,7 +13,7 @@ const olymp = require('./olymp')({ spiel:'loewenkart' });
 const PORT = Number(process.env.PORT) || 10100;
 const MAX_RAEUME = 200;
 const MAX_SPIELER = 8;
-const ANZAHL_FAHRER = 9, ANZAHL_STRECKEN = 3, ANZAHL_STUFEN = 3;
+const ANZAHL_FAHRER = 9, ANZAHL_STRECKEN = 6, ANZAHL_STUFEN = 3;
 const NACH_ERSTEM_ZIEL = 40_000;   // ms, dann ist das Rennen für alle vorbei
 const MAX_RENNDAUER = 10 * 60_000;
 const TYPEN = {
