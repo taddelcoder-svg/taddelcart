@@ -80,19 +80,20 @@ const THEMEN = {
     strasse:'#3d4250', wand:[0xb35cff, 0xf0f0ff], berge:0x1f2c4a, staub:[0.4, 0.42, 0.5], deko:'laternen', wolken:false, sterne:true
   }
 };
+// Strecken nach F1-Vorbildern: Ecken [x, z, Kurvenradius]; Radius 0 = Punkt auf einer Geraden
 const STRECKEN = [
-  { id:'wiese', name:'Löwenwiese', info:'Sonnig, breit, ideal zum Üben', thema:'wiese', skala:1.3, breite:17, saat:11,
-    punkte:[[0,0],[80,0],[140,10],[175,50],[170,100],[130,125],[90,110],[60,130],[55,175],[20,200],[-40,195],[-90,170],[-110,120],[-90,70],[-60,30]] },
-  { id:'wueste', name:'Kaktus-Canyon', info:'Heiße Haarnadelkurve', thema:'wueste', skala:1.3, breite:16, saat:22,
-    punkte:[[0,0],[100,0],[160,-20],[200,-70],[190,-130],[140,-150],[100,-120],[110,-80],[80,-55],[30,-70],[-10,-120],[-60,-140],[-110,-110],[-120,-50],[-80,-10]] },
-  { id:'frost', name:'Frostgipfel', info:'Schnee und enge Schikanen', thema:'frost', skala:1.3, breite:16, saat:33,
-    punkte:[[0,0],[90,0],[130,30],[120,80],[70,90],[40,130],[60,180],[20,220],[-50,215],[-70,170],[-40,130],[-80,90],[-130,80],[-140,30],[-90,0]] },
-  { id:'strand', name:'Palmenbucht', info:'Lange Bögen direkt am Meer', thema:'strand', skala:1.3, breite:17, saat:44,
-    punkte:[[0,0],[110,0],[170,25],[190,80],[160,120],[100,115],[60,90],[20,110],[0,160],[-50,180],[-110,160],[-140,110],[-120,50],[-70,15]] },
-  { id:'vulkan', name:'Vulkankrater', info:'Lava, Glut und Serpentinen', thema:'vulkan', skala:1.3, breite:16, saat:55,
-    punkte:[[0,0],[90,0],[150,30],[160,90],[120,120],[70,100],[40,60],[0,70],[-20,120],[10,170],[-30,210],[-90,200],[-120,150],[-130,80],[-100,30],[-50,0]] },
-  { id:'nacht', name:'Sternenpark', info:'Nachtrennen unter Laternen', thema:'nacht', skala:1.3, breite:16, saat:66,
-    punkte:[[0,0],[120,0],[180,40],[170,110],[110,140],[50,130],[20,170],[-40,190],[-100,170],[-140,120],[-110,80],[-130,40],[-90,0]] }
+  { id:'wiese', name:'Löwenwiese', info:'Schnelle Bögen wie in Silverstone', thema:'wiese', breite:17, saat:11,
+    ecken:[[0,0,0],[200,0,30],[260,60,35],[240,130,24],[285,180,24],[235,235,22],[90,225,20],[60,160,14],[15,175,14],[-70,145,40],[-85,55,30],[-40,0,25]] },
+  { id:'wueste', name:'Kaktus-Canyon', info:'Haarnadeln wie in Bahrain', thema:'wueste', breite:16, saat:22,
+    ecken:[[0,0,0],[230,0,16],[250,-45,14],[195,-70,18],[235,-145,24],[150,-205,30],[60,-175,14],[95,-120,12],[15,-100,16],[-80,-195,26],[-155,-150,20],[-125,-60,28],[-45,0,25]] },
+  { id:'frost', name:'Frostgipfel', info:'Lange Geraden wie in Spa', thema:'frost', breite:16, saat:33,
+    ecken:[[0,0,0],[130,0,13],[135,-40,13],[60,-55,30],[40,-90,30],[-60,-240,40],[-140,-250,16],[-150,-200,16],[-100,-170,40],[-110,-60,35],[-200,-20,30],[-170,50,22],[-60,25,12],[-40,0,12]] },
+  { id:'strand', name:'Palmenbucht', info:'Hafen-Schikanen wie in Monaco', thema:'strand', breite:17, saat:44,
+    ecken:[[0,0,0],[150,0,14],[175,55,30],[150,110,20],[215,150,12],[235,205,11],[180,200,12],[90,170,25],[45,190,9],[20,175,9],[-10,200,30],[-110,160,14],[-90,130,10],[-130,100,14],[-160,40,20],[-120,0,14]] },
+  { id:'vulkan', name:'Vulkankrater', info:'Kurvenwechsel wie in Interlagos', thema:'vulkan', breite:16, saat:55,
+    ecken:[[0,0,0],[170,0,16],[185,40,16],[140,70,28],[200,140,30],[150,210,18],[70,170,22],[100,110,14],[30,90,14],[-30,170,30],[-120,140,16],[-90,80,14],[-160,40,30],[-110,0,40]] },
+  { id:'nacht', name:'Sternenpark', info:'Stadtkurs bei Nacht wie in Las Vegas', thema:'nacht', breite:16, saat:66,
+    ecken:[[0,0,0],[240,0,12],[240,90,12],[170,90,12],[150,120,12],[170,150,12],[170,220,14],[-40,220,12],[-40,170,12],[-100,150,12],[-100,60,12],[-60,40,12],[-60,0,12]] }
 ];
 const CUPS = [
   { id:'loewe',  name:'Löwen-Cup',  info:'Wiese, Canyon, Frost',    strecken:[0, 1, 2] },
@@ -815,8 +816,41 @@ function spielerEingabe(){
    ========================================================= */
 let strecke = null;
 
+// Ecken mit Radius -> Mittellinie aus Geraden und Kreisbögen
+function eckenZuPunkten(ecken){
+  const n = ecken.length, roh = [];
+  for (let i = 0; i < n; i++){
+    const [x, z, r] = ecken[i], [px, pz] = ecken[(i - 1 + n) % n], [nx, nz] = ecken[(i + 1) % n];
+    if (!(r > 0)){ roh.push([x, z]); continue; }
+    let ax = x - px, az = z - pz; const la = Math.hypot(ax, az); ax /= la; az /= la;
+    let bx = nx - x, bz = nz - z; const lb = Math.hypot(bx, bz); bx /= lb; bz /= lb;
+    const th = Math.acos(Math.max(-1, Math.min(1, ax * bx + az * bz)));
+    if (th < 1e-3){ roh.push([x, z]); continue; }
+    const t = Math.min(r * Math.tan(th / 2), 0.45 * la, 0.45 * lb), rr = t / Math.tan(th / 2);
+    const sx = x - ax * t, sz = z - az * t, ex = x + bx * t, ez = z + bz * t;
+    const sg = ax * bz - az * bx > 0 ? 1 : -1;
+    const cx = sx - az * rr * sg, cz = sz + ax * rr * sg;
+    const a0 = Math.atan2(sz - cz, sx - cx);
+    let d = Math.atan2(ez - cz, ex - cx) - a0;
+    if (d > Math.PI) d -= 2 * Math.PI; if (d < -Math.PI) d += 2 * Math.PI;
+    const m = Math.max(2, Math.round(Math.abs(d) * rr / 5));
+    for (let k = 0; k <= m; k++){ const a = a0 + d * k / m; roh.push([cx + Math.cos(a) * rr, cz + Math.sin(a) * rr]); }
+  }
+  // Geraden mit Zwischenpunkten füllen, doppelte Punkte weglassen
+  const aus = [];
+  roh.forEach(([x0, z0], i) => {
+    const [x1, z1] = roh[(i + 1) % roh.length], k = Math.max(1, Math.floor(Math.hypot(x1 - x0, z1 - z0) / 10));
+    for (let j = 0; j < k; j++){
+      const p = [x0 + (x1 - x0) * j / k, z0 + (z1 - z0) * j / k], q = aus[aus.length - 1];
+      if (!q || Math.hypot(p[0] - q[0], p[1] - q[1]) > 1.5) aus.push(p);
+    }
+  });
+  if (Math.hypot(aus[0][0] - aus[aus.length - 1][0], aus[0][1] - aus[aus.length - 1][1]) < 1.5) aus.pop();
+  return aus;
+}
+
 function streckeRechnen(def){
-  const pts = def.punkte.map(([x, z]) => new THREE.Vector3(x * def.skala, 0, z * def.skala));
+  const pts = eckenZuPunkten(def.ecken).map(([x, z]) => new THREE.Vector3(x, 0, z));
   const kurve = new THREE.CatmullRomCurve3(pts, true, 'centripetal');
   const L = kurve.getLength();
   const N = Math.round(L);
@@ -841,7 +875,28 @@ function streckeRechnen(def){
     const j = (i + k) % N;
     S.kurv[i] = winkelDiff(Math.atan2(S.tx[j], S.tz[j]), Math.atan2(S.tx[i], S.tz[i])) / (k * S.ds);
   }
+  // Kurvenbereiche: dort liegen Curbs, Kiesbett und Reifenstapel
+  S.ecke = new Uint8Array(N); S.kies = new Uint8Array(N);
+  const vor = Math.round(10 / S.ds), nach = Math.round(3 / S.ds), kiesNach = Math.round(14 / S.ds);
+  for (let i = 0; i < N; i++){
+    if (Math.abs(S.kurv[i]) < 0.022) continue;
+    for (let d = -nach; d <= vor; d++) S.ecke[(i + d + N) % N] = 1;
+    for (let d = -nach; d <= vor + kiesNach; d++) S.kies[(i + d + N) % N] = 1;
+  }
   return S;
+}
+// Zusammenhängende Abschnitte, in denen feld[i] gesetzt ist: [[start, länge], …]
+function abschnitte(S, feld){
+  const N = S.N, liste = [];
+  const start = feld.indexOf(0);
+  if (start < 0) return [[0, N]];
+  let an = -1;
+  for (let j = 0; j <= N; j++){
+    const i = (start + j) % N, gesetzt = j < N && feld[i];
+    if (gesetzt && an < 0) an = j;
+    if (!gesetzt && an >= 0){ liste.push([(start + an) % N, j - an]); an = -1; }
+  }
+  return liste;
 }
 function naechster(S, x, z, start){
   let best = start, bd = Infinity;
@@ -862,18 +917,18 @@ const punktBei = (S, i, seite) => [S.px[i] + S.tz[i] * seite, S.pz[i] - S.tx[i] 
 const yawBei = (S, i) => Math.atan2(S.tx[i], S.tz[i]);
 
 // Ein Band entlang der Strecke zwischen zwei seitlichen Abständen (links > rechts)
-function band(S, links, rechts, y, vLaenge, mat){
-  const n = S.N + 1;
+function band(S, links, rechts, y, vLaenge, mat, von = 0, laenge = S.N){
+  const n = laenge + 1;
   const pos = new Float32Array(n * 6), uv = new Float32Array(n * 4), nor = new Float32Array(n * 6);
   for (let j = 0; j < n; j++){
-    const i = j % S.N, lx = S.tz[i], lz = -S.tx[i];
+    const i = (von + j) % S.N, lx = S.tz[i], lz = -S.tx[i];
     pos.set([S.px[i] + lx * links, y, S.pz[i] + lz * links, S.px[i] + lx * rechts, y, S.pz[i] + lz * rechts], j * 6);
     const v = j * S.ds / vLaenge;
     uv.set([0, v, 1, v], j * 4);
     nor.set([0, 1, 0, 0, 1, 0], j * 6);
   }
   const index = [];
-  for (let j = 0; j < S.N; j++){ const a = 2 * j, b = a + 1, c = a + 2, d = a + 3; index.push(a, b, c, b, d, c); }
+  for (let j = 0; j < laenge; j++){ const a = 2 * j, b = a + 1, c = a + 2, d = a + 3; index.push(a, b, c, b, d, c); }
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
   g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
@@ -921,6 +976,45 @@ function entsorgen(obj){
   });
 }
 
+const ASPHALT_AUSLAUF = 4.5;
+const AMPEL_AUS = 0x2a0606, AMPEL_AN = 0xff2412;
+function startPlatz(S, slot){
+  const reihe = Math.floor(slot / 2), seite = slot % 2 ? -1 : 1;
+  return [idxBei(S, -(7 + reihe * 6.5 + (slot % 2) * 3)), seite * S.hw * 0.42];
+}
+function ampelSetzen(n){
+  if (strecke && strecke.ampel) strecke.ampel.forEach((m, i) => m.color.setHex(i < n ? AMPEL_AN : AMPEL_AUS));
+}
+// Boxengebäude mit Garagen auf der Seite gegenüber der Tribüne
+function boxenGebaeude(S, gruppe){
+  const i = idxBei(S, -22), abstand = S.hw + S.auslauf + 9;
+  const [x, z] = punktBei(S, i, abstand);
+  // Nicht bauen, wenn dort ein anderer Teil der Strecke liegt
+  for (let j = 0; j < S.N; j += 2){
+    let d = Math.abs(j - i); d = Math.min(d, S.N - d) * S.ds;
+    if (d > 60 && Math.hypot(S.px[j] - x, S.pz[j] - z) < 48) return;
+  }
+  const g = new THREE.Group();
+  g.position.set(x, 0, z); g.rotation.y = yawBei(S, i);
+  const tex = canvasTex(1024, 128, (c, w, h) => {
+    c.fillStyle = '#e9ecef'; c.fillRect(0, 0, w, h);
+    const farben = ['#e1251b', '#1d5fd8', '#11a36a', '#f4b400', '#7a3fd1', '#ff7a1a', '#20232a', '#16a6c9'];
+    for (let n = 0; n < 8; n++){
+      c.fillStyle = '#2a2d33'; c.fillRect(n * 128 + 10, 22, 108, 106);
+      c.fillStyle = farben[n]; c.fillRect(n * 128 + 14, 26, 100, 14);
+      c.fillStyle = 'rgba(255,255,255,.08)'; for (let y = 46; y < h; y += 9) c.fillRect(n * 128 + 14, y, 100, 3);
+    }
+  });
+  const wandMat = std(0xe3e6ea, 0.7);
+  teil(GEO.box, wandMat, g, 0, 3, 0, 8, 6, 64);
+  teil(GEO.box, std(0x2a2d33, 0.5, 0.3), g, -0.4, 6.25, 0, 9.2, 0.5, 65);
+  const front = teil(GEO.box, new THREE.MeshLambertMaterial({ map:tex }), g, -4.04, 2.4, 0, 0.08, 4.8, 62);
+  front.material.map.wrapS = THREE.ClampToEdgeWrapping;
+  teil(GEO.box, std(0x17191d, 0.3, 0.2), g, -3.6, 5.4, 0, 0.9, 1.0, 64);
+  gruppe.add(g);
+  S.sperre = { x, z, r:40 };
+}
+
 function streckeLaden(nr){
   if (strecke && strecke.nr === nr) return strecke;
   if (strecke){ scene.remove(strecke.gruppe); entsorgen(strecke.gruppe); if (strecke.schnee){ scene.remove(strecke.schnee); strecke.schnee.geometry.dispose(); strecke.schnee.material.dispose(); } }
@@ -954,34 +1048,61 @@ function streckeLaden(nr){
   gruppe.add(boden);
   if (th.meer) meerBauen(S, gruppe);
 
-  // Auslaufzone, Randsteine, Straße
-  const auslaufTex = canvasTex(128, 128, (c, w, h) => { c.fillStyle = th.auslauf; c.fillRect(0, 0, w, h); koernung(c, w, h, 3000, 0.18); }, true);
-  const auslaufMat = new THREE.MeshLambertMaterial({ map:auslaufTex, side:THREE.DoubleSide, polygonOffset:true, polygonOffsetFactor:-1, polygonOffsetUnits:-1 });
-  gruppe.add(band(S, S.hw + S.auslauf + 0.8, S.hw + 1.2, 0.02, 10, auslaufMat));
-  gruppe.add(band(S, -S.hw - 1.2, -S.hw - S.auslauf - 0.8, 0.02, 10, auslaufMat));
+  // Rennstrecke wie in der F1: Asphalt-Auslauf, Kiesbett und Curbs in den Kurven, kein Mittelstreifen
   const [wandA, wandB] = th.wand;
-  const randTex = canvasTex(16, 64, (c, w, h) => { c.fillStyle = cssFarbe(wandA); c.fillRect(0, 0, w, h / 2); c.fillStyle = cssFarbe(wandB); c.fillRect(0, h / 2, w, h / 2); }, true);
-  const randMat = new THREE.MeshLambertMaterial({ map:randTex, side:THREE.DoubleSide, polygonOffset:true, polygonOffsetFactor:-3, polygonOffsetUnits:-3 });
-  gruppe.add(band(S, S.hw + 1.4, S.hw - 0.1, 0.05, 4, randMat));
-  gruppe.add(band(S, -S.hw + 0.1, -S.hw - 1.4, 0.05, 4, randMat));
+  const auslaufTex = canvasTex(128, 128, (c, w, h) => { c.fillStyle = '#74787f'; c.fillRect(0, 0, w, h); koernung(c, w, h, 4000, 0.12); }, true);
+  const auslaufMat = new THREE.MeshLambertMaterial({ map:auslaufTex, side:THREE.DoubleSide, polygonOffset:true, polygonOffsetFactor:-1, polygonOffsetUnits:-1 });
+  gruppe.add(band(S, S.hw + ASPHALT_AUSLAUF, S.hw + 0.5, 0.02, 10, auslaufMat));
+  gruppe.add(band(S, -S.hw - 0.5, -S.hw - ASPHALT_AUSLAUF, 0.02, 10, auslaufMat));
+  const kiesTex = canvasTex(128, 128, (c, w, h) => {
+    c.fillStyle = th.auslauf; c.fillRect(0, 0, w, h);
+    koernung(c, w, h, 6000, 0.3);
+    for (let n = 0; n < 500; n++){ c.fillStyle = `rgba(${n % 2 ? '255,255,255' : '0,0,0'},.18)`; c.fillRect(Math.random() * w, Math.random() * h, 2, 2); }
+  }, true);
+  const kiesMat = new THREE.MeshLambertMaterial({ map:kiesTex, side:THREE.DoubleSide, polygonOffset:true, polygonOffsetFactor:-1, polygonOffsetUnits:-1 });
+  for (const [von, laenge] of abschnitte(S, S.kies)){
+    gruppe.add(band(S, S.hw + S.auslauf + 0.8, S.hw + ASPHALT_AUSLAUF, 0.025, 6, kiesMat, von, laenge));
+    gruppe.add(band(S, -S.hw - ASPHALT_AUSLAUF, -S.hw - S.auslauf - 0.8, 0.025, 6, kiesMat, von, laenge));
+  }
+  const curbTex = canvasTex(16, 64, (c, w, h) => {
+    c.fillStyle = '#e1251b'; c.fillRect(0, 0, w, h / 2); c.fillStyle = '#f7f7f2'; c.fillRect(0, h / 2, w, h / 2);
+    c.fillStyle = 'rgba(0,0,0,.18)'; c.fillRect(0, 0, 2, h); c.fillRect(w - 2, 0, 2, h);
+  }, true);
+  const curbMat = new THREE.MeshLambertMaterial({ map:curbTex, side:THREE.DoubleSide, polygonOffset:true, polygonOffsetFactor:-3, polygonOffsetUnits:-3 });
+  for (const [von, laenge] of abschnitte(S, S.ecke)){
+    gruppe.add(band(S, S.hw + 1.3, S.hw - 0.6, 0.06, 2.2, curbMat, von, laenge));
+    gruppe.add(band(S, -S.hw + 0.6, -S.hw - 1.3, 0.06, 2.2, curbMat, von, laenge));
+  }
   const strasseTex = canvasTex(256, 512, (c, w, h) => {
     c.fillStyle = th.strasse; c.fillRect(0, 0, w, h);
-    koernung(c, w, h, 9000, 0.09);
-    c.fillStyle = 'rgba(0,0,0,.1)'; c.fillRect(w * 0.25, 0, w * 0.12, h); c.fillRect(w * 0.63, 0, w * 0.12, h);
-    c.fillStyle = 'rgba(255,255,255,.92)'; c.fillRect(12, 0, 7, h); c.fillRect(w - 19, 0, 7, h);
-    c.fillStyle = 'rgba(255,255,255,.7)'; c.fillRect(w / 2 - 3, 0, 6, h * 0.42);
+    // Etwas dunklere, gummierte Ideallinie in der Mitte
+    const g = c.createLinearGradient(0, 0, w, 0);
+    g.addColorStop(0.15, 'rgba(0,0,0,0)'); g.addColorStop(0.5, 'rgba(0,0,0,.16)'); g.addColorStop(0.85, 'rgba(0,0,0,0)');
+    c.fillStyle = g; c.fillRect(0, 0, w, h);
+    koernung(c, w, h, 12000, 0.07);
+    c.fillStyle = 'rgba(255,255,255,.95)'; c.fillRect(4, 0, 6, h); c.fillRect(w - 10, 0, 6, h);
   }, true);
-  const strasseMat = new THREE.MeshStandardMaterial({ map:strasseTex, roughness:th.schnee ? 0.58 : 0.92, metalness:0.02, envMapIntensity:0.25, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-2 });
-  gruppe.add(band(S, S.hw, -S.hw, 0.04, 22, strasseMat));
+  const strasseMat = new THREE.MeshStandardMaterial({ map:strasseTex, roughness:th.schnee ? 0.58 : 0.88, metalness:0.02, envMapIntensity:0.25, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-2 });
+  gruppe.add(band(S, S.hw + 0.5, -S.hw - 0.5, 0.04, 22, strasseMat));
 
-  // Startlinie
+  // Startlinie und Startaufstellung (weiße Grid-Markierungen)
   const karoTex = canvasTex(128, 32, (c, w, h) => { for (let x = 0; x < 16; x++) for (let y = 0; y < 4; y++){ c.fillStyle = (x + y) % 2 ? '#111' : '#fff'; c.fillRect(x * 8, y * 8, 8, 8); } });
   const linie = new THREE.Mesh(new THREE.PlaneGeometry(S.hw * 2, 2.4), new THREE.MeshLambertMaterial({ map:karoTex, polygonOffset:true, polygonOffsetFactor:-4, polygonOffsetUnits:-4 }));
   linie.position.set(S.px[0], 0.07, S.pz[0]); linie.receiveShadow = true;
   linie.rotation.order = 'YXZ'; linie.rotation.set(-Math.PI / 2, yawBei(S, 0), 0);
   gruppe.add(linie);
+  const gridGeo = new THREE.PlaneGeometry(1, 1); gridGeo.rotateX(-Math.PI / 2);
+  const gridMat = new THREE.MeshBasicMaterial({ color:0xf4f4f0, polygonOffset:true, polygonOffsetFactor:-5, polygonOffsetUnits:-5 });
+  const grid = new Instanzen();
+  for (let slot = 0; slot < 8; slot++){
+    const [i, seite] = startPlatz(S, slot), yaw = yawBei(S, i), fx = Math.sin(yaw), fz = Math.cos(yaw);
+    const [x, z] = punktBei(S, i, seite);
+    grid.add('grid', gridGeo, gridMat, [x + fx * 1.9, 0.08, z + fz * 1.9], [3.2, 1, 0.25], [0, yaw, 0]);
+    for (const q of [-1, 1]) grid.add('grid', gridGeo, gridMat, [x + fx * 1.4 + fz * q * 1.5, 0.08, z + fz * 1.4 - fx * q * 1.5], [0.25, 1, 1.2], [0, yaw, 0]);
+  }
+  grid.bauen(gruppe, false);
 
-  // Starttor mit Banner
+  // Startbrücke mit Banner und fünf Ampelpaaren, die im Countdown angehen
   const tor = new THREE.Group();
   tor.position.set(S.px[0], 0, S.pz[0]); tor.rotation.y = yawBei(S, 0);
   const bannerTex = canvasTex(1024, 160, (c, w, h) => {
@@ -993,11 +1114,21 @@ function streckeLaden(nr){
   });
   const torMat = std(0x2a2d33, 0.5, 0.3);
   const torBreite = S.hw * 2 + 4;
-  teil(GEO.box, torMat, tor, -torBreite / 2, 3.6, 0, 1.0, 7.2, 1.0);
-  teil(GEO.box, torMat, tor, torBreite / 2, 3.6, 0, 1.0, 7.2, 1.0);
-  const balken = teil(GEO.box, new THREE.MeshLambertMaterial({ map:bannerTex }), tor, 0, 7.4, 0, torBreite + 1, 1.8, 0.6);
+  teil(GEO.box, torMat, tor, -torBreite / 2, 3.9, 0, 1.0, 7.8, 1.0);
+  teil(GEO.box, torMat, tor, torBreite / 2, 3.9, 0, 1.0, 7.8, 1.0);
+  const balken = teil(GEO.box, new THREE.MeshLambertMaterial({ map:bannerTex }), tor, 0, 8.0, 0, torBreite + 1, 1.6, 0.6);
   balken.material.map.wrapS = THREE.ClampToEdgeWrapping;
+  S.ampel = [];
+  for (let n = 0; n < 5; n++){
+    const x = (n - 2) * 1.5, mat = new THREE.MeshBasicMaterial({ color:AMPEL_AUS });
+    teil(GEO.box, torMat, tor, x, 6.3, -0.1, 1.1, 1.9, 0.45);
+    for (const y of [6.75, 5.85]) teil(GEO.kugelGrob, mat, tor, x, y, -0.36, 0.32, 0.32, 0.12);
+    S.ampel.push(mat);
+  }
   gruppe.add(tor);
+
+  // Boxengebäude gegenüber der Tribüne
+  boxenGebaeude(S, gruppe);
 
   // Tribüne rechts neben der Startgeraden
   const trib = new THREE.Group();
@@ -1019,21 +1150,31 @@ function streckeLaden(nr){
   leute.bauen(trib);
   gruppe.add(trib);
 
-  // Absperrung (Blöcke in Streifenfarben), nur wo sie keine andere Strecke berührt
+  // Absperrung nur dort, wo sie keine andere Strecke berührt: Reifenstapel in den Kurven, sonst Betonmauer mit Werbebanden
   const frei = (x, z, abstand, schritt = 3) => {
     const a2 = abstand * abstand;
     for (let i = 0; i < S.N; i += schritt){ const dx = x - S.px[i], dz = z - S.pz[i]; if (dx * dx + dz * dz < a2) return false; }
     return true;
   };
+  const freiDeko = (x, z, abstand, schritt) => frei(x, z, abstand, schritt) && !(S.sperre && Math.hypot(x - S.sperre.x, z - S.sperre.z) < S.sperre.r);
   const wand = new Instanzen();
   const wandAbstand = S.hw + S.auslauf + 1.0;
   let farbe = 0;
-  for (let i = 0; i < S.N; i += Math.max(1, Math.round(2.2 / S.ds))){
+  for (let i = 0; i < S.N; i += Math.max(1, Math.round(1.1 / S.ds))){
+    const reifen = S.kies[i], yaw = yawBei(S, i), lx = S.tz[i], lz = -S.tx[i];
+    if (!reifen && i % Math.max(1, Math.round(2.2 / S.ds))) continue;
     farbe++;
     for (const sg of [1, -1]){
       const [x, z] = punktBei(S, i, sg * wandAbstand);
       if (!frei(x, z, wandAbstand - 0.4, 2)) continue;
-      wand.add('wand', GEO.box, MAT.bunt, [x, 0.55, z], [0.8, 1.1, 2.3], [0, yawBei(S, i), 0], lin(farbe % 2 ? wandA : wandB));
+      const vx = -lx * sg, vz = -lz * sg;
+      if (reifen){
+        for (const y of [0.17, 0.5, 0.83]) wand.add('reifen', GEO.zylGrob, MAT.bunt, [x, y, z], [0.5, 0.32, 0.5], [0, 0, 0], lin(0x1d1d20));
+        wand.add('gurt', GEO.box, MAT.bunt, [x + vx * 0.52, 0.5, z + vz * 0.52], [0.05, 0.9, 1.08], [0, yaw, 0], lin(Math.floor(farbe / 2) % 2 ? wandA : wandB));
+      } else {
+        wand.add('mauer', GEO.box, MAT.bunt, [x, 0.55, z], [0.6, 1.1, 2.3], [0, yaw, 0], lin(0xd9dce1));
+        wand.add('bande', GEO.box, MAT.bunt, [x + vx * 0.32, 0.6, z + vz * 0.32], [0.05, 0.75, 2.2], [0, yaw, 0], lin(farbe % 2 ? wandA : wandB));
+      }
     }
   }
   wand.bauen(gruppe);
@@ -1062,13 +1203,13 @@ function streckeLaden(nr){
     S.pads.push({ i, seite });
   });
 
-  dekoBauen(S, th, gruppe, rnd, frei);
+  dekoBauen(S, th, gruppe, rnd, freiDeko);
   // Streckenrand mit Grasbuescheln, Steinen oder Eiskristallen, gebuendelt gezeichnet.
   const details = new Instanzen();
   for (let n = 0; n < 260; n++){
     const i = Math.floor(rnd() * S.N), sg = rnd() < 0.5 ? -1 : 1;
     const [x, z] = punktBei(S, i, sg * (S.hw + S.auslauf + 2.5 + rnd() * 15));
-    if (!frei(x, z, S.hw + S.auslauf + 1.7) || imMeer(S, x, z)) continue;
+    if (!freiDeko(x, z, S.hw + S.auslauf + 1.7) || imMeer(S, x, z)) continue;
     const h = 0.2 + rnd() * 0.65;
     if (th.deko === 'baeume' || th.deko === 'laternen'){
       details.add('gras', GEO.kegelGrob, MAT.laub, [x,h/2,z], [0.22,h,0.22], [0,rnd()*TAU,0.1], lin(0x62963e));
@@ -1410,9 +1551,8 @@ class Kart {
 }
 
 function aufStartplatz(k, slot){
-  const S = strecke, reihe = Math.floor(slot / 2), seite = slot % 2 ? -1 : 1;
-  const i = idxBei(S, -(7 + reihe * 6.5 + (slot % 2) * 3));
-  const [x, z] = punktBei(S, i, seite * S.hw * 0.42);
+  const S = strecke, [i, seite] = startPlatz(S, slot);
+  const [x, z] = punktBei(S, i, seite);
   k.x = x; k.z = z; k.yaw = k.camYaw = yawBei(S, i); k.idx = k.idxAlt = i;
   k.fortschritt = i * S.ds;
 }
@@ -1485,9 +1625,13 @@ function kartBewegen(k, dt){
     k.v *= Math.exp(-2.5 * dt);
   }
   const amBoden = k.y <= 0.001;
-  k.offroad = Math.abs(k.seite) > S.hw + 1.3;
+  const neben = Math.abs(k.seite) - S.hw;
+  k.offroad = neben > ASPHALT_AUSLAUF;
   let maxV = w.maxV * k.gummi;
-  if (k.offroad && k.boost <= 0 && k.stern <= 0) maxV *= 0.48;
+  if (k.boost <= 0 && k.stern <= 0){
+    if (k.offroad) maxV *= S.kies[k.idx] ? 0.42 : 0.52;
+    else if (neben > 1.3) maxV *= 0.86;
+  }
   if (k.klein > 0) maxV *= 0.72;
   if (k.stern > 0) maxV = w.maxV * 1.2;
   if (k.boost > 0) maxV = w.maxV * 1.4;
@@ -1995,6 +2139,7 @@ function rennenStarten(opts = null){
   spurenLeeren();
   rennStufe = opts ? opts.stufe : wahl.stufe;
   const S = streckeLaden(opts ? opts.strecke : wahl.strecke);
+  ampelSetzen(0);
   if (vorschau){ vorschau.entfernen(); vorschau = null; }
   karts.forEach(k => k.entfernen());
   karts = []; spieler = null;
@@ -2055,6 +2200,8 @@ function countdown(dt){
   for (const [m, text] of marken){
     if (t0 < m && t >= m){ meldung(text, text === 'LOS!' ? 1 : 0.95); Ton.effekt(text === 'LOS!' ? 'los' : 'piep'); }
   }
+  // Startampel: alle 0,5 s ein Paar mehr, bei LOS gehen alle aus
+  ampelSetzen(t < 0.5 || t >= 3.5 ? 0 : Math.min(5, Math.floor((t - 0.5) / 0.5) + 1));
   rangliste().forEach((k, i) => { k.platz = i + 1; });
   const e = spielerEingabe();
   spieler.eingabe = e;
