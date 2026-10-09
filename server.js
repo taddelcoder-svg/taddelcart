@@ -14,6 +14,9 @@ const PORT = Number(process.env.PORT) || 10100;
 const MAX_RAEUME = 200;
 const MAX_SPIELER = 8;
 const ANZAHL_FAHRER = 9, ANZAHL_STRECKEN = 6, ANZAHL_STUFEN = 3;
+// Cups: Streckenfolge wie CUPS in spiel.js, Punkte wie PUNKTE in spiel.js
+const CUP_STRECKEN = [[0, 1, 2], [3, 4, 5], [0, 3, 1, 4, 2, 5]];
+const PUNKTE = [15, 12, 10, 8, 6, 4, 2, 1];
 const NACH_ERSTEM_ZIEL = 40_000;   // ms, dann ist das Rennen für alle vorbei
 const MAX_RENNDAUER = 10 * 60_000;
 const TYPEN = {
@@ -62,10 +65,31 @@ function anAlle(raum, m, ausser){
 function raumSenden(raum){
   const m = {
     t:'raum', code:raum.code, host:raum.host, phase:raum.phase, strecke:raum.strecke, stufe:raum.stufe, bots:raum.bots,
+    cup:raum.cup, cupLauf:cupInfo(raum),
     spieler:[...raum.spieler.values()].map(s => ({ id:s.id, name:s.name, fahrer:s.fahrer })),
     olymp:raum.olymp ? olympInfo(raum) : null
   };
   for (const sp of raum.spieler.values()) sende(sp.ws, { ...m, du:sp.id });
+}
+// Online-Cup: mehrere Rennen hintereinander, Punkte für Menschen (nach Verbindung) und Computerfahrer (nach Tier)
+function cupInfo(raum){
+  const l = raum.cupLauf;
+  if (!l) return null;
+  const stand = [...l.punkte.values()].sort((a, b) => b.punkte - a.punkte);
+  return { nr:l.nr, anzahl:CUP_STRECKEN[raum.cup].length, fertig:l.fertig, stand };
+}
+function cupSchluessel(s){ return s.id ? 'p:' + s.id : 'b:' + s.fahrer; }
+function cupWerten(raum, rang){
+  const l = raum.cupLauf;
+  rang.forEach((r, i) => {
+    const s = raum.slots[r.slot];
+    if (!s) return;
+    const k = cupSchluessel(s);
+    const e = l.punkte.get(k) || { id:s.id, name:s.name, fahrer:s.fahrer, punkte:0 };
+    e.punkte += r.weg ? 0 : PUNKTE[i] || 0;
+    l.punkte.set(k, e);
+  });
+  l.fertig = l.nr >= CUP_STRECKEN[raum.cup].length - 1;
 }
 const nameOk = n => String(n || '').replace(/[\u0000-\u001f\u007f<>&"]/g, '').trim().slice(0, 16) || 'Fahrer';
 const ganz = (v, min, max, std) => (Number.isInteger(v) && v >= min && v <= max ? v : std);
@@ -206,7 +230,12 @@ function rennenStarten(raum){
   const plaetze = mischen([...Array(anzahl).keys()]);
   // Computerfahrer bekommen zuerst die Tiere, die kein Mensch fährt
   const genommen = new Set(menschen.map(s => s.fahrer));
-  const botFahrer = mischen([...Array(ANZAHL_FAHRER).keys()].filter(f => !genommen.has(f)));
+  let botFahrer = mischen([...Array(ANZAHL_FAHRER).keys()].filter(f => !genommen.has(f)));
+  if (raum.cupLauf){
+    // Im Cup fahren dieselben Computerfahrer alle Rennen
+    if (!raum.cupLauf.bots) raum.cupLauf.bots = botFahrer.slice();
+    botFahrer = raum.cupLauf.bots.filter(f => !genommen.has(f)).concat(botFahrer.filter(f => !raum.cupLauf.bots.includes(f)));
+  }
   raum.slots = new Array(anzahl);
   menschen.forEach((s, i) => { raum.slots[plaetze[i]] = { id:s.id, name:s.name, fahrer:s.fahrer, olympId:s.olympId }; });
   for (const slot of plaetze.slice(menschen.length)){
@@ -219,7 +248,7 @@ function rennenStarten(raum){
   timerAus(raum);
   raum.endeTimer = setTimeout(() => rennenEnde(raum), MAX_RENNDAUER);
   hostPruefen(raum);
-  anAlle(raum, { t:'start', strecke:raum.strecke, stufe:raum.stufe, slots:raum.slots.map(s => ({ id:s.id, name:s.name, fahrer:s.fahrer, bot:!s.id })) });
+  anAlle(raum, { t:'start', strecke:raum.strecke, stufe:raum.stufe, cup:raum.cupLauf ? { id:raum.cup, nr:raum.cupLauf.nr } : null, slots:raum.slots.map(s => ({ id:s.id, name:s.name, fahrer:s.fahrer, bot:!s.id })) });
   raumSenden(raum);
 }
 
@@ -243,7 +272,8 @@ function rennenEnde(raum){
     })
     .map(({ slot, zeit, weg }) => ({ slot, zeit, weg }));
   olympMelden(raum, rang);
-  anAlle(raum, { t:'ende', rang });
+  if (raum.cupLauf) cupWerten(raum, rang);
+  anAlle(raum, { t:'ende', rang, cup:cupInfo(raum) });
   raumSenden(raum);
 }
 
@@ -265,7 +295,7 @@ wss.on('connection', ws => {
       case 'erstellen': {
         if (raum) raumVerlassen(ws);
         if (raeume.size >= MAX_RAEUME) return sende(ws, { t:'fehler', text:'Gerade sind zu viele Räume offen. Versuch es gleich nochmal.' });
-        const neu = { code:neuerCode(), host:ws.id, spieler:new Map(), phase:'lobby', strecke:0, stufe:1, bots:true, slots:[] };
+        const neu = { code:neuerCode(), host:ws.id, spieler:new Map(), phase:'lobby', strecke:0, stufe:1, bots:true, slots:[], cup:-1, cupLauf:null };
         raeume.set(neu.code, neu);
         beitreten(ws, neu, m);
         break;
@@ -297,15 +327,25 @@ wss.on('connection', ws => {
           raum.strecke = ganz(m.strecke, 0, ANZAHL_STRECKEN - 1, raum.strecke);
           raum.stufe = ganz(m.stufe, 0, ANZAHL_STUFEN - 1, raum.stufe);
           raum.bots = m.bots !== false;
+          raum.cup = ganz(m.cup, -1, CUP_STRECKEN.length - 1, -1);
+          raum.cupLauf = null;
           raumSenden(raum);
         }
         break;
       case 'start':
         // In der Olympiade gibt es genau ein Rennen
-        if (istHost && raum.phase !== 'rennen' && !(raum.olymp && raum.olymp.gestartet)) rennenStarten(raum);
+        if (istHost && raum.phase !== 'rennen' && !(raum.olymp && raum.olymp.gestartet)){
+          if (raum.cup >= 0 && !raum.olymp){
+            // Nächstes Cup-Rennen oder neuer Cup
+            if (raum.cupLauf && !raum.cupLauf.fertig && raum.phase === 'ergebnis') raum.cupLauf.nr++;
+            else raum.cupLauf = { nr:0, punkte:new Map(), fertig:false, bots:null };
+            raum.strecke = CUP_STRECKEN[raum.cup][raum.cupLauf.nr];
+          }
+          rennenStarten(raum);
+        }
         break;
       case 'lobby':
-        if (istHost && raum.phase === 'ergebnis' && !raum.olymp){ raum.phase = 'lobby'; raumSenden(raum); }
+        if (istHost && raum.phase === 'ergebnis' && !raum.olymp){ raum.phase = 'lobby'; raum.cupLauf = null; raumSenden(raum); }
         break;
       case 'z': {
         if (!raum || raum.phase !== 'rennen' || !Array.isArray(m.k)) return;
