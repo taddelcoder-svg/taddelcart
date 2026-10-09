@@ -2760,11 +2760,14 @@ Netz.on('ende', m => {
   // Den eigenen Zieleinlauf noch kurz genießen lassen
   const nr = online.rennenNr;
   const warten = spieler && spieler.fertig ? Math.max(0, zustand.zielMoment + 3 - zeit) : 0;
+  online.cupStand = m.cup && Array.isArray(m.cup.stand) ? m.cup : null;
   setTimeout(() => { if (online.imRennen && online.rennenNr === nr) ergebnisOnline(m.rang); }, warten * 1000);
 });
 
 function ergebnisOnline(rang){
   zustand.phase = 'ergebnis';
+  const cupDef = online.cupStand && online.raum ? CUPS[online.raum.cup] : null;
+  const c = cupDef ? online.cupStand : null;
   if (spieler) spieler.autopilot = true;
   $('pause').hidden = true;
   // Computerfahrer, die noch unterwegs sind, bekommen wie offline eine geschätzte Zeit
@@ -2778,11 +2781,24 @@ function ergebnisOnline(rang){
     }
     if (zeit != null) vorige = zeit;
     const zeitTxt = zeit != null ? zeitText(zeit) : r.weg ? 'raus' : 'nicht im Ziel';
-    return `<tr class="${k && k.spieler ? 'ich' : ''}"><td>${i + 1}.</td><td>${name}</td><td class="r">${zeitTxt}</td></tr>`;
+    const punkte = c ? `<td class="r">+${r.weg ? 0 : PUNKTE[i] || 0}</td>` : '';
+    return `<tr class="${k && k.spieler ? 'ich' : ''}"><td>${i + 1}.</td><td>${name}</td><td class="r">${zeitTxt}</td>${punkte}</tr>`;
   });
   const platz = rang.findIndex(r => spieler && r.slot === spieler.slot) + 1;
-  $('ergebnisTitel').textContent = platz === 1 ? '🏆 Sieg!' : platz >= 2 && platz <= 3 ? `${platz}. Platz – Podium!` : platz ? `${platz}. Platz` : 'Ergebnis';
-  $('ergebnisText').innerHTML = '<table>' + zeilen.join('') + '</table><p class="leise" id="ergebnisHinweis" style="margin-top:10px"></p>';
+  const titel = platz === 1 ? '🏆 Sieg!' : platz >= 2 && platz <= 3 ? `${platz}. Platz – Podium!` : platz ? `${platz}. Platz` : 'Ergebnis';
+  let html = '<table>' + zeilen.join('') + '</table>';
+  $('ergebnisTitel').textContent = c ? `${cupDef.name} · Rennen ${c.nr + 1}/${c.anzahl} · ${titel}` : titel;
+  if (c){
+    // Cup-Wertung über alle bisherigen Rennen
+    const fahrerVon = e => FAHRER[e.fahrer] || FAHRER[0];
+    html += '<h2 style="font-size:1.1rem;margin:16px 0 6px">Cup-Wertung</h2><table>' + c.stand.map((e, i) =>
+      `<tr class="${e.id && e.id === online.ich ? 'ich' : ''}"><td>${i + 1}.</td><td>${fahrerVon(e).gesicht} ${esc(e.id ? e.name || 'Fahrer' : fahrerVon(e).name)}</td><td class="r">${e.punkte | 0} P</td></tr>`).join('') + '</table>';
+    if (c.fertig){
+      const cupPlatz = c.stand.findIndex(e => e.id && e.id === online.ich) + 1;
+      $('ergebnisTitel').textContent = cupPlatz === 1 ? `🏆 ${cupDef.name} gewonnen!` : cupPlatz >= 2 && cupPlatz <= 3 ? `${POKAL[cupPlatz]} ${cupDef.name}: ${cupPlatz}. Platz` : cupPlatz ? `${cupDef.name}: ${cupPlatz}. Platz` : `${cupDef.name} vorbei`;
+    }
+  }
+  $('ergebnisText').innerHTML = html + '<p class="leise" id="ergebnisHinweis" style="margin-top:10px"></p>';
   ergebnisKnoepfeOnline();
   $('ergebnis').hidden = false;
   $('touch').hidden = true;
@@ -2797,12 +2813,15 @@ function ergebnisKnoepfeOnline(){
     if (hinweis) hinweis.textContent = 'Dein Platz ist bei der Olympiade eingetragen.';
     return;
   }
+  const c = online.cupStand, cupWeiter = c && !c.fertig;
   if (online.host){
-    knopf('Nochmal', true, () => Netz.senden({ t:'start' }));
+    knopf(cupWeiter ? 'Nächstes Rennen' : c ? 'Cup nochmal' : 'Nochmal', true, () => Netz.senden({ t:'start' }));
     knopf('Zur Lobby', false, () => Netz.senden({ t:'lobby' }));
   }
   knopf('Raum verlassen', false, raumVerlassen);
-  if (hinweis) hinweis.textContent = online.host ? 'Du bist Host: Starte das nächste Rennen oder geh zurück in die Lobby.' : 'Der Host startet gleich das nächste Rennen.';
+  if (hinweis) hinweis.textContent = online.host
+    ? (cupWeiter ? 'Du bist Host: Starte das nächste Cup-Rennen.' : 'Du bist Host: Starte das nächste Rennen oder geh zurück in die Lobby.')
+    : (cupWeiter ? 'Der Host startet gleich das nächste Cup-Rennen.' : 'Der Host startet gleich das nächste Rennen.');
 }
 
 function lobbyBauen(){
@@ -2821,30 +2840,36 @@ function lobbyBauen(){
   const ei = $('lobbyEinst');
   ei.innerHTML = '';
   if (online.host){
-    const einst = aenderung => Netz.senden({ t:'einst', strecke:m.strecke, stufe:m.stufe, bots:m.bots, ...aenderung });
-    const r1 = document.createElement('div'), r2 = document.createElement('div');
-    r1.className = r2.className = 'reihe';
-    STRECKEN.forEach((st, i) => r1.appendChild(wahlKnopf(`<b>${st.name}</b>`, i === m.strecke, () => einst({ strecke:i }), () => {})));
+    const cupNr = Number.isInteger(m.cup) && CUPS[m.cup] ? m.cup : -1;
+    const einst = aenderung => Netz.senden({ t:'einst', strecke:m.strecke, stufe:m.stufe, bots:m.bots, cup:cupNr, ...aenderung });
+    const r0 = document.createElement('div'), r1 = document.createElement('div'), r2 = document.createElement('div');
+    r0.className = r1.className = r2.className = 'reihe';
+    r0.appendChild(wahlKnopf('<b>Einzelrennen</b><small>Eine Strecke</small>', cupNr < 0, () => einst({ cup:-1 }), () => {}));
+    CUPS.forEach((c, i) => r0.appendChild(wahlKnopf(`<b>${c.name}</b><small>${c.strecken.length} Rennen, Punkte</small>`, i === cupNr, () => einst({ cup:i }), () => {})));
+    if (cupNr < 0) STRECKEN.forEach((st, i) => r1.appendChild(wahlKnopf(`<b>${st.name}</b>`, i === m.strecke, () => einst({ strecke:i }), () => {})));
+    else r1.innerHTML = `<p class="leise">${CUPS[cupNr].strecken.map(i => esc(STRECKEN[i].name)).join(' → ')}</p>`;
     STUFEN.forEach((st, i) => r2.appendChild(wahlKnopf(`<b>${st.name}</b><small>${st.info}</small>`, i === m.stufe, () => einst({ stufe:i }), () => {})));
     const sch = document.createElement('label');
     sch.className = 'schalter';
     sch.innerHTML = `<input type="checkbox" ${m.bots ? 'checked' : ''}> Freie Plätze mit Computerfahrern auffüllen`;
     sch.querySelector('input').onchange = e => einst({ bots:e.target.checked });
-    ei.append(r1, r2, sch);
+    ei.append(r0, r1, r2, sch);
   } else {
-    ei.innerHTML = `<p class="leise">${esc(STRECKEN[m.strecke].name)} · ${esc(STUFEN[m.stufe].name)} · Computerfahrer ${m.bots ? 'an' : 'aus'}</p>`;
+    const was = CUPS[m.cup] ? `${esc(CUPS[m.cup].name)} (${CUPS[m.cup].strecken.length} Rennen)` : esc(STRECKEN[m.strecke].name);
+    ei.innerHTML = `<p class="leise">${was} · ${esc(STUFEN[m.stufe].name)} · Computerfahrer ${m.bots ? 'an' : 'aus'}</p>`;
   }
   $('lobbyStart').hidden = !online.host;
   $('lobbyStart').disabled = m.phase === 'rennen';
   if (m.olymp) return olympLobby(m);
   $('olympBanner').hidden = true; $('raumKopf').hidden = false;
-  $('lobbyStart').textContent = 'Rennen starten'; $('lobbyRaus').textContent = 'Raum verlassen';
+  $('lobbyStart').textContent = CUPS[m.cup] ? 'Cup starten' : 'Rennen starten'; $('lobbyRaus').textContent = 'Raum verlassen';
   $('lobbyInfo').textContent = m.phase === 'rennen' ? 'Gerade läuft ein Rennen. Beim nächsten bist du dabei.'
     : m.phase === 'ergebnis' ? 'Das Rennen ist gerade vorbei, gleich geht es weiter.'
     : online.host ? (m.spieler.length > 1 ? 'Starte, wenn alle da sind.' : 'Warte auf Freunde oder starte schon mal allein.')
     : 'Warte, bis der Host das Rennen startet.';
-  // Hintergrund: Strecke des Raums und eigener Fahrer
-  if (!strecke || strecke.nr !== m.strecke){ streckeLaden(m.strecke); vorschauZeigen(); }
+  // Hintergrund: Strecke des Raums (im Cup die erste Cup-Strecke) und eigener Fahrer
+  const bild = m.phase === 'lobby' && CUPS[m.cup] ? CUPS[m.cup].strecken[0] : m.strecke;
+  if (!strecke || strecke.nr !== bild){ streckeLaden(bild); vorschauZeigen(); }
   else if (vorschau && vorschau.f !== FAHRER[meinFahrer]){ wahl.fahrer = meinFahrer; vorschauZeigen(); }
 }
 
