@@ -50,31 +50,37 @@ const STUFEN = [
 ];
 const THEMEN = {
   wiese: {
+    himmelWolke:['#ffffff', 0.85],
     himmel:['#2f7fd8', '#cfe9ff'], nebel:'#cfe6fb', nebelWeit:[260, 1150], sonne:'#fff1d8', sonnenKraft:2.2,
     hemi:['#dcefff', '#6d8a45'], hemiKraft:0.95, gras:['#5ea944', '#4f9838', '#6bbb50'], auslauf:'#b79b64',
     strasse:'#595d64', wand:[0xe8322a, 0xf5f5f5], berge:0x5d8b52, staub:[0.55, 0.45, 0.3], deko:'baeume', wolken:true
   },
   wueste: {
+    himmelWolke:['#ffe0bc', 0.45],
     himmel:['#d9683a', '#ffd6a0'], nebel:'#f5c793', nebelWeit:[220, 1000], sonne:'#ffd9a8', sonnenKraft:2.4,
     hemi:['#ffe2bd', '#a0643a'], hemiKraft:0.85, gras:['#e2bb78', '#d6aa63', '#ebc98a'], auslauf:'#c4935a',
     strasse:'#65605c', wand:[0xff8a1a, 0xfff1dc], berge:0xc0683a, staub:[0.85, 0.66, 0.4], deko:'kakteen', wolken:false
   },
   frost: {
+    himmelWolke:['#f3f7fc', 0.9],
     himmel:['#7aa5d8', '#eef4fb'], nebel:'#e4edf6', nebelWeit:[130, 820], sonne:'#f4f8ff', sonnenKraft:1.7,
     hemi:['#eef5ff', '#9aa9ba'], hemiKraft:1.15, gras:['#f1f5fa', '#e3eaf2', '#fbfdff'], auslauf:'#c3d2e2',
     strasse:'#4a4f57', wand:[0x2f7fd8, 0xf4f8ff], berge:0xdbe5f0, staub:[0.95, 0.97, 1], deko:'tannen', wolken:true, schnee:true
   },
   strand: {
+    himmelWolke:['#ffffff', 0.75],
     himmel:['#1f8fe0', '#c4ecff'], nebel:'#cdeefa', nebelWeit:[260, 1200], sonne:'#fff4dc', sonnenKraft:2.3,
     hemi:['#e2f4ff', '#c9a66b'], hemiKraft:1.0, gras:['#e9d29a', '#dfc386', '#f3e0b0'], auslauf:'#c9a46a',
     strasse:'#5c6068', wand:[0x1fb5c9, 0xfff6e0], berge:0x4f9a5a, staub:[0.92, 0.84, 0.62], deko:'palmen', wolken:true, meer:true
   },
   vulkan: {
+    himmelWolke:['#4a2620', 0.8],
     himmel:['#2a1416', '#c4502a'], nebel:'#6a3424', nebelWeit:[160, 950], sonne:'#ffb07a', sonnenKraft:1.7,
     hemi:['#ffa070', '#2a1a18'], hemiKraft:0.95, gras:['#2f2a2a', '#3a3232', '#262222'], auslauf:'#4f413a',
     strasse:'#3c3d42', wand:[0xff5a1a, 0x2a2a2e], berge:0x3a2a26, staub:[0.32, 0.28, 0.26], deko:'vulkan', wolken:false, glut:true
   },
   nacht: {
+    himmelWolke:['#28366a', 0.4],
     himmel:['#060b24', '#2d3d72'], nebel:'#1b2550', nebelWeit:[150, 950], sonne:'#b9c8ff', sonnenKraft:1.2,
     hemi:['#8090d8', '#1d2a3a'], hemiKraft:0.9, gras:['#2c5a3a', '#264f33', '#336843'], auslauf:'#5a5a66',
     strasse:'#3d4250', wand:[0xb35cff, 0xf0f0ff], berge:0x1f2c4a, staub:[0.4, 0.42, 0.5], deko:'laternen', wolken:false, sterne:true
@@ -156,16 +162,39 @@ scene.add(sonne, sonne.target);
 const SONNE_VERSATZ = new THREE.Vector3(70, 130, 45);
 
 // Himmel als Kugel mit Farbverlauf
-const himmelUni = { oben:{ value:new THREE.Color() }, horizont:{ value:new THREE.Color() } };
+const himmelUni = { oben:{ value:new THREE.Color() }, horizont:{ value:new THREE.Color() }, wolkenFarbe:{ value:new THREE.Color(1, 1, 1) }, wolkenMenge:{ value:0 }, zeit:{ value:0 } };
 const himmel = new THREE.Mesh(new THREE.SphereGeometry(2000, 32, 16), new THREE.ShaderMaterial({
   uniforms:himmelUni, side:THREE.BackSide, depthWrite:false, fog:false,
   vertexShader:'varying vec3 vP;\nvoid main(){ vP = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
-  fragmentShader:'uniform vec3 oben;\nuniform vec3 horizont;\nvarying vec3 vP;\nvoid main(){\n float h = clamp(vP.y * 1.7, 0.0, 1.0);\n gl_FragColor = vec4(mix(horizont, oben, pow(h, 0.65)), 1.0);\n#include <tonemapping_fragment>\n#include <encodings_fragment>\n}'
+  fragmentShader:[
+    'uniform vec3 oben;', 'uniform vec3 horizont;', 'uniform vec3 wolkenFarbe;', 'uniform float wolkenMenge;', 'uniform float zeit;', 'varying vec3 vP;',
+    'float hsh(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }',
+    'float rausch(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(hsh(i), hsh(i + vec2(1.0, 0.0)), f.x), mix(hsh(i + vec2(0.0, 1.0)), hsh(i + vec2(1.0, 1.0)), f.x), f.y); }',
+    'float fbm(vec2 p){ float a = 0.5, v = 0.0; for (int i = 0; i < 4; i++){ v += a * rausch(p); p = p * 2.03 + vec2(17.0, 3.0); a *= 0.5; } return v; }',
+    'void main(){',
+    '  vec3 d = normalize(vP);',
+    '  float h = clamp(d.y * 1.7, 0.0, 1.0);',
+    '  vec3 col = mix(horizont, oben, pow(h, 0.65));',
+    // Dunstband am Horizont und Sonnenhof
+    '  col = mix(col, horizont * 1.06, exp(-max(d.y, 0.0) * 7.0) * 0.4);',
+    '  vec3 sd = normalize(vec3(70.0, 130.0, 45.0));',
+    '  float sun = max(0.0, dot(d, sd));',
+    '  col += vec3(1.0, 0.78, 0.42) * (pow(sun, 28.0) * 0.18 + pow(sun, 650.0) * 1.3);',
+    // Wolkenschicht: Rauschen auf eine Ebene projiziert, driftet langsam; sonnennahe Raender leuchten
+    '  if (wolkenMenge > 0.01 && d.y > 0.015){',
+    '    vec2 uv = d.xz / (d.y + 0.28) * 1.7 + vec2(zeit * 0.012, zeit * 0.005);',
+    '    float n = fbm(uv);',
+    '    float c = smoothstep(0.66 - 0.2 * wolkenMenge, 0.9 - 0.12 * wolkenMenge, n) * smoothstep(0.015, 0.2, d.y);',
+    '    float tief = smoothstep(0.45, 0.95, n);',
+    '    vec3 cc = mix(wolkenFarbe * 0.72, wolkenFarbe, tief) + vec3(1.0, 0.85, 0.6) * pow(sun, 6.0) * 0.25 * (1.0 - tief);',
+    '    col = mix(col, cc, c * 0.92);',
+    '  }',
+    '  gl_FragColor = vec4(col, 1.0);',
+    '#include <tonemapping_fragment>',
+    '#include <encodings_fragment>',
+    '}'
+  ].join('\n')
 }));
-// Weicher Sonnenhof statt einer gleichmaessig leeren Himmelskugel.
-himmel.material.fragmentShader = himmel.material.fragmentShader.replace(
-  'gl_FragColor = vec4(mix(horizont, oben, pow(h, 0.65)), 1.0);',
-  'vec3 col = mix(horizont, oben, pow(h, 0.65)); float sun = max(0.0, dot(normalize(vP), normalize(vec3(70.0,130.0,45.0)))); col += vec3(1.0,0.78,0.42) * (pow(sun, 28.0)*0.18 + pow(sun, 650.0)*1.3); gl_FragColor = vec4(col, 1.0);');
 himmel.renderOrder = -1;
 
 // Kleine, pro Strecke erzeugte Umgebungsreflexion fuer Lack und Metall.
@@ -228,13 +257,59 @@ const boxTex = canvasTex(128, 128, (c, w) => {
   c.fillStyle = '#fff'; c.fillText('?', w / 2, w / 2 + 6);
 });
 const pfeilTex = canvasTex(128, 128, (c, w) => {
-  c.fillStyle = 'rgba(40,20,0,.55)'; c.fillRect(0, 0, w, w);
-  c.fillStyle = '#ffcf2e';
+  // Turbo-Feld: dunkles Orange mit leuchtenden Doppelpfeilen und Randlinien
+  const grund = c.createLinearGradient(0, 0, w, 0);
+  grund.addColorStop(0, 'rgba(60,20,0,.72)'); grund.addColorStop(0.5, 'rgba(110,40,0,.6)'); grund.addColorStop(1, 'rgba(60,20,0,.72)');
+  c.fillStyle = grund; c.fillRect(0, 0, w, w);
+  c.fillStyle = '#ffe28a'; c.fillRect(0, 0, 5, w); c.fillRect(w - 5, 0, 5, w);
   for (const y of [8, 72]){
+    const g = c.createLinearGradient(0, y, 0, y + 60);
+    g.addColorStop(0, '#fff3b0'); g.addColorStop(0.5, '#ffc21f'); g.addColorStop(1, '#ff7a14');
+    c.shadowColor = 'rgba(255,170,30,.9)'; c.shadowBlur = 10;
+    c.fillStyle = g;
     c.beginPath(); c.moveTo(14, y + 44); c.lineTo(64, y); c.lineTo(114, y + 44); c.lineTo(114, y + 60); c.lineTo(64, y + 18); c.lineTo(14, y + 60); c.closePath(); c.fill();
+    c.shadowBlur = 0;
+    c.strokeStyle = 'rgba(255,255,255,.55)'; c.lineWidth = 2; c.stroke();
   }
 }, true);
 
+// Geteilte Ressourcen (Modell-Vorlagen) werden beim Entfernen eines Karts nicht freigegeben.
+const GETEILT = new WeakSet();
+const geteilt = o => { GETEILT.add(o); return o; };
+// Box mit abgerundeten Kanten: weiche Karosserie statt Klötzchen.
+function rundBox(w, h, d, r, seg = 4){
+  const g = new THREE.BoxGeometry(w, h, d, seg, seg, seg);
+  const p = g.attributes.position, n = g.attributes.normal, v = new THREE.Vector3(), c = new THREE.Vector3(), nn = new THREE.Vector3();
+  const ix = w / 2 - r, iy = h / 2 - r, iz = d / 2 - r;
+  for (let i = 0; i < p.count; i++){
+    v.fromBufferAttribute(p, i);
+    c.set(klemm(v.x, -ix, ix), klemm(v.y, -iy, iy), klemm(v.z, -iz, iz));
+    nn.subVectors(v, c);
+    if (nn.lengthSq() < 1e-9) continue;
+    nn.normalize();
+    v.copy(c).addScaledVector(nn, r);
+    p.setXYZ(i, v.x, v.y, v.z); n.setXYZ(i, nn.x, nn.y, nn.z);
+  }
+  return g;
+}
+
+// Grossflaechige helle/dunkle Flecken: bricht die Kachelwiederholung des Bodens auf (wird per Shader ueber die Weltkoordinaten gelegt).
+const fleckTex = (() => {
+  const t = canvasTex(512, 512, (c, w, h) => {
+    c.fillStyle = '#808080'; c.fillRect(0, 0, w, h);
+    const rnd = zufallsGen(7);
+    for (let n = 0; n < 260; n++){
+      const x = rnd() * w, y = rnd() * h, r = 24 + rnd() * 90, hell = rnd() < 0.5 ? 255 : 0, a = 0.05 + rnd() * 0.12;
+      for (const [dx, dy] of [[0, 0], [-w, 0], [w, 0], [0, -h], [0, h]]){
+        const g = c.createRadialGradient(x + dx, y + dy, 0, x + dx, y + dy, r);
+        g.addColorStop(0, `rgba(${hell},${hell},${hell},${a})`); g.addColorStop(1, `rgba(${hell},${hell},${hell},0)`);
+        c.fillStyle = g; c.fillRect(x + dx - r, y + dy - r, r * 2, r * 2);
+      }
+    }
+  }, true);
+  t.encoding = THREE.LinearEncoding;
+  return geteilt(t);
+})();
 /* =========================================================
    Geteilte Geometrien und Materialien
    ========================================================= */
@@ -242,8 +317,10 @@ const GEO = {
   box:new THREE.BoxGeometry(1, 1, 1),
   kugel:new THREE.SphereGeometry(1, 20, 14),
   kugelGrob:new THREE.SphereGeometry(1, 8, 6),
+  kugelMittel:new THREE.SphereGeometry(1, 12, 9),
   zyl:new THREE.CylinderGeometry(1, 1, 1, 16),
   zylGrob:new THREE.CylinderGeometry(1, 1, 1, 8),
+  zyl16:new THREE.CylinderGeometry(1, 1, 1, 16),
   kegel:new THREE.ConeGeometry(1, 1, 14),
   kegelGrob:new THREE.ConeGeometry(1, 1, 8),
   rad:new THREE.CylinderGeometry(0.46, 0.46, 0.42, 18),
@@ -251,22 +328,32 @@ const GEO = {
   schatten:new THREE.PlaneGeometry(3.8, 4.8),
   lenkrad:new THREE.TorusGeometry(0.22, 0.05, 8, 16),
   banane:new THREE.TorusGeometry(0.42, 0.15, 8, 14, Math.PI * 0.95),
-  box16:new THREE.BoxGeometry(1.7, 1.7, 1.7)
+  box16:geteilt(rundBox(1.7, 1.7, 1.7, 0.24)),
+  okta:new THREE.OctahedronGeometry(1, 0),
+  scheibe:(() => { const g = new THREE.PlaneGeometry(1, 1); g.rotateX(-Math.PI / 2); return g; })()
 };
 const std = (farbe, rau = 0.6, metall = 0) => new THREE.MeshStandardMaterial({ color:lin(farbe), roughness:rau, metalness:metall });
 const MAT = {
   kontakt:new THREE.MeshBasicMaterial({ map:partikelTex, color:0x080c12, transparent:true, opacity:0.36, depthWrite:false, polygonOffset:true, polygonOffsetFactor:-5 }),
   licht:new THREE.MeshBasicMaterial({ color:0xffe8bd }),
   ruecklicht:new THREE.MeshBasicMaterial({ color:0xff3427 }),
-  dunkel:std(0x2a2d33, 0.6), metall:std(0xc4cad3, 0.3, 0.8), reifen:std(0x1a1a1e, 0.9), auge:std(0x111111, 0.25),
+  dunkel:std(0x2a2d33, 0.6), metall:Object.assign(std(0xc4cad3, 0.35, 0.7), { envMapIntensity:0.55 }), reifen:std(0x1a1a1e, 0.9), auge:std(0x111111, 0.25),
   weiss:std(0xf6f6f6, 0.6), banane:std(0xffd83a, 0.5), braun:std(0x5a3a1a, 0.8), rot:std(0xe8322a, 0.4),
   laub:new THREE.MeshPhongMaterial({ color:0xffffff, flatShading:true, shininess:0, specular:0x000000 }),
   stamm:new THREE.MeshLambertMaterial({ color:lin(0x6b4424) }),
   weissL:new THREE.MeshLambertMaterial({ color:lin(0xfafcff) }),
   bunt:new THREE.MeshLambertMaterial({ color:0xffffff }),
   itemBox:new THREE.MeshStandardMaterial({ map:boxTex, transparent:true, opacity:0.92, roughness:0.2, metalness:0.1, emissive:new THREE.Color(0x000000), side:THREE.DoubleSide, depthWrite:false }),
-  flamme:new THREE.MeshBasicMaterial({ color:0xffa020, transparent:true, opacity:0.85, blending:THREE.AdditiveBlending, depthWrite:false }),
+  flamme:new THREE.MeshBasicMaterial({ color:0xff7a1a, transparent:true, opacity:0.8, blending:THREE.AdditiveBlending, depthWrite:false }),
+  flammeKern:new THREE.MeshBasicMaterial({ color:0xfff0b0, transparent:true, opacity:0.95, blending:THREE.AdditiveBlending, depthWrite:false }),
+  glutSprite:new THREE.SpriteMaterial({ map:partikelTex, color:0xff9a3a, transparent:true, opacity:0.75, blending:THREE.AdditiveBlending, depthWrite:false }),
   pad:new THREE.MeshBasicMaterial({ map:pfeilTex, transparent:true, depthWrite:false, polygonOffset:true, polygonOffsetFactor:-4 }),
+  itemKern:new THREE.MeshBasicMaterial({ color:0xffffff, transparent:true, opacity:0.95 }),
+  itemHalo:new THREE.SpriteMaterial({ map:partikelTex, color:0xffffff, transparent:true, opacity:0.55, blending:THREE.AdditiveBlending, depthWrite:false }),
+  itemFleck:new THREE.MeshBasicMaterial({ map:partikelTex, color:0xffffff, transparent:true, opacity:0.5, blending:THREE.AdditiveBlending, depthWrite:false, polygonOffset:true, polygonOffsetFactor:-5 }),
+  blitz:new THREE.MeshBasicMaterial({ color:0xf4fbff, transparent:true, blending:THREE.AdditiveBlending, depthWrite:false, fog:false }),
+  blitzGlow:new THREE.MeshBasicMaterial({ color:0x6aa8ff, transparent:true, opacity:0.45, blending:THREE.AdditiveBlending, depthWrite:false, fog:false }),
+  blitzSprite:new THREE.SpriteMaterial({ map:partikelTex, color:0xbcd8ff, transparent:true, blending:THREE.AdditiveBlending, depthWrite:false, fog:false }),
   lava:new THREE.MeshBasicMaterial({ color:lin(0xff6a10) }),
   glut:new THREE.MeshBasicMaterial({ color:lin(0xff3a08) }),
   lampe:new THREE.MeshBasicMaterial({ color:lin(0xffe6a8) }),
@@ -279,17 +366,71 @@ function teil(geo, mat, eltern, x, y, z, sx = 1, sy = 1, sz = 1){
   return m;
 }
 
+
+// Fasst alle direkten Mesh-Kinder einer Gruppe nach Material zu je einem Mesh zusammen (weniger Draw-Calls).
+// Ergebnis: Liste [Material, Geometrie]; die Gruppe selbst wird dabei geleert.
+function verschmelzen(gruppe){
+  gruppe.updateMatrixWorld(true);
+  const proMat = new Map();
+  for (const ch of gruppe.children.slice()){
+    if (!ch.isMesh) continue;
+    ch.updateMatrix();
+    const g = (ch.geometry.index ? ch.geometry.toNonIndexed() : ch.geometry.clone()).applyMatrix4(ch.matrix);
+    if (!proMat.has(ch.material)) proMat.set(ch.material, []);
+    proMat.get(ch.material).push(g);
+    gruppe.remove(ch);
+  }
+  const ergebnis = [];
+  for (const [mat, liste] of proMat){
+    let n = 0; for (const g of liste) n += g.attributes.position.count;
+    const pos = new Float32Array(n * 3), nor = new Float32Array(n * 3), uv = new Float32Array(n * 2);
+    let o = 0;
+    for (const g of liste){
+      pos.set(g.attributes.position.array, o * 3); nor.set(g.attributes.normal.array, o * 3); uv.set(g.attributes.uv.array, o * 2);
+      o += g.attributes.position.count; g.dispose();
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    geo.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+    geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+    geo.computeBoundingSphere();
+    ergebnis.push([mat, geteilt(geo)]);
+  }
+  return ergebnis;
+}
+
 /* =========================================================
    Kart-Modell mit Tierfahrer
    ========================================================= */
+const kopfVorlagen = {};
 function kopfBauen(tier){
+  if (!kopfVorlagen[tier]){
+    const roh = kopfRoh(tier), vorlage = new THREE.Group();
+    for (const [mat, geo] of verschmelzen(roh)){ geteilt(mat); const m = new THREE.Mesh(geo, mat); m.castShadow = true; vorlage.add(m); }
+    kopfVorlagen[tier] = vorlage;
+  }
+  return kopfVorlagen[tier].clone();
+}
+const glanz = new THREE.MeshBasicMaterial({ color:0xffffff });
+function kopfRoh(tier){
   const k = new THREE.Group();
   const M = c => std(c, 0.75);
-  const augen = (y, abstand, z, r = 0.075) => { teil(GEO.kugel, MAT.auge, k, -abstand, y, z, r, r, r); teil(GEO.kugel, MAT.auge, k, abstand, y, z, r, r, r); };
+  // Augen mit kleinem Glanzpunkt: wirken sofort lebendig
+  const augen = (y, abstand, z, r = 0.075) => {
+    for (const sg of [-1, 1]){
+      teil(GEO.kugelMittel, MAT.auge, k, sg * abstand, y, z, r, r, r);
+      teil(GEO.kugelGrob, glanz, k, sg * abstand + r * 0.3, y + r * 0.38, z + r * 0.72, r * 0.32, r * 0.32, r * 0.32).castShadow = false;
+    }
+  };
   switch (tier){
     case 'loewe': {
-      const fell = M(0xf2b845);
-      teil(GEO.kugel, M(0xb4561c), k, 0, 0.02, -0.12, 0.82, 0.82, 0.55);
+      const fell = M(0xf2b845), mane1 = M(0xb4561c), mane2 = M(0xd0782a);
+      teil(GEO.kugel, mane1, k, 0, 0.02, -0.12, 0.82, 0.82, 0.55);
+      // Maehne aus Buescheln rund um das Gesicht
+      for (let n = 0; n < 11; n++){
+        const w = n / 11 * TAU + 0.2, rr = 0.66;
+        teil(GEO.kugelMittel, n % 2 ? mane2 : mane1, k, Math.cos(w) * rr, 0.02 + Math.sin(w) * rr * 0.95, -0.1 + (n % 3) * 0.03, 0.27, 0.27, 0.22);
+      }
       teil(GEO.kugel, fell, k, 0, 0, 0, 0.55, 0.52, 0.52);
       teil(GEO.kugel, fell, k, -0.36, 0.42, -0.05, 0.15, 0.15, 0.1);
       teil(GEO.kugel, fell, k, 0.36, 0.42, -0.05, 0.15, 0.15, 0.1);
@@ -303,6 +444,10 @@ function kopfBauen(tier){
       teil(GEO.kugel, fell, k, 0, 0, 0, 0.52, 0.5, 0.5);
       teil(GEO.kegel, fell, k, -0.28, 0.55, -0.02, 0.17, 0.4, 0.12).rotation.z = 0.3;
       teil(GEO.kegel, fell, k, 0.28, 0.55, -0.02, 0.17, 0.4, 0.12).rotation.z = -0.3;
+      teil(GEO.kegel, M(0x3a1a12), k, -0.28, 0.53, 0.04, 0.09, 0.26, 0.06).rotation.z = 0.3;
+      teil(GEO.kegel, M(0x3a1a12), k, 0.28, 0.53, 0.04, 0.09, 0.26, 0.06).rotation.z = -0.3;
+      teil(GEO.kugel, MAT.weiss, k, -0.34, -0.1, 0.2, 0.2, 0.15, 0.2);
+      teil(GEO.kugel, MAT.weiss, k, 0.34, -0.1, 0.2, 0.2, 0.15, 0.2);
       teil(GEO.kugel, MAT.weiss, k, 0, -0.17, 0.28, 0.42, 0.26, 0.3);
       teil(GEO.kegel, fell, k, 0, -0.08, 0.6, 0.16, 0.36, 0.14).rotation.x = Math.PI / 2;
       teil(GEO.kugel, MAT.auge, k, 0, -0.08, 0.79, 0.06, 0.06, 0.06);
@@ -377,6 +522,9 @@ function kopfBauen(tier){
       teil(GEO.kegel, rosa, k, 0.29, 0.49, 0.05, 0.1, 0.2, 0.05).rotation.z = -0.35;
       teil(GEO.kugel, MAT.weiss, k, 0, -0.15, 0.4, 0.23, 0.14, 0.15);
       teil(GEO.kugel, rosa, k, 0, -0.07, 0.52, 0.06, 0.045, 0.045);
+      for (const sg of [-1, 1]) for (const [dy, rz] of [[0.02, 0.18], [-0.04, 0], [-0.1, -0.18]]){
+        const w = teil(GEO.box, MAT.weiss, k, sg * 0.45, -0.1 + dy, 0.42, 0.34, 0.012, 0.012); w.rotation.z = sg * rz; w.rotation.y = sg * -0.35; w.castShadow = false;
+      }
       augen(0.12, 0.2, 0.44);
       break;
     }
@@ -403,71 +551,145 @@ function kopfBauen(tier){
   return k;
 }
 
+// Vorlage fuer Karosserie und Raeder: wird einmal gebaut, zu wenigen Meshes verschmolzen und fuer alle Karts geteilt.
+// Die Platzhalter LACK und ANZUG werden pro Kart durch dessen Farbmaterial ersetzt.
+const LACK = new THREE.MeshBasicMaterial(), ANZUG = new THREE.MeshBasicMaterial();
+const kartVorlage = {};
+const nummernTex = {};
+function nummernSchild(f, nr){
+  if (!nummernTex[f.id]) nummernTex[f.id] = geteilt(canvasTex(128, 128, (c, w) => {
+    c.fillStyle = '#fff'; c.beginPath(); c.arc(w / 2, w / 2, w / 2 - 4, 0, TAU); c.fill();
+    c.lineWidth = 9; c.strokeStyle = cssFarbe(f.farbe); c.stroke();
+    c.font = '900 76px "Barlow SC", system-ui, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillStyle = '#1a1a1e'; c.fillText(String(nr), w / 2, w / 2 + 6);
+  }));
+  return nummernTex[f.id];
+}
+function reifenGeo(r, breite){
+  const pf = [[0.22, -breite / 2], [r - 0.09, -breite / 2], [r - 0.03, -breite / 2 + 0.05], [r, -breite / 2 + 0.13], [r + 0.012, 0], [r, breite / 2 - 0.13], [r - 0.03, breite / 2 - 0.05], [r - 0.09, breite / 2], [0.22, breite / 2]];
+  return geteilt(new THREE.LatheGeometry(pf.map(([x, y]) => new THREE.Vector2(x, y)), 20));
+}
+function radVorlage(r, breite){
+  const g = new THREE.Group();
+  const felge = r - 0.1;
+  teil(GEO.zyl16, MAT.metall, g, 0, 0, 0, felge, breite * 0.84, felge).castShadow = false;
+  teil(GEO.zyl16, LACK, g, 0, 0, 0, 0.13, breite + 0.05, 0.13).castShadow = false;
+  for (let n = 0; n < 3; n++){
+    const sp = teil(GEO.box, MAT.dunkel, g, 0, 0, 0, 0.07, breite * 0.9, felge * 1.7); sp.rotation.y = n * Math.PI / 3; sp.castShadow = false;
+  }
+  return [reifenGeo(r, breite), verschmelzen(g)];
+}
+function kartTeile(){
+  if (kartVorlage.koerper) return kartVorlage;
+  const k = new THREE.Group();
+  const rb = (w, h, d, r) => geteilt(rundBox(w, h, d, r));
+  const T = (geo, mat, x, y, z, sx = 1, sy = 1, sz = 1) => teil(geo, mat, k, x, y, z, sx, sy, sz);
+  const kein = m => { m.castShadow = false; return m; };
+  // Unterbau, Bug, Seitenkaesten
+  T(rb(1.7, 0.16, 3.2, 0.06), MAT.dunkel, 0, 0.4, 0);
+  T(rb(1.5, 0.46, 2.1, 0.17), LACK, 0, 0.68, -0.15);
+  T(rb(1.1, 0.3, 1.1, 0.12), LACK, 0, 0.6, 1.2);
+  T(GEO.kugelMittel, LACK, 0, 0.57, 1.72, 0.5, 0.2, 0.36);
+  T(rb(2.0, 0.1, 0.42, 0.04), MAT.dunkel, 0, 0.36, 1.92);
+  for (const x of [-1, 1]){
+    T(rb(0.07, 0.3, 0.55, 0.025), LACK, x * 1.0, 0.46, 1.92);
+    T(rb(0.45, 0.36, 1.5, 0.14), LACK, x * 0.95, 0.58, -0.1);
+    kein(T(rb(0.3, 0.14, 0.05, 0.02), MAT.dunkel, x * 0.95, 0.6, 0.67));
+    // runde Kotfluegel ueber den Hinterraedern, Scheinwerfer, Ruecklichter
+    T(GEO.kugelMittel, LACK, x * 0.96, 0.77, -1.02, 0.4, 0.2, 0.64);
+    kein(T(GEO.kugelMittel, MAT.licht, x * 0.42, 0.63, 1.75, 0.13, 0.1, 0.08));
+    kein(T(rb(0.25, 0.1, 0.08, 0.03), MAT.ruecklicht, x * 0.6, 0.7, -1.24));
+    // Heckfluegel-Endplatten, Auspuff
+    T(rb(0.06, 0.5, 0.62, 0.02), LACK, x * 1.0, 1.3, -1.55);
+    T(rb(0.1, 0.5, 0.1, 0.03), MAT.dunkel, x * 0.6, 1.2, -1.5);
+    const rohr = T(GEO.zyl16, MAT.metall, x * 0.3, 0.95, -1.7, 0.1, 0.55, 0.1); rohr.rotation.x = Math.PI / 2;
+    const loch = kein(T(GEO.zyl16, MAT.auge, x * 0.3, 0.95, -1.97, 0.066, 0.03, 0.066)); loch.rotation.x = Math.PI / 2;
+  }
+  T(rb(1.0, 0.8, 0.25, 0.1), MAT.dunkel, 0, 1.12, -0.8).rotation.x = -0.12;
+  T(rb(0.9, 0.46, 0.55, 0.1), MAT.metall, 0, 0.95, -1.3);
+  for (const z of [-1.18, -1.32, -1.46]) kein(T(GEO.box, MAT.dunkel, 0, 1.2, z, 0.8, 0.05, 0.05));
+  T(rb(1.4, 0.14, 0.3, 0.05), MAT.dunkel, 0, 0.45, -1.7);
+  T(rb(2.0, 0.09, 0.5, 0.04), LACK, 0, 1.47, -1.55);
+  kein(T(GEO.box, MAT.weiss, 0, 1.52, -1.55, 1.6, 0.012, 0.1));
+  // Zierstreifen auf der Haube, Lenkrad mit Lenksaeule
+  for (const x of [-0.34, 0.34]) kein(T(GEO.box, MAT.weiss, x, 0.758, 1.2, 0.09, 0.015, 0.95));
+  T(GEO.lenkrad, MAT.dunkel, 0, 1.12, 0.45).rotation.x = -0.6;
+  T(GEO.zyl16, MAT.dunkel, 0, 0.95, 0.4, 0.04, 0.4, 0.04).rotation.x = 0.9;
+  // Fahrer: Oberkoerper, Arme, Handschuhe
+  T(GEO.kugelMittel, ANZUG, 0, 1.25, -0.35, 0.5, 0.55, 0.42);
+  for (const x of [-1, 1]){
+    T(GEO.zyl16, ANZUG, x * 0.33, 1.22, 0.08, 0.1, 0.55, 0.1).rotation.x = 1.2;
+    kein(T(GEO.kugelMittel, MAT.dunkel, x * 0.27, 1.13, 0.37, 0.11, 0.11, 0.11));
+    kein(T(GEO.kugelGrob, ANZUG, x * 0.42, 1.38, -0.28, 0.2, 0.17, 0.2));
+  }
+  // Halstuch-Ring unter dem Kopf
+  const ring = T(new THREE.TorusGeometry(0.3, 0.09, 8, 16), LACK, 0, 1.6, -0.33); ring.rotation.x = Math.PI / 2;
+  const teile = verschmelzen(k);
+  const [reifenV, radV] = radVorlage(0.46, 0.42), [reifenH, radH] = radVorlage(0.52, 0.5);
+  Object.assign(kartVorlage, { koerper:teile, reifenV, radV, reifenH, radH, schildGeo:geteilt(new THREE.CircleGeometry(0.26, 24)) });
+  kartVorlage.schildGeo.rotateX(-Math.PI / 2); kartVorlage.schildGeo.rotateY(Math.PI);
+  return kartVorlage;
+}
+
 function kartModell(f){
+  const V = kartTeile();
   const g = new THREE.Group();
   const koerper = new THREE.Group();
   g.add(koerper);
-  const lack = new THREE.MeshPhysicalMaterial({ color:lin(f.farbe), roughness:0.28, metalness:0.3, clearcoat:0.85, clearcoatRoughness:0.22, envMapIntensity:0.8 });
-  const anzug = new THREE.MeshStandardMaterial({ color:new THREE.Color(f.farbe).lerp(new THREE.Color(0xffffff), 0.5).convertSRGBToLinear(), roughness:0.7 });
-  teil(GEO.box, MAT.dunkel, koerper, 0, 0.42, 0, 1.7, 0.18, 3.1);
-  teil(GEO.box, lack, koerper, 0, 0.68, -0.15, 1.5, 0.42, 2.1);
-  teil(GEO.box, lack, koerper, 0, 0.6, 1.25, 1.2, 0.3, 1.0);
-  teil(GEO.box, MAT.dunkel, koerper, 0, 0.38, 1.85, 2.0, 0.14, 0.4);
-  teil(GEO.box, lack, koerper, -0.95, 0.58, -0.1, 0.45, 0.36, 1.5);
-  teil(GEO.box, lack, koerper, 0.95, 0.58, -0.1, 0.45, 0.36, 1.5);
-  teil(GEO.box, MAT.dunkel, koerper, 0, 1.15, -0.75, 1.0, 0.75, 0.22);
-  teil(GEO.box, MAT.metall, koerper, 0, 0.95, -1.3, 0.9, 0.45, 0.55);
-  teil(GEO.zyl, MAT.metall, koerper, -0.3, 0.95, -1.65, 0.1, 0.5, 0.1).rotation.x = Math.PI / 2;
-  teil(GEO.zyl, MAT.metall, koerper, 0.3, 0.95, -1.65, 0.1, 0.5, 0.1).rotation.x = Math.PI / 2;
-  teil(GEO.box, lack, koerper, 0, 1.45, -1.55, 2.0, 0.1, 0.5);
-  teil(GEO.box, MAT.dunkel, koerper, -0.6, 1.2, -1.5, 0.1, 0.45, 0.12);
-  teil(GEO.box, MAT.dunkel, koerper, 0.6, 1.2, -1.5, 0.1, 0.45, 0.12);
-  teil(GEO.lenkrad, MAT.dunkel, koerper, 0, 1.12, 0.45).rotation.x = -0.6;
-  // Runde Kotfluegel, Zierstreifen und Leuchten geben dem Kart mehr Tiefe.
-  for (const x of [-0.96, 0.96]){
-    teil(GEO.kugel, lack, koerper, x, 0.77, -1.02, 0.4, 0.2, 0.64);
-    teil(GEO.box, MAT.licht, koerper, x * 0.58, 0.69, 1.74, 0.3, 0.11, 0.07).castShadow = false;
-    teil(GEO.box, MAT.ruecklicht, koerper, x * 0.62, 0.7, -1.24, 0.25, 0.1, 0.08).castShadow = false;
-  }
-  for (const x of [-0.16, 0.16]) teil(GEO.box, MAT.weiss, koerper, x, 0.757, 1.35, 0.09, 0.015, 0.73).castShadow = false;
+  // Lack: weniger Metall und Spiegelung, damit die Fahrerfarbe satt statt ausgewaschen aussieht
+  // Die Szene ist hell beleuchtet (Sonne 2.2): helle Fahrerfarben wuerden sonst Richtung Weiss ausbrennen.
+  const abdunkeln = c => c.multiplyScalar(0.85 - 0.33 * Math.min(1, (0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b) * 2.4));
+  const lack = new THREE.MeshPhysicalMaterial({ color:abdunkeln(lin(f.farbe)), roughness:0.36, metalness:0.05, clearcoat:0.8, clearcoatRoughness:0.2, envMapIntensity:0.4 });
+  const anzug = new THREE.MeshStandardMaterial({ color:abdunkeln(new THREE.Color(f.farbe).lerp(new THREE.Color(0xffffff), 0.3).convertSRGBToLinear()), roughness:0.75 });
+  const ersatz = m => m === LACK ? lack : m === ANZUG ? anzug : m;
+  for (const [mat, geo] of V.koerper){ const m = new THREE.Mesh(geo, ersatz(mat)); m.castShadow = true; koerper.add(m); }
+  // Startnummer auf der Haube
+  const nr = FAHRER.indexOf(f) + 1;
+  const schild = new THREE.Mesh(V.schildGeo, new THREE.MeshBasicMaterial({ map:nummernSchild(f, nr), transparent:true, polygonOffset:true, polygonOffsetFactor:-2 }));
+  schild.position.set(0, 0.765, 1.18);
+  koerper.add(schild);
   const kontakt = new THREE.Mesh(GEO.schatten, MAT.kontakt);
   kontakt.rotation.x = -Math.PI / 2; kontakt.position.y = 0.09;
   g.add(kontakt);
-  // Fahrer
-  teil(GEO.kugel, anzug, koerper, 0, 1.25, -0.35, 0.5, 0.55, 0.42);
-  teil(GEO.zyl, anzug, koerper, -0.33, 1.22, 0.08, 0.1, 0.55, 0.1).rotation.x = 1.2;
-  teil(GEO.zyl, anzug, koerper, 0.33, 1.22, 0.08, 0.1, 0.55, 0.1).rotation.x = 1.2;
   const kopf = kopfBauen(f.tier);
   kopf.position.set(0, 1.95, -0.3);
   koerper.add(kopf);
-  // Räder
+  // Halstuch mit wehendem Ende
+  const schal = new THREE.Group();
+  schal.position.set(0, 1.58, -0.55);
+  const zipfel = new THREE.Mesh(GEO.box, lack); zipfel.scale.set(0.2, 0.05, 0.85); zipfel.position.z = -0.4; zipfel.castShadow = true;
+  schal.add(zipfel);
+  koerper.add(schal);
+  // Raeder
   const raeder = [], vorne = [];
-  [[-1.0, 0.46, 1.05, GEO.rad, true], [1.0, 0.46, 1.05, GEO.rad, true], [-1.0, 0.52, -1.05, GEO.radHinten, false], [1.0, 0.52, -1.05, GEO.radHinten, false]]
-    .forEach(([x, y, z, geo, istVorne]) => {
+  [[-1.0, 0.46, 1.05, true], [1.0, 0.46, 1.05, true], [-1.0, 0.52, -1.05, false], [1.0, 0.52, -1.05, false]]
+    .forEach(([x, y, z, istVorne]) => {
       const halter = new THREE.Group();
       halter.position.set(x, y, z);
       g.add(halter);
-      const r = new THREE.Mesh(geo, MAT.reifen);
-      r.rotation.z = Math.PI / 2; r.castShadow = true;
+      const r = new THREE.Group();
+      r.rotation.z = Math.PI / 2;
+      const reifen = new THREE.Mesh(istVorne ? V.reifenV : V.reifenH, MAT.reifen); reifen.castShadow = true;
+      r.add(reifen);
+      for (const [mat, geo] of (istVorne ? V.radV : V.radH)) r.add(new THREE.Mesh(geo, ersatz(mat)));
       halter.add(r);
-      const felge = new THREE.Mesh(GEO.zyl, lack);
-      felge.scale.set(0.24, istVorne ? 0.44 : 0.52, 0.24);
-      r.add(felge);
-      const speiche = new THREE.Mesh(GEO.box, MAT.metall);
-      speiche.scale.set(0.42, istVorne ? 0.45 : 0.53, 0.08);
-      r.add(speiche);
       raeder.push(r);
       if (istVorne) vorne.push(halter);
     });
-  // Turbo-Flammen
+  // Turbo-Flammen: heller Kern in orangem Mantel, plus Glut-Leuchten
   const flammen = [-0.3, 0.3].map(x => {
-    const fl = new THREE.Mesh(GEO.kegel, MAT.flamme);
-    fl.position.set(x, 0.95, -2.1); fl.rotation.x = -Math.PI / 2; fl.scale.set(0.16, 0.7, 0.16); fl.visible = false;
+    const fl = new THREE.Group();
+    fl.position.set(x, 0.95, -2.0); fl.visible = false;
+    const aussen = new THREE.Mesh(GEO.kegel, MAT.flamme); aussen.rotation.x = -Math.PI / 2; aussen.position.z = -0.35; aussen.scale.set(0.2, 0.9, 0.2);
+    const kern = new THREE.Mesh(GEO.kegel, MAT.flammeKern); kern.rotation.x = -Math.PI / 2; kern.position.z = -0.22; kern.scale.set(0.11, 0.55, 0.11);
+    const glut = new THREE.Sprite(MAT.glutSprite); glut.scale.set(1.1, 1.1, 1);
+    fl.add(aussen, kern, glut);
+    fl.userData = { aussen, kern, glut };
     koerper.add(fl);
     return fl;
   });
   g.scale.setScalar(0.95);
-  return { gruppe:g, koerper, raeder, vorne, kopf, flammen, lack, anzug, kontakt };
+  return { gruppe:g, koerper, raeder, vorne, kopf, flammen, lack, anzug, kontakt, schal };
 }
 
 /* =========================================================
@@ -965,11 +1187,11 @@ class Instanzen {
 
 function entsorgen(obj){
   obj.traverse(o => {
-    if (o.geometry && !Object.values(GEO).includes(o.geometry)) o.geometry.dispose();
+    if (o.geometry && !GETEILT.has(o.geometry) && !Object.values(GEO).includes(o.geometry)) o.geometry.dispose();
     if (o.material){
       for (const m of [].concat(o.material)){
-        if (Object.values(MAT).includes(m)) continue;
-        if (m.map && m.map !== boxTex && m.map !== pfeilTex) m.map.dispose();
+        if (GETEILT.has(m) || Object.values(MAT).includes(m)) continue;
+        if (m.map && !GETEILT.has(m.map) && m.map !== boxTex && m.map !== pfeilTex) m.map.dispose();
         m.dispose();
       }
     }
@@ -1029,6 +1251,7 @@ function streckeLaden(nr){
   // Himmel, Licht, Nebel
   umgebungBauen(th);
   himmelUni.oben.value = lin(th.himmel[0]); himmelUni.horizont.value = lin(th.himmel[1]);
+  himmelUni.wolkenFarbe.value = lin(th.himmelWolke[0]); himmelUni.wolkenMenge.value = th.himmelWolke[1];
   scene.fog = new THREE.Fog(lin(th.nebel), th.nebelWeit[0], th.nebelWeit[1]);
   hemi.color = lin(th.hemi[0]); hemi.groundColor = lin(th.hemi[1]); hemi.intensity = th.hemiKraft;
   sonne.color = lin(th.sonne); sonne.intensity = th.sonnenKraft;
@@ -1043,7 +1266,15 @@ function streckeLaden(nr){
     c.globalAlpha = 1; koernung(c, w, h, 2500, 0.08);
   }, true);
   grasTex.repeat.set(160, 160);
-  const boden = new THREE.Mesh(new THREE.PlaneGeometry(4000, 4000), new THREE.MeshLambertMaterial({ map:grasTex }));
+  const bodenMat = new THREE.MeshLambertMaterial({ map:grasTex });
+  bodenMat.onBeforeCompile = sh => {
+    sh.uniforms.fleck = { value:fleckTex };
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec2 vWxz;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvWxz = (modelMatrix * vec4(transformed, 1.0)).xz;');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec2 vWxz;\nuniform sampler2D fleck;')
+      .replace('#include <map_fragment>', '#include <map_fragment>\n float fl1 = texture2D(fleck, vWxz / 610.0).r; float fl2 = texture2D(fleck, vWxz / 143.0 + 0.37).r;\n diffuseColor.rgb *= (1.0 + (fl1 - 0.5) * 2.4) * (1.0 + (fl2 - 0.5) * 1.1);');
+  };
+  const boden = new THREE.Mesh(new THREE.PlaneGeometry(4000, 4000), bodenMat);
   boden.rotation.x = -Math.PI / 2; boden.receiveShadow = true;
   gruppe.add(boden);
   if (th.meer) meerBauen(S, gruppe);
@@ -1064,9 +1295,14 @@ function streckeLaden(nr){
     gruppe.add(band(S, S.hw + S.auslauf + 0.8, S.hw + ASPHALT_AUSLAUF, 0.025, 6, kiesMat, von, laenge));
     gruppe.add(band(S, -S.hw - ASPHALT_AUSLAUF, -S.hw - S.auslauf - 0.8, 0.025, 6, kiesMat, von, laenge));
   }
-  const curbTex = canvasTex(16, 64, (c, w, h) => {
+  const curbTex = canvasTex(32, 128, (c, w, h) => {
     c.fillStyle = '#e1251b'; c.fillRect(0, 0, w, h / 2); c.fillStyle = '#f7f7f2'; c.fillRect(0, h / 2, w, h / 2);
-    c.fillStyle = 'rgba(0,0,0,.18)'; c.fillRect(0, 0, 2, h); c.fillRect(w - 2, 0, 2, h);
+    // Rundung (hell zur Mitte), Abrieb und dunkle Kanten geben dem Curb Volumen
+    const g = c.createLinearGradient(0, 0, w, 0);
+    g.addColorStop(0, 'rgba(0,0,0,.28)'); g.addColorStop(0.3, 'rgba(255,255,255,.2)'); g.addColorStop(0.7, 'rgba(255,255,255,.08)'); g.addColorStop(1, 'rgba(0,0,0,.3)');
+    c.fillStyle = g; c.fillRect(0, 0, w, h);
+    c.fillStyle = 'rgba(0,0,0,.28)'; c.fillRect(0, 0, w, 3); c.fillRect(0, h / 2 - 1, w, 3);
+    koernung(c, w, h, 500, 0.16);
   }, true);
   const curbMat = new THREE.MeshLambertMaterial({ map:curbTex, side:THREE.DoubleSide, polygonOffset:true, polygonOffsetFactor:-3, polygonOffsetUnits:-3 });
   for (const [von, laenge] of abschnitte(S, S.ecke)){
@@ -1130,23 +1366,58 @@ function streckeLaden(nr){
   // Boxengebäude gegenüber der Tribüne
   boxenGebaeude(S, gruppe);
 
-  // Tribüne rechts neben der Startgeraden
+  // Tribüne rechts neben der Startgeraden: Sitzreihen in Streifen, Dach mit Blende, Wimpel und jubelnde Zuschauer
   const trib = new THREE.Group();
   const ti = idxBei(S, -14);
   const [tx, tz] = punktBei(S, ti, -(S.hw + S.auslauf + 2.5));
   trib.position.set(tx, 0, tz); trib.rotation.y = yawBei(S, ti);
   const leute = new Instanzen();
+  const stufeMat = std(0x8e99a6, 0.8);
+  const sitzTex = canvasTex(256, 32, (c, w, h) => {
+    c.fillStyle = '#' + wandA.toString(16).padStart(6, '0'); c.fillRect(0, 0, w, h);
+    for (let x = 0; x < w; x += 16){ c.fillStyle = (x / 16) % 2 ? 'rgba(255,255,255,.55)' : 'rgba(0,0,0,.18)'; c.fillRect(x, 4, 12, h - 8); }
+  });
+  const sitzMat = new THREE.MeshLambertMaterial({ map:sitzTex });
+  const haut = [0xf1c9a5, 0xd9a577, 0xa9724a, 0x6b4226, 0xf4d6b8];
   for (let r = 0; r < 4; r++){
-    teil(GEO.box, std(0x8e99a6, 0.8), trib, -r * 1.7 - 0.85, (r + 1) * 0.55, 0, 1.7, (r + 1) * 1.1, 26).receiveShadow = true;
+    teil(GEO.box, stufeMat, trib, -r * 1.7 - 0.85, (r + 1) * 0.55, 0, 1.7, (r + 1) * 1.1, 26).receiveShadow = true;
+    const sitz = teil(GEO.box, sitzMat, trib, -r * 1.7 + 0.01, (r + 1) * 1.1 - 0.35, 0, 0.04, 0.7, 26); sitz.castShadow = false;
+    sitz.material.map.wrapS = THREE.RepeatWrapping; sitz.material.map.repeat.set(3, 1);
     for (let z = -12; z <= 12; z += 1.15){
       if (rnd() < 0.15) continue;
-      leute.add('kopf', GEO.kugelGrob, MAT.bunt, [-r * 1.7 - 0.85 + zufall(-0.2, 0.2), (r + 1) * 1.1 + 0.9, z], [0.28, 0.3, 0.28], [0, 0, 0], lin(0xf1c9a5).lerp(lin(0x6b4226), rnd()));
-      leute.add('koerper', GEO.box, MAT.bunt, [-r * 1.7 - 0.85, (r + 1) * 1.1 + 0.35, z], [0.55, 0.7, 0.5], [0, 0, 0], new THREE.Color().setHSL(rnd(), 0.7, 0.45).convertSRGBToLinear());
+      const hx = -r * 1.7 - 0.85 + zufall(-0.2, 0.2), hy = (r + 1) * 1.1, hz = z + zufall(-0.1, 0.1);
+      const skin = lin(haut[Math.floor(rnd() * haut.length)]), shirt = new THREE.Color().setHSL(rnd(), 0.7, 0.45).convertSRGBToLinear();
+      leute.add('kopf', GEO.kugelGrob, MAT.bunt, [hx, hy + 0.9, hz], [0.28, 0.3, 0.28], [0, 0, 0], skin);
+      leute.add('koerper', GEO.box, MAT.bunt, [hx + 0.02, hy + 0.35, hz], [0.55, 0.7, 0.5], [0, 0, 0], shirt);
+      const jubel = rnd();
+      if (jubel < 0.45){
+        // Arme nach oben (ein oder beide), im Takt der Menge verstreut
+        for (const sg of jubel < 0.2 ? [-1, 1] : [rnd() < 0.5 ? -1 : 1]) leute.add('arm', GEO.box, MAT.bunt, [hx + 0.02, hy + 0.95, hz + sg * 0.36], [0.12, 0.55, 0.12], [sg * 0.35, 0, 0], skin);
+      }
+      const hut = rnd();
+      if (hut < 0.22) leute.add('muetze', GEO.kegelGrob, MAT.bunt, [hx, hy + 1.28, hz], [0.3, 0.34, 0.3], [0, 0, 0], shirt.clone().multiplyScalar(0.8));
+      else if (hut < 0.34) leute.add('haar', GEO.kugelGrob, MAT.bunt, [hx - 0.04, hy + 1.04, hz], [0.3, 0.2, 0.3], [0, 0, 0], lin([0x2a1a10, 0xd8a838, 0x8a4a22][Math.floor(rnd() * 3)]));
     }
   }
-  teil(GEO.box, std(0xe8322a, 0.5), trib, -3.4, 7.6, 0, 7.6, 0.25, 27);
-  teil(GEO.zyl, torMat, trib, -7.0, 3.8, -13, 0.15, 7.6, 0.15);
-  teil(GEO.zyl, torMat, trib, -7.0, 3.8, 13, 0.15, 7.6, 0.15);
+  const dachMat = std(0xe8322a, 0.5);
+  teil(GEO.box, dachMat, trib, -3.4, 7.6, 0, 7.6, 0.25, 27);
+  teil(GEO.box, std(0xf7f7f2, 0.6), trib, -3.4, 7.42, 0, 7.4, 0.12, 26.6).castShadow = false;
+  for (const z of [-13, -4.4, 4.4, 13]) teil(GEO.zyl, torMat, trib, -7.0, 3.8, z, 0.15, 7.6, 0.15);
+  // Blende mit Schriftzug an der Dachkante
+  const blendeTex = canvasTex(1024, 64, (c, w, h) => {
+    c.fillStyle = '#' + wandA.toString(16).padStart(6, '0'); c.fillRect(0, 0, w, h);
+    c.fillStyle = '#f7f7f2'; for (let x = 0; x < w; x += 64){ c.fillRect(x, 0, 32, 8); c.fillRect(x + 32, h - 8, 32, 8); }
+    c.font = '900 40px "Barlow SC", system-ui, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillStyle = '#fff'; c.fillText('LÖWEN-KART  ·  HAUPTTRIBÜNE  ·  LÖWEN-KART', w / 2, h / 2 + 2);
+  });
+  const blende = teil(GEO.box, new THREE.MeshLambertMaterial({ map:blendeTex }), trib, 0.45, 7.2, 0, 0.1, 0.9, 27); blende.castShadow = false;
+  // Wimpel an Masten auf dem Dach
+  const fahne = new Instanzen();
+  for (let z = -12; z <= 12; z += 6){
+    fahne.add('mast', GEO.zylGrob, MAT.bunt, [-0.4, 8.7, z], [0.06, 1.8, 0.06], [0, 0, 0], lin(0xdadde2));
+    fahne.add('wimpel', GEO.kegelGrob, MAT.bunt, [-0.4, 9.2, z + 0.55], [0.38, 1.0, 0.38], [Math.PI / 2, 0, 0], lin([wandA, 0xffd23f, 0xf5f5f5][(z + 12) / 6 % 3]));
+  }
+  fahne.bauen(trib);
   leute.bauen(trib);
   gruppe.add(trib);
 
@@ -1185,10 +1456,16 @@ function streckeLaden(nr){
     const i = Math.round(S.N * anteil);
     for (const q of [-0.6, -0.2, 0.2, 0.6]){
       const [x, z] = punktBei(S, i, q * S.hw);
-      const m = new THREE.Mesh(GEO.box16, MAT.itemBox);
-      m.position.set(x, 1.3, z); m.castShadow = true;
+      // Glaswuerfel mit drehendem Kristallkern, Leuchthof und Lichtfleck auf dem Boden
+      const m = new THREE.Group();
+      m.position.set(x, 1.3, z);
+      const wuerfel = new THREE.Mesh(GEO.box16, MAT.itemBox); wuerfel.castShadow = true;
+      const kern = new THREE.Mesh(GEO.okta, MAT.itemKern); kern.scale.set(0.42, 0.62, 0.42);
+      const halo = new THREE.Sprite(MAT.itemHalo); halo.scale.set(3.6, 3.6, 1);
+      const fleck = new THREE.Mesh(GEO.scheibe, MAT.itemFleck); fleck.scale.set(3.4, 1, 3.4);
+      m.add(wuerfel, kern, halo, fleck);
       gruppe.add(m);
-      S.boxen.push({ x, z, mesh:m, aus:0, wachs:1, phase:rnd() * TAU });
+      S.boxen.push({ x, z, mesh:m, wuerfel, kern, fleck, aus:0, wachs:1, phase:rnd() * TAU });
     }
   }
   // Turbo-Felder
@@ -1206,14 +1483,15 @@ function streckeLaden(nr){
   dekoBauen(S, th, gruppe, rnd, freiDeko);
   // Streckenrand mit Grasbuescheln, Steinen oder Eiskristallen, gebuendelt gezeichnet.
   const details = new Instanzen();
-  for (let n = 0; n < 260; n++){
+  for (let n = 0; n < 520; n++){
     const i = Math.floor(rnd() * S.N), sg = rnd() < 0.5 ? -1 : 1;
     const [x, z] = punktBei(S, i, sg * (S.hw + S.auslauf + 2.5 + rnd() * 15));
     if (!freiDeko(x, z, S.hw + S.auslauf + 1.7) || imMeer(S, x, z)) continue;
     const h = 0.2 + rnd() * 0.65;
     if (th.deko === 'baeume' || th.deko === 'laternen'){
-      details.add('gras', GEO.kegelGrob, MAT.laub, [x,h/2,z], [0.22,h,0.22], [0,rnd()*TAU,0.1], lin(0x62963e));
-      if (n % 4 === 0) details.add('bluete', GEO.kugelGrob, MAT.bunt, [x,h,z], [0.15,0.1,0.15], [0,0,0], lin(n % 8 ? 0xffdb62 : 0xf8d3ef));
+      const gc = lin(n % 3 ? 0x62963e : 0x7bb04c);
+      for (const [dx, dz, f] of [[0, 0, 1], [0.18, 0.1, 0.7], [-0.15, 0.14, 0.8]]) details.add('gras', GEO.kegelGrob, MAT.laub, [x + dx, h * f / 2, z + dz], [0.2, h * f, 0.2], [0, rnd() * TAU, 0.12 * (dx ? Math.sign(dx) : 1)], gc);
+      if (n % 3 === 0) details.add('bluete', GEO.kugelGrob, MAT.bunt, [x, h + 0.05, z], [0.16, 0.11, 0.16], [0, 0, 0], lin([0xffdb62, 0xf8d3ef, 0xffffff, 0xff7a8a, 0xb89cff][n % 5]));
     } else {
       const steinFarbe = th.schnee ? 0xafdcea : th.deko === 'vulkan' ? 0x1e1a1a : th.deko === 'palmen' ? 0xf4e6cf : 0xb98354;
       details.add('stein', th.schnee ? GEO.kegelGrob : GEO.kugelGrob, MAT.bunt, [x,h/2,z], [h,h,h*0.7], [0,rnd()*TAU,0.18], lin(steinFarbe));
@@ -1263,7 +1541,17 @@ function meerBauen(S, gruppe){
     for (let y = 8; y < h; y += 24){ c.beginPath(); for (let x = 0; x <= w; x += 8) c.lineTo(x, y + Math.sin(x / w * TAU * 2 + y) * 5); c.stroke(); }
   }, true);
   tex.repeat.set(60, 30);
-  const wasser = new THREE.Mesh(new THREE.PlaneGeometry(4000, 2000), new THREE.MeshStandardMaterial({ map:tex, roughness:0.18, metalness:0.15, envMapIntensity:0.9 }));
+  const wasserMat = new THREE.MeshStandardMaterial({ map:tex, roughness:0.18, metalness:0.15, envMapIntensity:0.9 });
+  // Farbverlauf: helles Tuerkis im flachen Wasser an der Kueste, tiefes Blau weiter draussen
+  const kuesteZ = S.minZ - 40;
+  wasserMat.onBeforeCompile = sh => {
+    sh.uniforms.kuesteZ = { value:kuesteZ };
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying float vWz;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvWz = (modelMatrix * vec4(transformed, 1.0)).z;');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vWz;\nuniform float kuesteZ;')
+      .replace('#include <map_fragment>', '#include <map_fragment>\n float tiefe = smoothstep(0.0, 190.0, kuesteZ - vWz);\n diffuseColor.rgb = mix(diffuseColor.rgb * vec3(0.55, 1.55, 1.25) + vec3(0.02, 0.1, 0.08), diffuseColor.rgb * vec3(0.5, 0.72, 1.0), tiefe);');
+  };
+  const wasser = new THREE.Mesh(new THREE.PlaneGeometry(4000, 2000), wasserMat);
   wasser.rotation.x = -Math.PI / 2;
   wasser.position.set((S.minX + S.maxX) / 2, 0.35, S.minZ - 40 - 1000);
   gruppe.add(wasser);
@@ -1386,13 +1674,31 @@ function dekoBauen(S, th, gruppe, rnd, frei){
         inst.add('stamm', GEO.zylGrob, MAT.bunt, [x - 0.4 * s, 2.6 * s, z], [0.1 * s, 1.3 * s, 0.1 * s], [0, 0, 0.9], lin(0x231a16));
       }
     } else if (th.deko === 'baeume' || th.deko === 'laternen'){
-      if (rnd() < 0.3){
-        inst.add('busch', GEO.kugelGrob, MAT.laub, [x, 0.5 * s, z], [1.5 * s, 1.1 * s, 1.5 * s], [0, dreh, 0], farbe(0.28 + rnd() * 0.06, 0.55, 0.3 + rnd() * 0.1));
+      const art = rnd();
+      if (art < 0.26){
+        // Busch mit hellerer Oberseite, manchmal mit Beeren/Bluetentupfern
+        const c = farbe(0.28 + rnd() * 0.06, 0.55, 0.3 + rnd() * 0.1);
+        inst.add('busch', GEO.kugelGrob, MAT.laub, [x, 0.5 * s, z], [1.5 * s, 1.1 * s, 1.5 * s], [0, dreh, 0], c);
+        inst.add('busch', GEO.kugelGrob, MAT.laub, [x - 0.3 * s, 0.95 * s, z + 0.2 * s], [0.9 * s, 0.7 * s, 0.9 * s], [0, dreh, 0], c.clone().multiplyScalar(1.2));
+        if (rnd() < 0.4) for (let q = 0; q < 4; q++) inst.add('beere', GEO.kugelGrob, MAT.bunt, [x + zufall(-0.9, 0.9) * s, 0.7 * s + rnd() * 0.5 * s, z + 1.1 * s * (rnd() < 0.5 ? 1 : -1) * rnd()], [0.12, 0.12, 0.12], [0, 0, 0], lin(rnd() < 0.5 ? 0xe8322a : 0xffd23f));
       } else {
-        inst.add('stamm', GEO.zylGrob, MAT.stamm, [x, 1.5 * s, z], [0.3 * s, 3 * s, 0.3 * s]);
-        const c = farbe(0.25 + rnd() * 0.1, 0.55, 0.28 + rnd() * 0.12);
-        inst.add('krone', GEO.kugelGrob, MAT.laub, [x, 3.9 * s, z], [2.0 * s, 2.2 * s, 2.0 * s], [0, dreh, 0], c);
-        if (rnd() < 0.5) inst.add('krone', GEO.kugelGrob, MAT.laub, [x + 0.8 * s, 3.2 * s, z + 0.5 * s], [1.3 * s, 1.3 * s, 1.3 * s], [0, dreh, 0], c.clone().multiplyScalar(0.85));
+        // Baeume in drei Wuchsformen und Herbst-/Bluetenfarben, Stamm mit Wurzelansatz
+        const form = rnd(), herbst = rnd();
+        const hoehe = form < 0.25 ? 1.45 : 1;
+        inst.add('stamm', GEO.zylGrob, MAT.stamm, [x, 1.5 * s * hoehe, z], [0.3 * s, 3 * s * hoehe, 0.3 * s]);
+        inst.add('wurzel', GEO.kegelGrob, MAT.stamm, [x, 0.35 * s, z], [0.62 * s, 0.7 * s, 0.62 * s]);
+        let c = farbe(0.25 + rnd() * 0.1, 0.55, 0.28 + rnd() * 0.12);
+        if (herbst < 0.1) c = farbe(0.07 + rnd() * 0.05, 0.75, 0.42);
+        else if (herbst < 0.2) c = farbe(0.93 + rnd() * 0.05, 0.55, 0.72);
+        if (form < 0.25){
+          // schlanke Pappel
+          inst.add('krone', GEO.kugelGrob, MAT.laub, [x, 4.6 * s, z], [1.3 * s, 3.2 * s, 1.3 * s], [0, dreh, 0], c);
+          inst.add('krone', GEO.kugelGrob, MAT.laub, [x, 5.6 * s, z], [0.8 * s, 1.6 * s, 0.8 * s], [0, dreh, 0], c.clone().multiplyScalar(1.2));
+        } else {
+          inst.add('krone', GEO.kugelGrob, MAT.laub, [x, 3.9 * s, z], [2.0 * s, 2.2 * s, 2.0 * s], [0, dreh, 0], c);
+          inst.add('krone', GEO.kugelGrob, MAT.laub, [x + 0.8 * s, 3.2 * s, z + 0.5 * s], [1.3 * s, 1.3 * s, 1.3 * s], [0, dreh, 0], c.clone().multiplyScalar(0.85));
+          inst.add('krone', GEO.kugelGrob, MAT.laub, [x - 0.4 * s, 4.9 * s, z - 0.2 * s], [1.2 * s, 1.0 * s, 1.2 * s], [0, dreh, 0], c.clone().multiplyScalar(1.22));
+        }
         if (rnd() < 0.15) inst.add('blume', GEO.kugelGrob, MAT.laub, [x + 2, 0.25, z + 1], [0.25, 0.25, 0.25], [0, 0, 0], farbe(rnd(), 0.8, 0.6));
       }
     } else if (th.deko === 'kakteen'){
@@ -1689,7 +1995,8 @@ function kartBewegen(k, dt){
     if (hinein > 0.1 && Math.abs(k.v) > 4){
       if (k.wandZeit <= 0){
         if (k.spieler){ Ton.effekt('wand'); vibrieren(25); zustand.wackeln = Math.max(zustand.wackeln, 0.25 * hinein); }
-        for (let n = 0; n < 8; n++) funken.neu(k.x + lx * sg, 0.7, k.z + lz * sg, zufall(-3, 3), zufall(1, 4), zufall(-3, 3), 0.4, 1, 0.85, 0.4, 0.45, 12);
+        for (let n = 0; n < 14; n++) funken.neu(k.x + lx * sg, 0.7, k.z + lz * sg, zufall(-3, 3) - lx * sg * 2, zufall(1, 5), zufall(-3, 3) - lz * sg * 2, zufall(0.3, 0.55), 1, zufall(0.7, 0.95), 0.4, zufall(0.3, 0.55), 12);
+        for (let n = 0; n < 3; n++) staub.neu(k.x + lx * sg, 0.5, k.z + lz * sg, zufall(-1, 1), zufall(0.4, 1.2), zufall(-1, 1), zufall(0.5, 0.9), 0.7, 0.68, 0.64, 0.7, -0.3, 2, 0.45);
       }
       k.v *= 1 - 0.45 * hinein;
       k.kx -= lx * sg * 5 * hinein; k.kz -= lz * sg * 5 * hinein;
@@ -1757,13 +2064,33 @@ const neueId = () => `${online.ich || 'x'}-${++ereignisNr}`;
 const rund = (v, f = 100) => Math.round(v * f) / f;
 function ereignis(m){ if (online.aktiv && online.imRennen) Netz.senden({ t:'e', ...m }); }
 
+let bananeVorlage = null;
+function bananeTeile(){
+  if (bananeVorlage) return bananeVorlage;
+  const g = new THREE.Group(), schale = geteilt(std(0xe6b21a, 0.55));
+  // Gebogene Frucht aus ueberlappenden Kugeln, dazu aufgeklappte Schalenstuecke am Boden
+  for (let n = 0; n <= 10; n++){
+    const t = n / 5 - 1, a = t * 1.05;
+    teil(GEO.kugelMittel, MAT.banane, g, Math.sin(a) * 0.62, 0.12 + 0.62 * (1 - Math.cos(a)) + 0.12, 0, 0.17 * (1 - 0.35 * t * t) + 0.03, 0.15 * (1 - 0.3 * t * t) + 0.03, 0.15 * (1 - 0.3 * t * t) + 0.03);
+  }
+  teil(GEO.kugelGrob, MAT.braun, g, -0.64, 0.5, 0, 0.07, 0.07, 0.07);
+  teil(GEO.zylGrob, MAT.braun, g, 0.64, 0.58, 0, 0.05, 0.2, 0.05).rotation.z = -0.55;
+  for (let n = 0; n < 3; n++){
+    const w = n / 3 * TAU + 0.4;
+    const f = teil(GEO.kugelMittel, schale, g, Math.cos(w) * 0.42, -0.2, Math.sin(w) * 0.42, 0.34, 0.035, 0.12);
+    f.rotation.y = -w; f.rotation.z = 0.12;
+  }
+  const rb = verschmelzen(g);
+  rb.forEach(([m]) => geteilt(m));
+  bananeVorlage = rb;
+  return rb;
+}
 function bananeLegen(x, z, idx, id = null){
   const g = new THREE.Group();
-  const frucht = new THREE.Mesh(GEO.banane, MAT.banane);
-  frucht.rotation.set(0, 0, Math.PI * 0.52); frucht.castShadow = true;
-  g.add(frucht);
-  teil(GEO.kugelGrob, MAT.braun, g, -0.05, 0.42, 0, 0.1, 0.1, 0.1);
-  g.position.set(x, 0.55, z); g.rotation.y = Math.random() * TAU;
+  for (const [mat, geo] of bananeTeile()){ const m = new THREE.Mesh(geo, mat); m.castShadow = true; g.add(m); }
+  const fleck = new THREE.Mesh(GEO.scheibe, MAT.kontakt); fleck.scale.set(1.6, 1, 1.6); fleck.position.y = -0.16;
+  g.add(fleck);
+  g.position.set(x, 0.25, z); g.rotation.y = Math.random() * TAU;
   scene.add(g);
   const b = { id:id || neueId(), x, z, idx:naechster(strecke, x, z, idx), mesh:g };
   bananen.push(b);
@@ -1789,10 +2116,63 @@ function blitzAusloesen(k){
   blitzTreffen(k);
   ereignis({ a:'l', von:k.slot });
 }
+// Sichtbarer Blitz aus dem Himmel auf jedes getroffene Kart (zackiger Strahl mit Leuchthof, flackert kurz)
+const blitzStrahlen = [];
+function blitzStrahl(k){
+  if (blitzStrahlen.length > 9) return;
+  const g = new THREE.Group(), kern = new THREE.Group(), hof = new THREE.Group();
+  const hoehe = 60, n = 9, pts = [];
+  let px = 0, pz = 0;
+  for (let i = 0; i <= n; i++){
+    const f = i / n;
+    if (i > 0 && i < n){ px += zufall(-3.2, 3.2) * (1 - f * 0.5); pz += zufall(-3.2, 3.2) * (1 - f * 0.5); }
+    else if (i === n){ px *= 0.0; pz *= 0.0; }
+    pts.push(new THREE.Vector3(px, hoehe * (1 - f), pz));
+  }
+  const up = new THREE.Vector3(0, 1, 0);
+  for (let i = 0; i < n; i++){
+    const a = pts[i], b = pts[i + 1], d = new THREE.Vector3().subVectors(b, a), len = d.length();
+    for (const [teilG, dicke] of [[kern, 0.32], [hof, 1.0]]){
+      const m = new THREE.Mesh(GEO.box, MAT.blitz);
+      m.position.copy(a).add(b).multiplyScalar(0.5);
+      m.quaternion.setFromUnitVectors(up, d.clone().normalize());
+      m.scale.set(dicke, len, dicke);
+      teilG.add(m);
+    }
+  }
+  const mk = verschmelzen(kern), mh = verschmelzen(hof);
+  for (const [mat, geo] of mk){ const m = new THREE.Mesh(geo, MAT.blitz); m.frustumCulled = false; g.add(m); }
+  for (const [mat, geo] of mh){ const m = new THREE.Mesh(geo, MAT.blitzGlow); m.frustumCulled = false; g.add(m); }
+  const blitz = new THREE.Sprite(MAT.blitzSprite); blitz.scale.set(9, 9, 1); blitz.position.y = 2;
+  g.add(blitz);
+  g.position.set(k.x, 0, k.z);
+  scene.add(g);
+  blitzStrahlen.push({ g, k, t:0 });
+  for (let i = 0; i < 18; i++){
+    const w = Math.random() * TAU, v = zufall(3, 9);
+    funken.neu(k.x, 0.6, k.z, Math.cos(w) * v, zufall(2, 8), Math.sin(w) * v, zufall(0.3, 0.6), 0.75, 0.88, 1, zufall(0.3, 0.6), 14);
+  }
+}
+function blitzUpdate(dt){
+  for (let i = blitzStrahlen.length - 1; i >= 0; i--){
+    const b = blitzStrahlen[i];
+    b.t += dt;
+    if (b.t > 0.55){
+      scene.remove(b.g);
+      b.g.traverse(o => { if (o.geometry && !o.isSprite) o.geometry.dispose(); });
+      blitzStrahlen.splice(i, 1);
+      continue;
+    }
+    b.g.position.set(b.k.x, 0, b.k.z);
+    b.g.visible = (Math.floor(b.t * 36) % 3) !== 2;
+  }
+  MAT.blitz.opacity = 1; MAT.blitzSprite.opacity = 0.9;
+}
 function blitzTreffen(werfer){
   for (const k of karts){
     if (k === werfer || k.fertig || k.fortschritt <= werfer.fortschritt || k.stern > 0) continue;
     k.klein = 4;
+    blitzStrahl(k);
     if (!k.fern) treffer(k, 'blitz');
   }
   $('blitzFlash').classList.remove('an'); void $('blitzFlash').offsetWidth; $('blitzFlash').classList.add('an');
@@ -1821,11 +2201,37 @@ function windschattenPruefen(k, dt){
     if (k.spieler){ meldung('Windschatten!', 0.9, true); Ton.effekt('windschatten'); }
   }
 }
+let raketeVorlage = null;
+function raketeTeile(){
+  if (raketeVorlage) return raketeVorlage;
+  const g = new THREE.Group(), rot = geteilt(std(0xe8322a, 0.35)), gelb = geteilt(std(0xffc928, 0.4));
+  const quer = (geo, mat, z, sx, sy, sz) => { const m = teil(geo, mat, g, 0, 0, z, sx, sy, sz); m.rotation.x = Math.PI / 2; return m; };
+  quer(GEO.zyl16, MAT.weiss, 0, 0.27, 1.25, 0.27);
+  quer(GEO.kegel, rot, 0.95, 0.27, 0.6, 0.27);
+  quer(GEO.zyl16, rot, 0.45, 0.285, 0.14, 0.285);
+  quer(GEO.zyl16, gelb, 0.18, 0.285, 0.07, 0.285);
+  quer(GEO.zyl16, MAT.dunkel, -0.66, 0.2, 0.14, 0.2);
+  teil(GEO.kugelMittel, MAT.auge, g, 0, 0.14, 0.38, 0.08, 0.08, 0.08);
+  for (let n = 0; n < 4; n++){
+    const f = teil(geteilt(rundBox(0.05, 0.42, 0.5, 0.02)), rot, g, 0, 0, -0.45, 1, 1, 1);
+    f.rotation.z = n * Math.PI / 2;
+    f.position.set(Math.sin(n * Math.PI / 2) * -0.3, Math.cos(n * Math.PI / 2) * 0.3, -0.45);
+  }
+  raketeVorlage = verschmelzen(g);
+  raketeVorlage.forEach(([m]) => geteilt(m));
+  return raketeVorlage;
+}
 function raketeBauen(r){
   const g = new THREE.Group();
-  teil(GEO.zyl, MAT.rot, g, 0, 0, 0, 0.24, 1.2, 0.24).rotation.x = Math.PI / 2;
-  teil(GEO.kegel, MAT.weiss, g, 0, 0, 0.85, 0.24, 0.5, 0.24).rotation.x = Math.PI / 2;
-  for (let n = 0; n < 4; n++){ const f = teil(GEO.box, MAT.weiss, g, 0, 0, -0.45, 0.06, 0.7, 0.35); f.rotation.z = n * Math.PI / 4 * 2; }
+  for (const [mat, geo] of raketeTeile()){ const m = new THREE.Mesh(geo, mat); m.castShadow = true; g.add(m); }
+  // Triebwerksflamme und Leuchten, flackern im Update
+  const fl = new THREE.Group(); fl.position.z = -0.75;
+  const aussen = new THREE.Mesh(GEO.kegel, MAT.flamme); aussen.rotation.x = -Math.PI / 2; aussen.scale.set(0.2, 0.95, 0.2); aussen.position.z = -0.45;
+  const kern = new THREE.Mesh(GEO.kegel, MAT.flammeKern); kern.rotation.x = -Math.PI / 2; kern.scale.set(0.11, 0.55, 0.11); kern.position.z = -0.27;
+  const glut = new THREE.Sprite(MAT.glutSprite); glut.scale.set(1.6, 1.6, 1);
+  fl.add(aussen, kern, glut);
+  g.add(fl);
+  g.userData.flamme = { aussen, kern, glut };
   r.mesh = g;
   g.position.set(r.x, 0.8, r.z);
   scene.add(g);
@@ -1877,13 +2283,17 @@ function raketenUpdate(dt){
     }
     r.mesh.position.set(r.x, 0.8 + Math.sin(r.t * 20) * 0.05, r.z);
     r.mesh.rotation.y = r.yaw;
-    const bx = r.x - Math.sin(r.yaw) * 0.9, bz = r.z - Math.cos(r.yaw) * 0.9;
-    funken.neu(bx, 0.8, bz, zufall(-1, 1), zufall(0, 1), zufall(-1, 1), 0.3, 1, 0.6, 0.15, 0.7, 0, -1.5);
-    staub.neu(bx, 0.8, bz, zufall(-0.5, 0.5), zufall(0.5, 1.5), zufall(-0.5, 0.5), 0.7, 0.8, 0.8, 0.8, 0.5, -0.5, 1.5, 0.5);
+    r.mesh.rotation.z = Math.sin(r.t * 17) * 0.06;
+    const u = r.mesh.userData.flamme, fk = 0.8 + Math.random() * 0.5;
+    u.aussen.scale.y = 0.95 * fk; u.aussen.position.z = -0.47 * fk; u.kern.scale.y = 0.55 * fk; u.kern.position.z = -0.27 * fk; u.glut.scale.setScalar(1.4 + Math.random() * 0.4);
+    const bx = r.x - Math.sin(r.yaw) * 1.5, bz = r.z - Math.cos(r.yaw) * 1.5;
+    funken.neu(bx, 0.8, bz, zufall(-1, 1), zufall(0, 1), zufall(-1, 1), 0.3, 1, 0.6, 0.15, 0.5, 0, -1.5);
+    if (grafik.modus !== 'leicht' || Math.random() < 0.5) staub.neu(bx, 0.85, bz, zufall(-0.5, 0.5), zufall(0.5, 1.5), zufall(-0.5, 0.5), 1.0, 0.86, 0.86, 0.88, 0.55, -0.5, 2.0, 0.55);
   }
 }
 
 function itemsLeeren(){
+  while (blitzStrahlen.length){ const b = blitzStrahlen.pop(); scene.remove(b.g); b.g.traverse(o => { if (o.geometry && !o.isSprite) o.geometry.dispose(); }); }
   while (bananen.length) bananeWeg(0);
   while (raketen.length){ scene.remove(raketen[0].mesh); raketen.shift(); }
 }
@@ -1893,6 +2303,10 @@ function boxenUpdate(dt){
   const hue = (zeit * 0.25) % 1;
   MAT.itemBox.emissive.setHSL(hue, 0.9, 0.35);
   MAT.itemBox.color.setHSL((hue + 0.5) % 1, 0.7, 0.75);
+  MAT.itemKern.color.setHSL((hue + 0.15) % 1, 0.95, 0.72);
+  MAT.itemHalo.color.setHSL(hue, 0.85, 0.55);
+  MAT.itemFleck.color.setHSL(hue, 0.85, 0.5);
+  const funkeln = grafik.modus !== 'leicht';
   S.boxen.forEach((b, bi) => {
     if (b.aus > 0){
       b.aus -= dt;
@@ -1901,8 +2315,15 @@ function boxenUpdate(dt){
     }
     b.wachs = Math.min(1, b.wachs + dt * 3);
     b.mesh.scale.setScalar(b.wachs);
-    b.mesh.rotation.set(0.5, zeit * 1.3 + b.phase, 0.3);
+    b.wuerfel.rotation.set(0.5, zeit * 1.3 + b.phase, 0.3);
+    b.kern.rotation.set(zeit * 1.9, -zeit * 2.6 + b.phase, 0);
     b.mesh.position.y = 1.4 + Math.sin(zeit * 2.2 + b.phase) * 0.18;
+    b.fleck.position.y = 0.1 - b.mesh.position.y;
+    b.fleck.scale.set(3.2 + Math.sin(zeit * 3 + b.phase) * 0.35, 1, 3.2 + Math.sin(zeit * 3 + b.phase) * 0.35);
+    if (funkeln && Math.random() < dt * 3 && nahAmSpieler(b.x, b.z, 70)){
+      const w = Math.random() * TAU, c = new THREE.Color().setHSL((hue + Math.random() * 0.3) % 1, 1, 0.7);
+      funken.neu(b.x + Math.cos(w) * 1.1, b.mesh.position.y - 0.6, b.z + Math.sin(w) * 1.1, 0, zufall(0.8, 1.8), 0, zufall(0.7, 1.2), c.r, c.g, c.b, zufall(0.18, 0.32), -0.4);
+    }
     if (!['rennen', 'auslauf'].includes(zustand.phase)) return;
     for (const k of karts){
       if (k.fern) continue;
@@ -2034,7 +2455,17 @@ function kartDarstellen(k, dt){
   // Namensschild aus der Nähe ausblenden, damit es nicht die Sicht versperrt
   if (k.schild) k.schild.material.opacity = klemm((camera.position.distanceTo(g.position) - 7) / 6, 0, 1);
   const flamme = k.boost > 0;
-  for (const f of m.flammen){ f.visible = flamme; if (flamme) f.scale.set(0.17, 0.7 + Math.random() * 0.6, 0.17); }
+  for (const f of m.flammen){
+    f.visible = flamme;
+    if (!flamme) continue;
+    const fl = 0.8 + Math.random() * 0.5, u = f.userData;
+    u.aussen.scale.set(0.2 * (0.9 + Math.random() * 0.2), 0.9 * fl, 0.2); u.aussen.position.z = -0.45 * fl;
+    u.kern.scale.set(0.11, 0.55 * fl, 0.11); u.kern.position.z = -0.27 * fl;
+    u.glut.scale.setScalar(1.0 + Math.random() * 0.35);
+  }
+  // Halstuch weht nach hinten, je schneller, desto flacher
+  m.schal.rotation.x = -0.35 + tempo * 0.4 - (k.boost > 0 ? 0.15 : 0) + Math.sin(zeit * 14 + k.phase) * 0.06 * (0.3 + tempo);
+  m.schal.rotation.y = Math.sin(zeit * 9 + k.phase) * 0.12 * tempo - k.lenkAnzeige * 0.25;
   if (k.stern > 0){
     const c = new THREE.Color().setHSL((zeit * 2 + k.phase) % 1, 1, 0.45);
     m.lack.emissive.copy(c); m.anzug.emissive.copy(c).multiplyScalar(0.6);
@@ -2083,10 +2514,21 @@ function kartEffekte(k){
       funken.neu(x, 0.25, z, -fx * 3 + zufall(-2, 2) + lx * k.drift * -3, zufall(1, 4), -fz * 3 + zufall(-2, 2) + lz * k.drift * -3, zufall(0.15, 0.35), r, g, b, k.driftStufe ? 0.55 : 0.3, 14);
     }
   }
+  // Reifenqualm: beim Driften, scharfen Bremsen und im Wirbel nach einem Treffer
+  const qualmRate = grafik.modus === 'leicht' ? 0 : grafik.modus === 'mittel' ? 0.45 : 0.8;
+  const rauchen = (k.drift && k.y < 0.05 && Math.abs(k.v) > 8) ? 1 : (k.eingabe.bremse && k.v > 12 && k.y < 0.05) ? 0.6 : k.dreh > 0 ? 0.5 : 0;
+  if (rauchen && Math.random() < qualmRate * rauchen){
+    for (const s of [-0.95, 0.95]){
+      const [x, z] = hinten(s);
+      const g = zufall(0.82, 0.96);
+      staub.neu(x + zufall(-0.15, 0.15), 0.2, z + zufall(-0.15, 0.15), -fx * 1.5 + zufall(-0.6, 0.6), zufall(0.5, 1.4), -fz * 1.5 + zufall(-0.6, 0.6), zufall(0.7, 1.2), g, g, g * 1.02, zufall(0.5, 0.8), -0.3, 2.4, 0.5);
+    }
+  }
   if (k.boost > 0){
     for (const s of [-0.3, 0.3]){
       const [x, z] = hinten(s);
       funken.neu(x - fx, 0.95, z - fz, -fx * 6 + zufall(-1, 1), zufall(0, 1.5), -fz * 6 + zufall(-1, 1), 0.2, 1, zufall(0.45, 0.75), 0.1, 0.55, 0, -1.5);
+      if (Math.random() < 0.5) funken.neu(x - fx * 1.6, 0.95 + zufall(-0.1, 0.1), z - fz * 1.6, -fx * 9 + zufall(-1.5, 1.5), zufall(-0.5, 1.2), -fz * 9 + zufall(-1.5, 1.5), 0.45, 0.35, 0.65, 1, 0.38, 0, -0.5, 0.8);
     }
   }
   if (k.stern > 0 && Math.random() < 0.7){
@@ -2943,9 +3385,11 @@ function schritt(dt){
   for (const k of karts){ kartDarstellen(k, dt); kartEffekte(k); }
   boxenUpdate(dt);
   spurenUpdate(dt);
-  for (const b of bananen) b.mesh.rotation.y += dt * 0.5;
+  for (const b of bananen){ b.mesh.rotation.y += dt * 0.5; b.mesh.position.y = 0.25 + Math.sin(zeit * 3 + b.x) * 0.05; }
   funken.update(dt); staub.update(dt);
+  blitzUpdate(dt);
   if (S.wolken) S.wolken.rotation.y += dt * 0.004;
+  himmelUni.zeit.value = zeit;
   if (S.schnee){
     const p = S.schnee.geometry.attributes.position, a = p.array, cx = camera.position.x, cz = camera.position.z;
     const richtung = S.glut ? -0.6 : 1;
@@ -2984,6 +3428,10 @@ function schleife(jetzt){
 window.loewenkart = {
   zustand, wahl, online, get karts(){ return karts; }, get strecke(){ return strecke; },
   get bananen(){ return bananen; }, get raketen(){ return raketen; },
+  test:{ bananeLegen, raketeStarten, blitzAusloesen, boost, treffer },
+  // Nur zum Testen: freie Kamera (bei zustand.pause = true bleibt sie stehen)
+  kamera(px, py, pz, zx, zy, zz, fov = 50){ camera.position.set(px, py, pz); camera.fov = fov; camera.updateProjectionMatrix(); camera.lookAt(zx, zy, zz); himmel.position.copy(camera.position); renderer.render(scene, camera); },
+  get renderInfo(){ return { aufrufe:renderer.info.render.calls, dreiecke:renderer.info.render.triangles, geometrien:renderer.info.memory.geometries }; },
   sim(sekunden, dt = 1 / 60){ for (let t = 0; t < sekunden; t += dt) schritt(dt); renderer.render(scene, camera); }
 };
 
