@@ -522,5 +522,17 @@
   if (document.body) bauen(); else document.addEventListener('DOMContentLoaded', bauen);
 })();
 </script>
+
+<!-- Rangliste der Spielesammlung: meldet Spielzeit, Punkte und Progress -->
+<script>
+window.SLRangAdapter=function(){
+  var l=function(k,d){try{var v=localStorage.getItem('loewenkart:'+k);return v==null?d:JSON.parse(v)}catch(e){return d}};
+  var rk=l('rekorde',{})||{},pk=l('pokale',{})||{},ids={},p=0;
+  Object.keys(rk).forEach(function(k){if(rk[k]&&rk[k].zeit){ids[k.split('|')[0]]=1;p+=100}});
+  Object.keys(pk).forEach(function(k){var v=pk[k];if(v>=1&&v<=3)p+=(4-v)*100});
+  return{punkte:p,progress:Math.min(100,Object.keys(ids).length/6*100)}
+};
+</script>
+<script src="https://rangliste-aoee.onrender.com/melder.js" data-spiel="Löwen-Kart" defer></script>
 </body>
 </html>
