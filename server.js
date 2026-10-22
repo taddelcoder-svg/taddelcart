@@ -251,7 +251,8 @@ function rennenStarten(raum){
   timerAus(raum);
   raum.endeTimer = setTimeout(() => rennenEnde(raum), MAX_RENNDAUER);
   hostPruefen(raum);
-  anAlle(raum, { t:'start', strecke:raum.strecke, stufe:raum.stufe, cup:raum.cupLauf ? { id:raum.cup, nr:raum.cupLauf.nr } : null, slots:raum.slots.map(s => ({ id:s.id, name:s.name, fahrer:s.fahrer, teile:s.teile, bot:!s.id })) });
+  // Wetter: 0–4 Sonne, 5–6 Regen, 7 Gewitter, 8–9 Sturm (in der Olympiade immer Sonne)
+  anAlle(raum, { t:'start', strecke:raum.strecke, stufe:raum.stufe, wetter:raum.olymp ? 0 : crypto.randomInt(10), cup:raum.cupLauf ? { id:raum.cup, nr:raum.cupLauf.nr } : null, slots:raum.slots.map(s => ({ id:s.id, name:s.name, fahrer:s.fahrer, teile:s.teile, bot:!s.id })) });
   raumSenden(raum);
 }
 

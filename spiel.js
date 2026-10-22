@@ -831,8 +831,8 @@ function buntStoss(x, y, z){
    Ton: alles mit WebAudio synthetisiert
    ========================================================= */
 const Ton = (() => {
-  let ctx = null, master, sfx, musikBus, rauschen, motorOsc1, motorOsc2, motorFilter, motorGain, driftGain, driftFilter;
-  let an = lesen('ton', true), lied = null, schritt = 0, naechste = 0;
+  let ctx = null, regenGain, master, sfx, musikBus, rauschen, motorOsc1, motorOsc2, motorFilter, motorGain, driftGain, driftFilter;
+  let an = lesen('ton', true), lied = null, schritt = 0, naechste = 0, regenWunsch = 0;
   const note = m => 440 * Math.pow(2, (m - 69) / 12);
   const LIEDER = {
     menue:  { bpm:112, akkorde:[[60, 64, 67], [57, 60, 64], [53, 57, 60], [55, 59, 62]] },
@@ -870,6 +870,11 @@ const Ton = (() => {
     driftFilter = ctx.createBiquadFilter(); driftFilter.type = 'bandpass'; driftFilter.frequency.value = 1800; driftFilter.Q.value = 5;
     driftGain = ctx.createGain(); driftGain.gain.value = 0;
     dq.connect(driftFilter); driftFilter.connect(driftGain); driftGain.connect(sfx); dq.start();
+    // Regenrauschen
+    const rq = ctx.createBufferSource(); rq.buffer = rauschen; rq.loop = true;
+    const rf = ctx.createBiquadFilter(); rf.type = 'highpass'; rf.frequency.value = 1400;
+    regenGain = ctx.createGain(); regenGain.gain.value = regenWunsch * 0.05;
+    rq.connect(rf); rf.connect(regenGain); regenGain.connect(sfx); rq.start();
     naechste = ctx.currentTime + 0.1;
     setInterval(planen, 30);
   }
@@ -908,6 +913,7 @@ const Ton = (() => {
     ziel:() => [523, 659, 784, 1047, 784, 1047].forEach((f, i) => ton(f, i === 5 ? 0.8 : 0.16, 'square', 0.14, null, [0, .12, .24, .36, .6, .72][i])),
     klick:() => ton(900, 0.05, 'triangle', 0.08),
     blitz:() => { geraeusch(0.9, 2400, 0.4, 0, 'highpass'); ton(1800, 0.5, 'sawtooth', 0.08, 120); geraeusch(1.2, 120, 0.5, 0.15, 'lowpass'); },
+    donner:() => { geraeusch(2.2, 70, 0.7, 0, 'lowpass'); geraeusch(0.5, 300, 0.35, 0.05, 'lowpass'); },
     muenze:() => { ton(988, 0.07, 'square', 0.09); ton(1319, 0.18, 'square', 0.09, null, 0.06); },
     sprung:() => { geraeusch(0.45, 900, 0.2, 0, 'bandpass', sfx, 0.7); ton(260, 0.35, 'triangle', 0.08, 640); },
     trick:() => [784, 988, 1175, 1568].forEach((f, i) => ton(f, 0.12, 'square', 0.1, null, i * 0.05)),
@@ -950,6 +956,7 @@ const Ton = (() => {
       driftGain.gain.setTargetAtTime(stufe >= 0 ? 0.03 : 0, t, 0.05);
       driftFilter.frequency.setTargetAtTime(1500 + Math.max(0, stufe) * 350, t, 0.1);
     },
+    regen(st){ regenWunsch = st; if (ctx) regenGain.gain.setTargetAtTime(st * 0.05, ctx.currentTime, 0.5); },
     pause(p){ if (ctx){ if (p) ctx.suspend(); else ctx.resume(); } },
     umschalten(){ an = !an; schreiben('ton', an); if (master) master.gain.value = an ? 0.8 : 0; return an; },
     istAn:() => an
@@ -1384,6 +1391,7 @@ function streckeLaden(nr){
   }, true);
   const strasseMat = new THREE.MeshStandardMaterial({ map:strasseTex, roughness:th.schnee ? 0.58 : 0.88, metalness:0.02, envMapIntensity:0.25, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-2 });
   gruppe.add(band(S, S.hw + 0.5, -S.hw - 0.5, 0.04, 22, strasseMat));
+  S.strasseMat = strasseMat;
 
   // Startlinie und Startaufstellung (weiße Grid-Markierungen)
   const karoTex = canvasTex(128, 32, (c, w, h) => { for (let x = 0; x < 16; x++) for (let y = 0; y < 4; y++){ c.fillStyle = (x + y) % 2 ? '#111' : '#fff'; c.fillRect(x * 8, y * 8, 8, 8); } });
@@ -1601,6 +1609,7 @@ function streckeLaden(nr){
     scene.add(S.schnee);
   }
   if (th.sterne) himmelNacht(S, gruppe, rnd);
+  wetterGrundMerken(S);
   strecke = S;
   return S;
 }
@@ -2416,6 +2425,168 @@ function kulisseUpdate(dt){
 }
 
 /* =========================================================
+   Wetter: Sonne, Regen mit Pfützen, Gewitter mit Blitzen,
+   Sturm mit Seitenwind (je nach Strecke Sand, Schnee oder Asche)
+   ========================================================= */
+const WETTER = {
+  klar:    { name:'Sonne',    icon:'☀️' },
+  regen:   { name:'Regen',    icon:'🌧️' },
+  gewitter:{ name:'Gewitter', icon:'⛈️' },
+  sturm:   { name:'Sturm',    icon:'🌪️' }
+};
+const WETTER_ARTEN = Object.keys(WETTER);
+const sturmName = th => th.deko === 'kakteen' ? 'Sandsturm' : th.schnee ? 'Schneesturm' : th.glut ? 'Aschesturm' : 'Sturm';
+// Grundwerte der Strecke merken, damit jedes Wetter vom selben Stand aus rechnet
+function wetterGrundMerken(S){
+  S.basis = {
+    nebel:scene.fog.color.clone(), nah:scene.fog.near, weit:scene.fog.far,
+    hemi:hemi.intensity, sonne:sonne.intensity, oben:himmelUni.oben.value.clone(), horizont:himmelUni.horizont.value.clone(),
+    wolkenFarbe:himmelUni.wolkenFarbe.value.clone(), wolken:himmelUni.wolkenMenge.value,
+    rau:S.strasseMat.roughness, glanz:S.strasseMat.envMapIntensity
+  };
+  S.wetter = 'klar'; S.pfuetzen = []; S.wetterFx = null; S.wind = 0;
+}
+function wetterSetzen(S, art){
+  if (!WETTER[art]) art = 'klar';
+  const B = S.basis, th = S.th;
+  scene.fog.color.copy(B.nebel); scene.fog.near = B.nah; scene.fog.far = B.weit;
+  hemi.intensity = B.hemi; sonne.intensity = B.sonne;
+  himmelUni.oben.value.copy(B.oben); himmelUni.horizont.value.copy(B.horizont);
+  himmelUni.wolkenFarbe.value.copy(B.wolkenFarbe); himmelUni.wolkenMenge.value = B.wolken;
+  S.strasseMat.roughness = B.rau; S.strasseMat.envMapIntensity = B.glanz;
+  if (S.wetterFx){ scene.remove(S.wetterFx); S.wetterFx.geometry.dispose(); S.wetterFx.material.dispose(); S.wetterFx = null; }
+  for (const p of S.pfuetzen) S.gruppe.remove(p.mesh);
+  S.pfuetzen = []; S.wind = 0; S.blitzIn = 5;
+  S.wetter = art;
+  if (art === 'klar'){ Ton.regen(0); return; }
+  const grau = lin(0x5d6672);
+  if (art === 'regen' || art === 'gewitter'){
+    const d = art === 'gewitter' ? 0.75 : 0.55;
+    himmelUni.oben.value.lerp(grau.clone().multiplyScalar(art === 'gewitter' ? 0.45 : 0.8), d);
+    himmelUni.horizont.value.lerp(grau, d);
+    himmelUni.wolkenFarbe.value.copy(lin(art === 'gewitter' ? 0x4a5058 : 0x8a929c)); himmelUni.wolkenMenge.value = 1;
+    scene.fog.color.lerp(grau, d); scene.fog.near *= 0.45; scene.fog.far *= art === 'gewitter' ? 0.4 : 0.55;
+    sonne.intensity *= art === 'gewitter' ? 0.3 : 0.45; hemi.intensity *= 0.8;
+    // Nasse Straße glänzt
+    S.strasseMat.roughness = 0.28; S.strasseMat.envMapIntensity = 0.9;
+    pfuetzenBauen(S);
+    S.wetterFx = regenBauen(grafik.modus === 'leicht' ? 700 : 2200);
+    Ton.regen(art === 'gewitter' ? 1 : 0.7);
+  } else {
+    // Sturm: Böen drücken die Karts zur Seite, dazu fliegender Sand, Schnee, Asche oder Regen
+    S.wind = 1;
+    const farbe = th.deko === 'kakteen' ? lin(0xd8a868) : th.schnee ? lin(0xf2f6fb) : th.glut ? lin(0x4a3a36) : grau;
+    scene.fog.color.lerp(farbe, 0.8); const dicht = th.deko === 'kakteen' || th.schnee;
+    scene.fog.near = 4; scene.fog.far = dicht ? 130 : B.weit * 0.45;
+    if (dicht){ hemi.intensity *= 0.85; himmelUni.horizont.value.copy(scene.fog.color); himmelUni.oben.value.lerp(scene.fog.color, 0.75); himmelUni.wolkenMenge.value = 0; }
+    himmelUni.horizont.value.lerp(farbe, 0.85); himmelUni.oben.value.lerp(farbe, 0.5); himmelUni.wolkenMenge.value = 1;
+    sonne.intensity *= 0.55;
+    S.wetterFx = th.deko === 'kakteen' || th.schnee || th.glut
+      ? flockenBauen(grafik.modus === 'leicht' ? 700 : 2600, th.deko === 'kakteen' ? 0xe0b070 : th.schnee ? 0xffffff : 0x8a7a70)
+      : regenBauen(grafik.modus === 'leicht' ? 700 : 2000);
+    Ton.regen(0.5);
+  }
+  if (S.wetterFx){ S.wetterFx.frustumCulled = false; scene.add(S.wetterFx); }
+}
+function regenBauen(n){
+  const pos = new Float32Array(n * 6);
+  for (let i = 0; i < n; i++){ const x = zufall(-45, 45), y = zufall(0, 35), z = zufall(-45, 45); pos.set([x, y, z, x, y + 0.9, z], i * 6); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  const fx = new THREE.LineSegments(g, new THREE.LineBasicMaterial({ color:0xc4d4e6, transparent:true, opacity:0.45, depthWrite:false }));
+  fx.userData.art = 'regen';
+  return fx;
+}
+function flockenBauen(n, farbe){
+  const pos = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) pos.set([zufall(-40, 40), zufall(0, 14), zufall(-40, 40)], i * 3);
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  const fx = new THREE.Points(g, new THREE.PointsMaterial({ color:farbe, size:0.45, map:partikelTex, transparent:true, opacity:0.85, depthWrite:false }));
+  fx.userData.art = 'flocken';
+  return fx;
+}
+function pfuetzenBauen(S){
+  const mat = new THREE.MeshStandardMaterial({ color:lin(0x2a3644), roughness:0.04, metalness:0.5, envMapIntensity:1.6, transparent:true, opacity:0.82, depthWrite:false, polygonOffset:true, polygonOffsetFactor:-5, polygonOffsetUnits:-5 });
+  const rnd = zufallsGen(S.def.saat * 13 + 5);
+  for (let versuch = 0; versuch < 80 && S.pfuetzen.length < 9; versuch++){
+    const i = Math.floor(rnd() * S.N);
+    if (ringAbstand(S, i, 0) < 40 || S.rampen.some(r => ringAbstand(S, i, r.i) < 25) || S.pfuetzen.some(p => ringAbstand(S, i, p.i) < 50)) continue;
+    const lq = 2.2 + rnd() * 2, la = 3 + rnd() * 3, seite = (rnd() * 2 - 1) * (S.hw - lq);
+    const ort = streckenOrt(S, i, seite);
+    const m = new THREE.Mesh(GEO.scheibe, mat);
+    m.position.set(ort.x, 0.08, ort.z); m.rotation.y = yawBei(S, i); m.scale.set(lq * 2, 1, la * 2);
+    S.gruppe.add(m);
+    S.pfuetzen.push(Object.assign(ort, { la, lq, mesh:m }));
+  }
+}
+function inPfuetze(S, k){
+  if (k.y > 0.05) return false;
+  for (const p of S.pfuetzen){
+    const [a, q] = ortLage(p, k.x, k.z), fa = a / p.la, fq = q / p.lq;
+    if (fa * fa + fq * fq < 1) return true;
+  }
+  return false;
+}
+// Wind: langsame Böen quer zur Fahrtrichtung der Strecke, für alle gleich
+const windRichtung = () => [Math.cos(0.7), Math.sin(0.7)];
+function windStaerke(){ return strecke.wind ? 2.6 + 2.4 * Math.sin(zeit * 0.5) * Math.sin(zeit * 0.23 + 1) : 0; }
+function wetterUpdate(dt){
+  const S = strecke, fx = S.wetterFx;
+  if (fx){
+    const a = fx.geometry.attributes.position.array, cx = camera.position.x, cz = camera.position.z, cy = camera.position.y;
+    const [wx, wz] = windRichtung(), w = windStaerke() * (S.wind ? 3 : 0.4);
+    if (fx.userData.art === 'regen'){
+      for (let i = 0; i < a.length; i += 6){
+        const dy = 36 * dt;
+        for (const o of [0, 3]){ a[i + o] += wx * w * dt; a[i + o + 1] -= dy; a[i + o + 2] += wz * w * dt; }
+        if (a[i + 1] < cy - 6 || Math.abs(a[i] - cx) > 45 || Math.abs(a[i + 2] - cz) > 45){
+          const x = cx + zufall(-45, 45), y = cy + zufall(5, 30), z = cz + zufall(-45, 45);
+          a[i] = x; a[i + 1] = y; a[i + 2] = z; a[i + 3] = x - wx * w * 0.03; a[i + 4] = y + 0.9; a[i + 5] = z - wz * w * 0.03;
+        }
+      }
+    } else {
+      for (let i = 0; i < a.length; i += 3){
+        a[i] += wx * w * 4 * dt + Math.sin(zeit * 3 + i) * dt; a[i + 1] -= dt * 1.2; a[i + 2] += wz * w * 4 * dt;
+        if (a[i + 1] < 0 || Math.abs(a[i] - cx) > 40 || Math.abs(a[i + 2] - cz) > 40){ a[i] = cx + zufall(-40, 40); a[i + 1] = zufall(0, 14); a[i + 2] = cz + zufall(-40, 40); }
+      }
+    }
+    fx.geometry.attributes.position.needsUpdate = true;
+  }
+  if (S.wetter === 'gewitter' && zustand.phase !== 'menue'){
+    S.blitzIn -= dt;
+    if (S.blitzIn <= 0){
+      S.blitzIn = zufall(4, 9);
+      $('blitzFlash').classList.remove('an'); void $('blitzFlash').offsetWidth; $('blitzFlash').classList.add('an');
+      S.blitzHell = 1;
+      setTimeout(() => Ton.effekt('donner'), 300 + Math.random() * 900);
+    }
+    S.blitzHell = Math.max(0, (S.blitzHell || 0) - dt * 3);
+    hemi.intensity = S.basis.hemi * 0.8 + S.blitzHell * 2.5;
+  }
+}
+// Pfützen bremsen und spritzen, der Wind drückt das Kart zur Seite
+function wetterAufKart(k, dt){
+  const S = strecke;
+  if (S.pfuetzen.length && inPfuetze(S, k)){
+    k.pfuetze = true;
+    if (k.boost <= 0 && k.stern <= 0) k.v *= Math.exp(-0.9 * dt);
+    if (Math.abs(k.v) > 6 && nahAmSpieler(k.x, k.z, 70) && Math.random() < 0.9){
+      const fx = Math.sin(k.yaw), fz = Math.cos(k.yaw);
+      for (const sg of [-1, 1]) funken.neu(k.x + fz * sg, 0.3, k.z - fx * sg, fz * sg * zufall(2, 5) - fx * 2, zufall(2, 5), -fx * sg * zufall(2, 5) - fz * 2, zufall(0.3, 0.6), 0.75, 0.85, 1, zufall(0.35, 0.6), 14);
+    }
+  } else k.pfuetze = false;
+  if (S.wind && k.y < 0.5){
+    const [wx, wz] = windRichtung(), w = windStaerke();
+    k.kx += wx * w * dt * 2.2; k.kz += wz * w * dt * 2.2;
+  }
+}
+// Online: der Server würfelt eine Zahl, daraus wird für alle dasselbe Wetter
+const wetterAusZahl = n => n < 5 ? 'klar' : n < 7 ? 'regen' : n < 8 ? 'gewitter' : 'sturm';
+function wetterWuerfeln(){
+  const r = Math.random();
+  return r < 0.45 ? 'klar' : r < 0.7 ? 'regen' : r < 0.85 ? 'gewitter' : 'sturm';
+}
+
+/* =========================================================
    Karts
    ========================================================= */
 let karts = [], spieler = null, vorschau = null;
@@ -2614,6 +2785,7 @@ function kartBewegen(k, dt){
   if (k.eis) k.bewegYaw += winkelDiff(k.yaw, k.bewegYaw) * (1 - Math.exp(-1.6 * dt));
   else k.bewegYaw = k.yaw;
   k.lenkAnzeige += (lenk - k.lenkAnzeige) * Math.min(1, dt * 10);
+  wetterAufKart(k, dt);
   // Bewegung (beim Driften rutscht das Kart leicht nach außen)
   const fx = Math.sin(k.bewegYaw), fz = Math.cos(k.bewegYaw);
   let vx = fx * k.v, vz = fz * k.v;
@@ -3225,6 +3397,7 @@ let zeit = 0;
 function vorschauZeigen(){
   karts.forEach(k => k.entfernen()); karts = []; spieler = null;
   itemsLeeren(); geistEntfernen(); zustand.zeitfahren = false;
+  wetterSetzen(strecke, 'klar');
   for (const b of strecke.boxen){ b.aus = 0; b.mesh.visible = true; }
   if (vorschau) vorschau.entfernen();
   vorschau = new Kart(FAHRER[wahl.fahrer], true, { teile:garage.wahl });
@@ -3248,6 +3421,8 @@ function rennenStarten(opts = null){
   for (const b of S.boxen){ b.aus = zustand.zeitfahren ? Infinity : 0; b.mesh.visible = !zustand.zeitfahren; }
   for (const m of S.muenzen) m.aus = 0;
   zustand.muenzRennen = 0;
+  const wetter = opts ? (olympia ? 'klar' : wetterAusZahl(opts.wetter | 0)) : WETTER[wahl.wetter] ? wahl.wetter : wetterWuerfeln();
+  wetterSetzen(S, wetter);
   let slots = opts && opts.slots;
   if (!slots && zustand.zeitfahren) slots = [{ fahrer:wahl.fahrer, ich:true, teile:garage.wahl }];
   if (!slots){
@@ -3277,6 +3452,7 @@ function rennenStarten(opts = null){
   $('weiterKnopf').textContent = online.aktiv ? 'Weiterfahren' : 'Weiter';
   hudCache = {};
   Ton.musik(S.def.thema);
+  if (wetter !== 'klar') meldung(`${WETTER[wetter].icon} ${wetter === 'sturm' ? sturmName(S.th) : WETTER[wetter].name}`, 0.48, true);
 }
 
 function zielErreicht(k){
@@ -3752,6 +3928,9 @@ function menueBauen(){
       wahl.strecke = i; schreiben('wahl', wahl); streckeLaden(i); vorschauZeigen(); Ton.musik('menue');
     }));
   });
+  const ww = $('wetterwahl'); ww.innerHTML = '';
+  [['zufall', '🎲', 'Zufall'], ...WETTER_ARTEN.map(a => [a, WETTER[a].icon, WETTER[a].name])].forEach(([id, icon, name]) =>
+    ww.appendChild(wahlKnopf(`<b>${icon}</b><small>${name}</small>`, (wahl.wetter || 'zufall') === id, () => { wahl.wetter = id; schreiben('wahl', wahl); })));
   const stw = $('stufenwahl'); stw.innerHTML = '';
   STUFEN.forEach((s, i) => stw.appendChild(wahlKnopf(`<b>${s.name}</b><small>${s.info}</small>`, i === wahl.stufe, () => { wahl.stufe = i; schreiben('wahl', wahl); })));
 }
@@ -3952,7 +4131,7 @@ Netz.on('start', m => {
   online.wegNamen = {};
   online.rennenNr = (online.rennenNr || 0) + 1;
   $('menue').hidden = true;
-  rennenStarten({ strecke:klemm(m.strecke | 0, 0, STRECKEN.length - 1), stufe:klemm(m.stufe | 0, 0, STUFEN.length - 1), slots });
+  rennenStarten({ strecke:klemm(m.strecke | 0, 0, STRECKEN.length - 1), stufe:klemm(m.stufe | 0, 0, STUFEN.length - 1), slots, wetter:klemm(m.wetter | 0, 0, 9) });
 });
 
 Netz.on('z', m => {
@@ -4201,6 +4380,7 @@ function schritt(dt){
   blitzUpdate(dt);
   gefahrenUpdate(dt);
   kulisseUpdate(dt);
+  wetterUpdate(dt);
   if (S.wolken) S.wolken.rotation.y += dt * 0.004;
   himmelUni.zeit.value = zeit;
   if (S.schnee){
@@ -4240,7 +4420,7 @@ function schleife(jetzt){
 // Zum Testen in der Konsole
 window.loewenkart = {
   zustand, wahl, online, get karts(){ return karts; }, get strecke(){ return strecke; },
-  get bananen(){ return bananen; }, get raketen(){ return raketen; }, get geist(){ return geist; },
+  get bananen(){ return bananen; }, get raketen(){ return raketen; }, get geist(){ return geist; }, get szene(){ return scene; },
   test:{ bananeLegen, raketeStarten, blitzAusloesen, boost, treffer },
   // Nur zum Testen: freie Kamera (bei zustand.pause = true bleibt sie stehen)
   kamera(px, py, pz, zx, zy, zz, fov = 50){ camera.position.set(px, py, pz); camera.fov = fov; camera.updateProjectionMatrix(); camera.lookAt(zx, zy, zz); himmel.position.copy(camera.position); renderer.render(scene, camera); },
