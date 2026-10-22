@@ -853,6 +853,7 @@ const Ton = (() => {
     ziel:() => [523, 659, 784, 1047, 784, 1047].forEach((f, i) => ton(f, i === 5 ? 0.8 : 0.16, 'square', 0.14, null, [0, .12, .24, .36, .6, .72][i])),
     klick:() => ton(900, 0.05, 'triangle', 0.08),
     blitz:() => { geraeusch(0.9, 2400, 0.4, 0, 'highpass'); ton(1800, 0.5, 'sawtooth', 0.08, 120); geraeusch(1.2, 120, 0.5, 0.15, 'lowpass'); },
+    muenze:() => { ton(988, 0.07, 'square', 0.09); ton(1319, 0.18, 'square', 0.09, null, 0.06); },
     sprung:() => { geraeusch(0.45, 900, 0.2, 0, 'bandpass', sfx, 0.7); ton(260, 0.35, 'triangle', 0.08, 640); },
     trick:() => [784, 988, 1175, 1568].forEach((f, i) => ton(f, 0.12, 'square', 0.1, null, i * 0.05)),
     windschatten:() => { geraeusch(0.5, 2600, 0.18, 0, 'bandpass', sfx, 2); ton(520, 0.35, 'triangle', 0.08, 1040); }
@@ -1864,6 +1865,7 @@ function streckenExtras(S, gruppe, th){
   const rnd = zufallsGen(S.def.saat * 7 + 3);
   rampenBauen(S, gruppe, th);
   boegenBauen(S, gruppe, th);
+  muenzenBauen(S, gruppe);
   S.eis = [];
   if (th.gefahr === 'eis') eisBauen(S, gruppe, rnd);
   S.gefahren = []; S.gefahrTimer = 4;
@@ -1962,6 +1964,65 @@ function landen(k){
   boost(k, 0.9);
   buntStoss(k.x, 1.5, k.z);
   if (k.spieler){ meldung('Trick!', 0.9, true); Ton.effekt('trick'); vibrieren(40); }
+}
+
+/* ---------- Münzen: jede macht ein bisschen schneller (höchstens 10) ---------- */
+const MAX_MUENZEN = 10;
+const muenzGeo = geteilt((() => { const g = new THREE.CylinderGeometry(0.55, 0.55, 0.13, 22); g.rotateX(Math.PI / 2); return g; })());
+const muenzMat = geteilt(new THREE.MeshStandardMaterial({ color:lin(0xffd22a), metalness:0.7, roughness:0.3, emissive:lin(0xb07000), envMapIntensity:1.2 }));
+function muenzenBauen(S, gruppe){
+  S.muenzen = [];
+  // Ein Bogen über jeder Schanze, genau auf der Flugbahn
+  for (const r of S.rampen){
+    [[14, 3.9], [20, 4.9], [26, 4.8], [32, 3.6]].forEach(([d, h]) => S.muenzen.push({ x:r.x + r.fx * d, z:r.z + r.fz * d, y:h + 0.8 }));
+  }
+  // Reihen auf der Straße, abwechselnd links und rechts
+  [0.12, 0.42, 0.71].forEach((anteil, n) => {
+    const seite = (n % 2 ? -0.45 : 0.45) * S.hw;
+    for (let m = 0; m < 5; m++){
+      const i = (Math.round(S.N * anteil) + Math.round(m * 3.5 / S.ds)) % S.N;
+      if (S.rampen.some(r => ringAbstand(S, i, r.i) < 12)) continue;
+      const [x, z] = punktBei(S, i, seite);
+      S.muenzen.push({ x, z, y:1.0 });
+    }
+  });
+  for (const m of S.muenzen) m.aus = 0;
+  S.muenzMesh = new THREE.InstancedMesh(muenzGeo, muenzMat, Math.max(1, S.muenzen.length));
+  S.muenzMesh.castShadow = true; S.muenzMesh.frustumCulled = false;
+  gruppe.add(S.muenzMesh);
+}
+const muenzObj = new THREE.Object3D();
+function muenzenUpdate(dt){
+  const S = strecke;
+  S.muenzen.forEach((m, i) => {
+    if (m.aus > 0) m.aus -= dt;
+    muenzObj.position.set(m.x, m.y + Math.sin(zeit * 3 + i) * 0.12, m.z);
+    muenzObj.rotation.set(0, zeit * 3 + i * 0.4, 0);
+    muenzObj.scale.setScalar(m.aus > 0 ? 0.0001 : 1);
+    muenzObj.updateMatrix();
+    S.muenzMesh.setMatrixAt(i, muenzObj.matrix);
+    if (m.aus > 0 || !['rennen', 'auslauf'].includes(zustand.phase)) return;
+    for (const k of karts){
+      if (k.fern) continue;
+      const dx = k.x - m.x, dz = k.z - m.z;
+      if (dx * dx + dz * dz > 3.4 || Math.abs(k.y + 0.8 - m.y) > 1.6) continue;
+      muenzeWeg(m);
+      ereignis({ a:'m', i });
+      k.muenzen = Math.min(MAX_MUENZEN, k.muenzen + 1);
+      if (k.spieler){ zustand.muenzRennen++; Ton.effekt('muenze'); }
+      break;
+    }
+  });
+  S.muenzMesh.instanceMatrix.needsUpdate = true;
+}
+function muenzeWeg(m){
+  m.aus = 10;
+  if (nahAmSpieler(m.x, m.z, 80)) for (let n = 0; n < 8; n++){ const w = Math.random() * TAU; funken.neu(m.x, m.y, m.z, Math.cos(w) * 3, zufall(1, 4), Math.sin(w) * 3, zufall(0.3, 0.5), 1, 0.85, 0.2, 0.45, 8); }
+}
+function muenzenVerlieren(k, anzahl){
+  const weg = Math.min(k.muenzen, anzahl);
+  k.muenzen -= weg;
+  if (weg && nahAmSpieler(k.x, k.z, 80)) for (let n = 0; n < weg * 4; n++){ const w = Math.random() * TAU; funken.neu(k.x, k.y + 1.2, k.z, Math.cos(w) * 4, zufall(4, 8), Math.sin(w) * 4, zufall(0.5, 0.8), 1, 0.82, 0.15, 0.6, 16); }
 }
 
 /* ---------- Leuchtbögen über der Strecke ---------- */
@@ -2356,7 +2417,7 @@ class Kart {
       item:null, itemNeu:null, itemAnzahl:0, roulette:0, itemTimer:0, fertig:false, zielzeit:Infinity, rundeStart:0, rundenzeiten:[],
       platz:1, lenkAnzeige:0, lenkSanft:0, stand:0, offroad:false, falsch:0, steckt:0, wandZeit:0, padZeit:0, hatteStern:false,
       spur:zufall(-0.5, 0.5), spurZiel:zufall(-0.5, 0.5), spurTimer:zufall(1, 3), gummi:1, camYaw:0, autopilot:false,
-      klein:0, kleinSkala:1, windschatten:0, rampe:0, sprung:false, trick:0, trickOk:false, netzTrick:0, eis:false, bewegYaw:0
+      klein:0, kleinSkala:1, windschatten:0, rampe:0, sprung:false, trick:0, trickOk:false, netzTrick:0, eis:false, bewegYaw:0, muenzen:0
     });
   }
   entfernen(){
@@ -2382,6 +2443,7 @@ function treffer(k, art){
   k.dreh = k.drehDauer = art === 'rakete' ? 1.4 : art === 'stoss' ? 0.8 : art === 'blitz' ? 0.7 : 1.1;
   if (art === 'rakete') k.vy = 7;
   k.drift = 0; k.boost = 0; k.driftStufe = 0;
+  muenzenVerlieren(k, 3);
   for (let n = 0; n < 14; n++){
     const w = Math.random() * TAU;
     funken.neu(k.x, 1.5, k.z, Math.cos(w) * 5, zufall(3, 7), Math.sin(w) * 5, 0.6, 1, 0.95, 0.5, 0.7, 10);
@@ -2447,7 +2509,7 @@ function kartBewegen(k, dt){
   k.eis = aufEis(S, k);
   const neben = Math.abs(k.seite) - S.hw;
   k.offroad = neben > ASPHALT_AUSLAUF;
-  let maxV = w.maxV * k.gummi;
+  let maxV = w.maxV * k.gummi * (1 + 0.012 * k.muenzen);
   if (k.boost <= 0 && k.stern <= 0){
     if (k.offroad) maxV *= S.kies[k.idx] ? 0.42 : 0.52;
     else if (neben > 1.3) maxV *= 0.86;
@@ -3127,6 +3189,8 @@ function rennenStarten(opts = null){
   zustand.zeitfahren = !opts && !cup.aktiv && wahl.modus === 'zeit';
   // Im Zeitfahren gibt es keine Item-Boxen, dafür drei Turbos zum Start
   for (const b of S.boxen){ b.aus = zustand.zeitfahren ? Infinity : 0; b.mesh.visible = !zustand.zeitfahren; }
+  for (const m of S.muenzen) m.aus = 0;
+  zustand.muenzRennen = 0;
   let slots = opts && opts.slots;
   if (!slots && zustand.zeitfahren) slots = [{ fahrer:wahl.fahrer, ich:true }];
   if (!slots){
@@ -3277,7 +3341,7 @@ function ergebnisZeigen(){
       }
     }
   }
-  $('ergebnisText').innerHTML = html;
+  $('ergebnisText').innerHTML = html + muenzenGutschreiben(platz);
   const knoepfe = $('ergebnisKnoepfe');
   knoepfe.innerHTML = '';
   const knopf = (text, haupt, fn) => { const b = document.createElement('button'); b.className = 'knopf' + (haupt ? ' haupt' : ''); b.textContent = text; b.onclick = () => { Ton.effekt('klick'); fn(); }; knoepfe.appendChild(b); };
@@ -3294,6 +3358,17 @@ function ergebnisZeigen(){
 }
 
 const POKAL = { 1:'🏆', 2:'🥈', 3:'🥉' };
+// Münzkonto für die Garage: gesammelte Münzen plus Bonus für den Platz
+const konto = { muenzen:lesen('konto', 0) };
+if (!zahlOk(konto.muenzen) || konto.muenzen < 0) konto.muenzen = 0;
+const PLATZ_BONUS = [10, 7, 5, 3, 2, 2, 1, 1];
+function muenzenGutschreiben(platz){
+  const bonus = platz ? PLATZ_BONUS[platz - 1] || 0 : 0, summe = (zustand.muenzRennen || 0) + bonus;
+  zustand.muenzRennen = 0;
+  if (!summe) return '';
+  konto.muenzen += summe; schreiben('konto', konto.muenzen);
+  return `<p class="muenzGewinn">+${summe} 🪙 <small>(${summe - bonus} gesammelt${bonus ? ` + ${bonus} Platzbonus` : ''}) · Konto: ${konto.muenzen} 🪙</small></p>`;
+}
 function cupStarten(){
   cup.aktiv = true; cup.nr = 0; cup.punkte = {}; cup.gegner = null; cup.def = CUPS[wahl.cup];
   wahl.strecke = cup.def.strecken[0];
@@ -3338,6 +3413,8 @@ function hudUpdate(){
   setzen('zeitGesamt', zeitText(k.fertig ? k.zielzeit : zustand.rt));
   setzen('rundenzeiten', k.rundenzeiten.map((t, i) => `R${i + 1} ${zeitText(t)}`).join('<br>'), true);
   setzen('tempo', `${Math.round(Math.abs(k.v) * 4)} km/h`);
+  setzen('muenzen', `🪙 ${k.muenzen}`);
+  $('muenzen').classList.toggle('voll', k.muenzen >= MAX_MUENZEN);
   // Item
   let icon = '', anzahl = '';
   if (k.roulette > 0){ const alle = Object.values(ITEM_ICON); icon = alle[Math.floor(zeit * 14) % alle.length]; }
@@ -3529,7 +3606,7 @@ function zeitfahrErgebnis(){
     html += `<p class="neu">${alt ? `Neue Bestzeit, ${(alt - k.zielzeit).toFixed(2).replace('.', ',')} s schneller!` : 'Erste Zeit gesetzt!'} Ab jetzt fährt dieser Geist mit.</p>`;
   } else html += `<p class="rekord" style="margin-top:10px">Dein Geist war ${(k.zielzeit - alt).toFixed(2).replace('.', ',')} s schneller · Bestzeit ${zeitText(alt)}</p>`;
   $('ergebnisTitel').textContent = `⏱️ Zeitfahren · ${zeitText(k.zielzeit)}`;
-  $('ergebnisText').innerHTML = html;
+  $('ergebnisText').innerHTML = html + muenzenGutschreiben(0);
   const knoepfe = $('ergebnisKnoepfe');
   knoepfe.innerHTML = '';
   const knopf = (text, haupt, fn) => { const b = document.createElement('button'); b.className = 'knopf' + (haupt ? ' haupt' : ''); b.textContent = text; b.onclick = () => { Ton.effekt('klick'); fn(); }; knoepfe.appendChild(b); };
@@ -3822,6 +3899,7 @@ Netz.on('e', m => {
     case 'l': { const von = karts.find(k => k.slot === m.von); if (von) blitzTreffen(von); break; }
     case 'rw': { const i = raketen.findIndex(r => r.id === m.id); if (i >= 0) raketeWeg(i); break; }
     case 'x': { const b = S.boxen[m.i]; if (b && b.aus <= 0) boxWeg(b); break; }
+    case 'm': { const mu = S.muenzen[m.i]; if (mu && mu.aus <= 0) muenzeWeg(mu); break; }
   }
 });
 
@@ -3882,7 +3960,7 @@ function ergebnisOnline(rang){
       $('ergebnisTitel').textContent = cupPlatz === 1 ? `🏆 ${cupDef.name} gewonnen!` : cupPlatz >= 2 && cupPlatz <= 3 ? `${POKAL[cupPlatz]} ${cupDef.name}: ${cupPlatz}. Platz` : cupPlatz ? `${cupDef.name}: ${cupPlatz}. Platz` : `${cupDef.name} vorbei`;
     }
   }
-  $('ergebnisText').innerHTML = html + '<p class="leise" id="ergebnisHinweis" style="margin-top:10px"></p>';
+  $('ergebnisText').innerHTML = html + muenzenGutschreiben(platz) + '<p class="leise" id="ergebnisHinweis" style="margin-top:10px"></p>';
   ergebnisKnoepfeOnline();
   $('ergebnis').hidden = false;
   $('touch').hidden = true;
@@ -4027,6 +4105,7 @@ function schritt(dt){
   for (const k of karts){ kartDarstellen(k, dt); kartEffekte(k); }
   geistUpdate(dt);
   boxenUpdate(dt);
+  muenzenUpdate(dt);
   spurenUpdate(dt);
   for (const b of bananen){ b.mesh.rotation.y += dt * 0.5; b.mesh.position.y = 0.25 + Math.sin(zeit * 3 + b.x) * 0.05; }
   funken.update(dt); staub.update(dt);
