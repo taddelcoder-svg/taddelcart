@@ -688,6 +688,7 @@ function kartModell(f, teile = [0, 0, 0]){
   const V = kartTeile();
   const [reifenArt, fluegelArt, lackArt] = teileOk(teile);
   const g = new THREE.Group();
+  g.rotation.order = 'YXZ';
   const koerper = new THREE.Group();
   g.add(koerper);
   // Lack: weniger Metall und Spiegelung, damit die Fahrerfarbe satt statt ausgewaschen aussieht
@@ -761,7 +762,7 @@ class Partikel {
     this.max = max; this.n = 0;
     this.pos = new Float32Array(max * 3); this.farbe = new Float32Array(max * 4); this.gr = new Float32Array(max);
     this.v = new Float32Array(max * 3); this.leben = new Float32Array(max); this.maxLeben = new Float32Array(max);
-    this.grav = new Float32Array(max); this.wachs = new Float32Array(max); this.a0 = new Float32Array(max);
+    this.grav = new Float32Array(max); this.wachs = new Float32Array(max); this.a0 = new Float32Array(max); this.boden = new Float32Array(max);
     const g = new THREE.BufferGeometry();
     this.aPos = new THREE.BufferAttribute(this.pos, 3).setUsage(THREE.DynamicDrawUsage);
     this.aFarbe = new THREE.BufferAttribute(this.farbe, 4).setUsage(THREE.DynamicDrawUsage);
@@ -781,15 +782,16 @@ class Partikel {
   }
   neu(x, y, z, vx, vy, vz, leben, r, gg, b, groesse, grav = 0, wachs = 0, alpha = 1){
     if (this.n >= this.max) return;
-    const i = this.n++;
-    this.pos.set([x, y, z], i * 3); this.v.set([vx, vy, vz], i * 3); this.farbe.set([r, gg, b, alpha], i * 4);
+    const i = this.n++, hb = bodenAn(x, z);
+    this.boden[i] = hb;
+    this.pos.set([x, y + hb, z], i * 3); this.v.set([vx, vy, vz], i * 3); this.farbe.set([r, gg, b, alpha], i * 4);
     this.gr[i] = groesse; this.leben[i] = this.maxLeben[i] = leben; this.grav[i] = grav; this.wachs[i] = wachs; this.a0[i] = alpha;
   }
   kopieren(von, nach){
     this.pos.copyWithin(nach * 3, von * 3, von * 3 + 3); this.v.copyWithin(nach * 3, von * 3, von * 3 + 3);
     this.farbe.copyWithin(nach * 4, von * 4, von * 4 + 4);
     this.gr[nach] = this.gr[von]; this.leben[nach] = this.leben[von]; this.maxLeben[nach] = this.maxLeben[von];
-    this.grav[nach] = this.grav[von]; this.wachs[nach] = this.wachs[von]; this.a0[nach] = this.a0[von];
+    this.grav[nach] = this.grav[von]; this.wachs[nach] = this.wachs[von]; this.a0[nach] = this.a0[von]; this.boden[nach] = this.boden[von];
   }
   update(dt){
     let i = 0;
@@ -799,7 +801,7 @@ class Partikel {
       const p = i * 3;
       this.v[p + 1] -= this.grav[i] * dt;
       this.pos[p] += this.v[p] * dt; this.pos[p + 1] += this.v[p + 1] * dt; this.pos[p + 2] += this.v[p + 2] * dt;
-      if (this.pos[p + 1] < 0.05){ this.pos[p + 1] = 0.05; this.v[p + 1] *= -0.3; }
+      if (this.pos[p + 1] < this.boden[i] + 0.05){ this.pos[p + 1] = this.boden[i] + 0.05; this.v[p + 1] *= -0.3; }
       this.gr[i] += this.wachs[i] * dt;
       this.farbe[i * 4 + 3] = this.a0[i] * Math.min(1, this.leben[i] / this.maxLeben[i] * 1.5);
       i++;
@@ -1168,6 +1170,21 @@ function streckeRechnen(def){
     const j = (i + k) % N;
     S.kurv[i] = winkelDiff(Math.atan2(S.tx[j], S.tz[j]), Math.atan2(S.tx[i], S.tz[i])) / (k * S.ds);
   }
+  // Höhenprofil (nur Strecken mit profil:[[Anteil, Höhe], …]); weiche Übergänge zwischen den Stützpunkten
+  S.hy = new Float32Array(N); S.steig = new Float32Array(N); S.hoch = !!def.profil;
+  if (S.hoch){
+    const pr = def.profil;
+    for (let i = 0; i < N; i++){
+      const u = i / N;
+      let a = pr[pr.length - 1], b = pr[0], ua = a[0] - 1, ub = b[0];
+      for (let n = 0; n < pr.length; n++){ if (pr[n][0] <= u){ a = pr[n]; ua = a[0]; b = pr[(n + 1) % pr.length]; ub = n + 1 < pr.length ? b[0] : b[0] + 1; } }
+      const f = klemm((u - ua) / Math.max(1e-6, ub - ua), 0, 1), e = f * f * (3 - 2 * f);
+      S.hy[i] = a[1] + (b[1] - a[1]) * e;
+    }
+    for (let i = 0; i < N; i++) S.steig[i] = (S.hy[(i + 1) % N] - S.hy[(i - 1 + N) % N]) / (2 * S.ds);
+  }
+  S.gitter = new Map();
+  if (S.hoch) for (let i = 0; i < N; i++) gitterEintragen(S, S.px[i], S.pz[i], S.hy[i]);
   // Kurvenbereiche: dort liegen Curbs, Kiesbett und Reifenstapel
   S.ecke = new Uint8Array(N); S.kies = new Uint8Array(N);
   const vor = Math.round(10 / S.ds), nach = Math.round(3 / S.ds), kiesNach = Math.round(14 / S.ds);
@@ -1205,6 +1222,40 @@ function naechsterGlobal(S, x, z){
   for (let i = 0; i < S.N; i++){ const dx = x - S.px[i], dz = z - S.pz[i], d = dx * dx + dz * dz; if (d < bd){ bd = d; best = i; } }
   return best;
 }
+// Boden unter einem Kart, das nicht selbst gerechnet wird (Fernfahrer, Geist)
+function bodenUnter(S, k){
+  if (!S.hoch) return 0;
+  if (Math.abs(k.seite) > S.hw + 1) for (const c of S.abk){ const [d, t] = abkLage(c, k.x, k.z); if (d < c.hb + 0.6) return abkPunktH(c, t); }
+  return bodenHoehe(S, k.x, k.z, k.idx);
+}
+// Liegt (x, z) auf einer Abkürzung (mit Rand)?
+function abkuerzungDa(S, x, z, rand){
+  for (const c of S.abk || []){ const [d] = abkLage(c, x, z); if (d < c.hb + rand) return true; }
+  return false;
+}
+// Straßenhöhe am Punkt (x, z) in der Nähe von Index i
+function bodenHoehe(S, x, z, i){
+  if (!S.hoch) return 0;
+  const vor = (x - S.px[i]) * S.tx[i] + (z - S.pz[i]) * S.tz[i], j = vor >= 0 ? (i + 1) % S.N : (i - 1 + S.N) % S.N;
+  return S.hy[i] + (S.hy[j] - S.hy[i]) * Math.min(1, Math.abs(vor) / S.ds);
+}
+// Straßenhöhe irgendwo in der Welt (für Partikel, Bananen): nächster Punkt aus einem groben Raster
+function bodenAn(x, z){
+  const S = strecke;
+  if (!S || !S.hoch) return 0;
+  let best = 0, bd = Infinity;
+  const cx = Math.floor(x / 16), cz = Math.floor(z / 16);
+  for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++){
+    const liste = S.gitter.get((cx + a) * 100003 + cz + b);
+    if (liste) for (const [px, pz, h] of liste){ const d = (px - x) ** 2 + (pz - z) ** 2; if (d < bd){ bd = d; best = h; } }
+  }
+  return best;
+}
+function gitterEintragen(S, x, z, h){
+  const key = Math.floor(x / 16) * 100003 + Math.floor(z / 16);
+  if (!S.gitter.has(key)) S.gitter.set(key, []);
+  S.gitter.get(key).push([x, z, h]);
+}
 const idxBei = (S, s) => ((Math.round(s / S.ds) % S.N) + S.N) % S.N;
 const punktBei = (S, i, seite) => [S.px[i] + S.tz[i] * seite, S.pz[i] - S.tx[i] * seite];
 const yawBei = (S, i) => Math.atan2(S.tx[i], S.tz[i]);
@@ -1215,7 +1266,8 @@ function band(S, links, rechts, y, vLaenge, mat, von = 0, laenge = S.N){
   const pos = new Float32Array(n * 6), uv = new Float32Array(n * 4), nor = new Float32Array(n * 6);
   for (let j = 0; j < n; j++){
     const i = (von + j) % S.N, lx = S.tz[i], lz = -S.tx[i];
-    pos.set([S.px[i] + lx * links, y, S.pz[i] + lz * links, S.px[i] + lx * rechts, y, S.pz[i] + lz * rechts], j * 6);
+    const h = y + S.hy[i];
+    pos.set([S.px[i] + lx * links, h, S.pz[i] + lz * links, S.px[i] + lx * rechts, h, S.pz[i] + lz * rechts], j * 6);
     const v = j * S.ds / vLaenge;
     uv.set([0, v, 1, v], j * 4);
     nor.set([0, 1, 0, 0, 1, 0], j * 6);
@@ -1396,7 +1448,7 @@ function streckeLaden(nr){
   // Startlinie und Startaufstellung (weiße Grid-Markierungen)
   const karoTex = canvasTex(128, 32, (c, w, h) => { for (let x = 0; x < 16; x++) for (let y = 0; y < 4; y++){ c.fillStyle = (x + y) % 2 ? '#111' : '#fff'; c.fillRect(x * 8, y * 8, 8, 8); } });
   const linie = new THREE.Mesh(new THREE.PlaneGeometry(S.hw * 2, 2.4), new THREE.MeshLambertMaterial({ map:karoTex, polygonOffset:true, polygonOffsetFactor:-4, polygonOffsetUnits:-4 }));
-  linie.position.set(S.px[0], 0.07, S.pz[0]); linie.receiveShadow = true;
+  linie.position.set(S.px[0], 0.07 + S.hy[0], S.pz[0]); linie.receiveShadow = true;
   linie.rotation.order = 'YXZ'; linie.rotation.set(-Math.PI / 2, yawBei(S, 0), 0);
   gruppe.add(linie);
   const gridGeo = new THREE.PlaneGeometry(1, 1); gridGeo.rotateX(-Math.PI / 2);
@@ -1405,14 +1457,15 @@ function streckeLaden(nr){
   for (let slot = 0; slot < 8; slot++){
     const [i, seite] = startPlatz(S, slot), yaw = yawBei(S, i), fx = Math.sin(yaw), fz = Math.cos(yaw);
     const [x, z] = punktBei(S, i, seite);
-    grid.add('grid', gridGeo, gridMat, [x + fx * 1.9, 0.08, z + fz * 1.9], [3.2, 1, 0.25], [0, yaw, 0]);
-    for (const q of [-1, 1]) grid.add('grid', gridGeo, gridMat, [x + fx * 1.4 + fz * q * 1.5, 0.08, z + fz * 1.4 - fx * q * 1.5], [0.25, 1, 1.2], [0, yaw, 0]);
+    const h = S.hy[i] + 0.08;
+    grid.add('grid', gridGeo, gridMat, [x + fx * 1.9, h, z + fz * 1.9], [3.2, 1, 0.25], [0, yaw, 0]);
+    for (const q of [-1, 1]) grid.add('grid', gridGeo, gridMat, [x + fx * 1.4 + fz * q * 1.5, h, z + fz * 1.4 - fx * q * 1.5], [0.25, 1, 1.2], [0, yaw, 0]);
   }
   grid.bauen(gruppe, false);
 
   // Startbrücke mit Banner und fünf Ampelpaaren, die im Countdown angehen
   const tor = new THREE.Group();
-  tor.position.set(S.px[0], 0, S.pz[0]); tor.rotation.y = yawBei(S, 0);
+  tor.position.set(S.px[0], S.hy[0], S.pz[0]); tor.rotation.y = yawBei(S, 0);
   const bannerTex = canvasTex(1024, 160, (c, w, h) => {
     const g = c.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#ffd23f'); g.addColorStop(1, '#ff8a1a');
     c.fillStyle = g; c.fillRect(0, 0, w, h);
@@ -1437,6 +1490,7 @@ function streckeLaden(nr){
 
   // Boxengebäude gegenüber der Tribüne
   boxenGebaeude(S, gruppe);
+  abkuerzungenFinden(S);
 
   // Tribüne rechts neben der Startgeraden: Sitzreihen in Streifen, Dach mit Blende, Wimpel und jubelnde Zuschauer
   const trib = new THREE.Group();
@@ -1499,7 +1553,13 @@ function streckeLaden(nr){
     for (let i = 0; i < S.N; i += schritt){ const dx = x - S.px[i], dz = z - S.pz[i]; if (dx * dx + dz * dz < a2) return false; }
     return true;
   };
-  const freiDeko = (x, z, abstand, schritt) => frei(x, z, abstand, schritt) && !(S.sperre && Math.hypot(x - S.sperre.x, z - S.sperre.z) < S.sperre.r);
+  const freiDeko = (x, z, abstand, schritt) => frei(x, z, abstand, schritt) && !(S.sperre && Math.hypot(x - S.sperre.x, z - S.sperre.z) < S.sperre.r) && !abkuerzungDa(S, x, z, 5);
+  // Auf Strecken mit Höhen zählt ein anderer Streckenteil nur, wenn er auf ähnlicher Höhe liegt (Brücken)
+  const wandFrei = (x, z, abstand, h) => {
+    const a2 = abstand * abstand;
+    for (let i = 0; i < S.N; i += 2){ const dx = x - S.px[i], dz = z - S.pz[i]; if (dx * dx + dz * dz < a2 && Math.abs(S.hy[i] - h) < 5) return false; }
+    return !abkuerzungDa(S, x, z, 2.5);
+  };
   const wand = new Instanzen();
   const wandAbstand = S.hw + S.auslauf + 1.0;
   let farbe = 0;
@@ -1507,16 +1567,17 @@ function streckeLaden(nr){
     const reifen = S.kies[i], yaw = yawBei(S, i), lx = S.tz[i], lz = -S.tx[i];
     if (!reifen && i % Math.max(1, Math.round(2.2 / S.ds))) continue;
     farbe++;
+    const h = S.hy[i], neig = -Math.atan(S.steig[i]);
     for (const sg of [1, -1]){
       const [x, z] = punktBei(S, i, sg * wandAbstand);
-      if (!frei(x, z, wandAbstand - 0.4, 2)) continue;
+      if (!wandFrei(x, z, wandAbstand - 0.4, h)) continue;
       const vx = -lx * sg, vz = -lz * sg;
-      if (reifen){
+      if (reifen && !S.hoch){
         for (const y of [0.17, 0.5, 0.83]) wand.add('reifen', GEO.zylGrob, MAT.bunt, [x, y, z], [0.5, 0.32, 0.5], [0, 0, 0], lin(0x1d1d20));
         wand.add('gurt', GEO.box, MAT.bunt, [x + vx * 0.52, 0.5, z + vz * 0.52], [0.05, 0.9, 1.08], [0, yaw, 0], lin(Math.floor(farbe / 2) % 2 ? wandA : wandB));
       } else {
-        wand.add('mauer', GEO.box, MAT.bunt, [x, 0.55, z], [0.6, 1.1, 2.3], [0, yaw, 0], lin(0xd9dce1));
-        wand.add('bande', GEO.box, MAT.bunt, [x + vx * 0.32, 0.6, z + vz * 0.32], [0.05, 0.75, 2.2], [0, yaw, 0], lin(farbe % 2 ? wandA : wandB));
+        wand.add('mauer', GEO.box, MAT.bunt, [x, 0.55 + h, z], [0.6, 1.1, 2.3], [neig, yaw, 0, 'YXZ'], lin(0xd9dce1));
+        wand.add('bande', GEO.box, MAT.bunt, [x + vx * 0.32, 0.6 + h, z + vz * 0.32], [0.05, 0.75, 2.2], [neig, yaw, 0, 'YXZ'], lin(farbe % 2 ? wandA : wandB));
       }
     }
   }
@@ -1530,14 +1591,14 @@ function streckeLaden(nr){
       const [x, z] = punktBei(S, i, q * S.hw);
       // Glaswuerfel mit drehendem Kristallkern, Leuchthof und Lichtfleck auf dem Boden
       const m = new THREE.Group();
-      m.position.set(x, 1.3, z);
+      m.position.set(x, 1.3 + S.hy[i], z);
       const wuerfel = new THREE.Mesh(GEO.box16, MAT.itemBox); wuerfel.castShadow = true;
       const kern = new THREE.Mesh(GEO.okta, MAT.itemKern); kern.scale.set(0.42, 0.62, 0.42);
       const halo = new THREE.Sprite(MAT.itemHalo); halo.scale.set(3.6, 3.6, 1);
       const fleck = new THREE.Mesh(GEO.scheibe, MAT.itemFleck); fleck.scale.set(3.4, 1, 3.4);
       m.add(wuerfel, kern, halo, fleck);
       gruppe.add(m);
-      S.boxen.push({ x, z, mesh:m, wuerfel, kern, fleck, aus:0, wachs:1, phase:rnd() * TAU });
+      S.boxen.push({ x, z, h:S.hy[i], mesh:m, wuerfel, kern, fleck, aus:0, wachs:1, phase:rnd() * TAU });
     }
   }
   // Turbo-Felder
@@ -1546,8 +1607,8 @@ function streckeLaden(nr){
     const i = Math.round(S.N * anteil), seite = q * S.hw;
     const [x, z] = punktBei(S, i, seite);
     const m = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 6), MAT.pad);
-    m.rotation.order = 'YXZ'; m.rotation.set(-Math.PI / 2, yawBei(S, i), 0);
-    m.position.set(x, 0.08, z);
+    m.rotation.order = 'YXZ'; m.rotation.set(-Math.PI / 2 - Math.atan(S.steig[i]), yawBei(S, i), 0);
+    m.position.set(x, 0.08 + S.hy[i], z);
     gruppe.add(m);
     S.pads.push({ i, seite });
   });
@@ -1581,6 +1642,10 @@ function streckeLaden(nr){
   S.kOx = 190 - (S.minX + S.maxX) / 2 * S.kSkala; S.kOz = 190 - (S.minZ + S.maxZ) / 2 * S.kSkala;
   kc.lineJoin = kc.lineCap = 'round';
   const pfad = () => { kc.beginPath(); for (let i = 0; i <= S.N; i += 4){ const j = i % S.N; kc.lineTo(S.px[j] * S.kSkala + S.kOx, S.pz[j] * S.kSkala + S.kOz); } kc.closePath(); };
+  // Abkürzungen gestrichelt unter der Strecke
+  kc.setLineDash([10, 8]); kc.strokeStyle = 'rgba(255,214,90,.9)'; kc.lineWidth = 7;
+  for (const c of S.abk){ kc.beginPath(); kc.moveTo(c.ax * S.kSkala + S.kOx, c.az * S.kSkala + S.kOz); kc.lineTo(c.bx * S.kSkala + S.kOx, c.bz * S.kSkala + S.kOz); kc.stroke(); }
+  kc.setLineDash([]);
   pfad(); kc.strokeStyle = 'rgba(0,0,0,.55)'; kc.lineWidth = 22; kc.stroke();
   pfad(); kc.strokeStyle = 'rgba(255,255,255,.92)'; kc.lineWidth = 12; kc.stroke();
   const [sx1, sz1] = punktBei(S, 0, S.hw), [sx2, sz2] = punktBei(S, 0, -S.hw);
@@ -1917,7 +1982,12 @@ function fremdFrei(S, x, z, i, abstand){
 // Ort auf der Strecke mit lokaler Richtung: daran hängen Schanzen und Eisflächen
 function streckenOrt(S, i, seite){
   const [x, z] = punktBei(S, i, seite);
-  return { i, x, z, fx:S.tx[i], fz:S.tz[i] };
+  return { i, x, z, h:S.hy[i], fx:S.tx[i], fz:S.tz[i] };
+}
+// Flaches Teil (Eis, Pfütze) an einem Ort auf die Straße legen, bergauf/bergab mitgeneigt
+function aufStrasse(m, S, ort, y){
+  m.position.set(ort.x, ort.h + y, ort.z);
+  m.rotation.order = 'YXZ'; m.rotation.set(-Math.atan(S.steig[ort.i]), yawBei(S, ort.i), 0);
 }
 // Lage eines Punkts relativ zu einem Ort: [entlang, quer]
 function ortLage(o, x, z){
@@ -1929,6 +1999,8 @@ function streckenExtras(S, gruppe, th){
   const rnd = zufallsGen(S.def.saat * 7 + 3);
   rampenBauen(S, gruppe, th);
   boegenBauen(S, gruppe, th);
+  S.muenzen = [];
+  abkuerzungenBauen(S, gruppe, th);
   muenzenBauen(S, gruppe);
   S.eis = [];
   if (th.gefahr === 'eis') eisBauen(S, gruppe, rnd);
@@ -1958,6 +2030,7 @@ function rampenBauen(S, gruppe, th){
   S.rampen = [];
   // Nur auf langen Geraden, mit Platz zum Landen, weg von Start, Item-Boxen und Turbo-Feldern
   const belegt = [0, 0.2, 0.36, 0.5, 0.64, 0.79, 0.92].map(a => Math.round(S.N * a) % S.N);
+  for (const c of S.abk) belegt.push(c.i, c.j);
   const vor = Math.round(20 / S.ds), nach = Math.round(50 / S.ds), landung = Math.round(32 / S.ds);
   const kandidaten = [];
   for (let i = 0; i < S.N; i += 2){
@@ -1988,7 +2061,7 @@ function rampenBauen(S, gruppe, th){
   for (const i of zweite >= 0 ? [erste, zweite] : [erste]){
     const ort = streckenOrt(S, i, 0);
     const g = new THREE.Group();
-    g.position.set(ort.x, 0, ort.z); g.rotation.y = yawBei(S, i);
+    g.position.set(ort.x, ort.h, ort.z); g.rotation.y = yawBei(S, i);
     const bahn = new THREE.Mesh(bahnGeo, bahnMat); bahn.receiveShadow = true; bahn.castShadow = true;
     const k = new THREE.Mesh(keil, keilMat); k.castShadow = true;
     // Leuchtkante an der Absprungkante, dazu Pfosten mit Lampen
@@ -2012,7 +2085,7 @@ function rampeHoehe(S, k){
   return -1;
 }
 function abheben(k){
-  k.vy = 4 + k.v * 0.32; k.sprung = true; k.trick = 0; k.trickOk = false;
+  k.vy = 4 + k.v * 0.32 + k.vb; k.sprung = true; k.trick = 0; k.trickOk = false;
   if (k.spieler) Ton.effekt('sprung');
   // Computerfahrer machen meistens auch einen Trick
   if (!k.mensch && Math.random() < 0.6){ k.trick = TRICK_DAUER; k.trickOk = true; }
@@ -2035,10 +2108,9 @@ const MAX_MUENZEN = 10;
 const muenzGeo = geteilt((() => { const g = new THREE.CylinderGeometry(0.55, 0.55, 0.13, 22); g.rotateX(Math.PI / 2); return g; })());
 const muenzMat = geteilt(new THREE.MeshStandardMaterial({ color:lin(0xffd22a), metalness:0.7, roughness:0.3, emissive:lin(0xb07000), envMapIntensity:1.2 }));
 function muenzenBauen(S, gruppe){
-  S.muenzen = [];
   // Ein Bogen über jeder Schanze, genau auf der Flugbahn
   for (const r of S.rampen){
-    [[14, 3.9], [20, 4.9], [26, 4.8], [32, 3.6]].forEach(([d, h]) => S.muenzen.push({ x:r.x + r.fx * d, z:r.z + r.fz * d, y:h + 0.8 }));
+    [[14, 3.9], [20, 4.9], [26, 4.8], [32, 3.6]].forEach(([d, h]) => S.muenzen.push({ x:r.x + r.fx * d, z:r.z + r.fz * d, y:h + 0.8 + r.h }));
   }
   // Reihen auf der Straße, abwechselnd links und rechts
   [0.12, 0.42, 0.71].forEach((anteil, n) => {
@@ -2047,7 +2119,7 @@ function muenzenBauen(S, gruppe){
       const i = (Math.round(S.N * anteil) + Math.round(m * 3.5 / S.ds)) % S.N;
       if (S.rampen.some(r => ringAbstand(S, i, r.i) < 12)) continue;
       const [x, z] = punktBei(S, i, seite);
-      S.muenzen.push({ x, z, y:1.0 });
+      S.muenzen.push({ x, z, y:1.0 + S.hy[i] });
     }
   });
   for (const m of S.muenzen) m.aus = 0;
@@ -2069,7 +2141,7 @@ function muenzenUpdate(dt){
     for (const k of karts){
       if (k.fern) continue;
       const dx = k.x - m.x, dz = k.z - m.z;
-      if (dx * dx + dz * dz > 3.4 || Math.abs(k.y + 0.8 - m.y) > 1.6) continue;
+      if (dx * dx + dz * dz > 3.4 || Math.abs(k.boden + k.y + 0.8 - m.y) > 1.6) continue;
       muenzeWeg(m);
       ereignis({ a:'m', i });
       k.muenzen = Math.min(MAX_MUENZEN, k.muenzen + 1);
@@ -2089,6 +2161,202 @@ function muenzenVerlieren(k, anzahl){
   if (weg && nahAmSpieler(k.x, k.z, 80)) for (let n = 0; n < weg * 4; n++){ const w = Math.random() * TAU; funken.neu(k.x, k.y + 1.2, k.z, Math.cos(w) * 4, zufall(4, 8), Math.sin(w) * 4, zufall(0.5, 0.8), 1, 0.82, 0.15, 0.6, 16); }
 }
 
+/* ---------- Abkürzungen ----------
+   Schotterwege quer durchs Gelände (langsamer Untergrund, aber viel kürzer – mit Turbo lohnt es sich),
+   auf dem Wolkenreich eine Regenbogenbrücke ohne Geländer. Sie werden automatisch gesucht:
+   ein Weg zwischen zwei Streckenpunkten, der kürzer ist und keinen anderen Streckenteil berührt. */
+const ABK_BREITE = 4.2;
+function abkuerzungenFinden(S){
+  S.abk = [];
+  const vorgabe = S.def.abk;
+  const kand = [];
+  const st = Math.max(1, Math.round(5 / S.ds));
+  if (vorgabe){
+    for (const [von, bis, art] of vorgabe){
+      const i = Math.round(von * S.N), j = Math.round(bis * S.N);
+      for (const sg of [1, -1]) kand.push(abkKandidat(S, i, j, sg, art));
+    }
+  } else {
+    const lo = Math.round(0.1 * S.N), hi = Math.round(0.88 * S.N);
+    for (let i = lo; i < hi; i += st){
+      for (let j = i + Math.round(80 / S.ds); j < Math.min(hi, i + Math.round(330 / S.ds)); j += st){
+        for (const sg of [1, -1]){
+          const c = abkKandidat(S, i, j, sg, 'erde');
+          if (c.d / c.D >= 0.38 && c.d / c.D <= 0.65 && c.d > 50) kand.push(c);
+        }
+      }
+    }
+    kand.sort((a, b) => (b.D - b.d) - (a.D - a.d));
+  }
+  for (const c of kand){
+    if (S.abk.length >= 2) break;
+    if (S.abk.some(o => !(c.j * S.ds + 60 < o.i * S.ds || c.i * S.ds > o.j * S.ds + 60))) continue;
+    if (!abkPruefen(S, c)) continue;
+    S.abk.push(abkFertig(S, c));
+  }
+}
+function abkKandidat(S, i, j, sg, art){
+  const [ax, az] = punktBei(S, i, sg * S.hw * 0.6), [bx, bz] = punktBei(S, j, sg * S.hw * 0.6);
+  return { i, j, sg, art, ax, az, bx, bz, d:Math.hypot(bx - ax, bz - az), D:(j - i) * S.ds };
+}
+const abkHoehe = (S, c, t) => S.hy[c.i] + (S.hy[c.j] - S.hy[c.i]) * t + (c.art === 'bruecke' ? Math.sin(t * Math.PI) * 6 : 0);
+// Der Weg muss die Strecke schnell verlassen und darf sonst nirgends in ihre Nähe kommen
+function abkPruefen(S, c){
+  const n = Math.ceil(c.d / 3), rand = S.hw + S.auslauf + 4;
+  for (let m = 1; m < n; m++){
+    const t = m / n, s = t * c.d, x = c.ax + (c.bx - c.ax) * t, z = c.az + (c.bz - c.az) * t, h = abkHoehe(S, c, t);
+    if (Math.hypot(x - S.px[0], z - S.pz[0]) < 60) return false;
+    if (S.sperre && Math.hypot(x - S.sperre.x, z - S.sperre.z) < S.sperre.r + 6) return false;
+    const amEnde = s < 26 || c.d - s < 26;
+    for (let k = 0; k < S.N; k += 2){
+      const dx = x - S.px[k], dz = z - S.pz[k];
+      if (dx * dx + dz * dz > rand * rand || Math.abs(S.hy[k] - h) > 7) continue;
+      if (amEnde && (ringAbstand(S, k, c.i) < s + 14 || ringAbstand(S, k, c.j) < c.d - s + 14)) continue;
+      return false;
+    }
+  }
+  return true;
+}
+function abkFertig(S, c){
+  const n = Math.max(2, Math.ceil(c.d / 2));
+  c.px = new Float32Array(n + 1); c.pz = new Float32Array(n + 1); c.ph = new Float32Array(n + 1);
+  for (let m = 0; m <= n; m++){
+    const t = m / n;
+    c.px[m] = c.ax + (c.bx - c.ax) * t; c.pz[m] = c.az + (c.bz - c.az) * t; c.ph[m] = abkHoehe(S, c, t);
+    gitterEintragen(S, c.px[m], c.pz[m], c.ph[m]);
+  }
+  c.n = n; c.hb = ABK_BREITE; c.fx = (c.bx - c.ax) / c.d; c.fz = (c.bz - c.az) / c.d;
+  c.box = [Math.min(c.ax, c.bx) - 12, Math.max(c.ax, c.bx) + 12, Math.min(c.az, c.bz) - 12, Math.max(c.az, c.bz) + 12];
+  c.nr = S.abk.length;
+  return c;
+}
+// Abstand zum Weg, Anteil t (0 = Anfang, 1 = Ende) und nächster Punkt auf dem Weg
+function abkLage(c, x, z){
+  if (x < c.box[0] || x > c.box[1] || z < c.box[2] || z > c.box[3]) return [Infinity, 0, 0, 0];
+  const t = klemm(((x - c.ax) * c.fx + (z - c.az) * c.fz) / c.d, 0, 1);
+  const nx = c.ax + (c.bx - c.ax) * t, nz = c.az + (c.bz - c.az) * t;
+  return [Math.hypot(x - nx, z - nz), t, nx, nz];
+}
+const abkPunktH = (c, t) => { const f = t * c.n, m = Math.min(c.n - 1, Math.floor(f)); return c.ph[m] + (c.ph[m + 1] - c.ph[m]) * (f - m); };
+// Ist das Kart auf einer Abkürzung? Dann folgen Index, Fortschritt und Boden dem Weg.
+function abkFolgen(S, k){
+  const war = k.aufAbk;
+  k.aufAbk = null;
+  if (k.faellt) return;
+  for (const c of S.abk){
+    const [d, t] = abkLage(c, k.x, k.z);
+    if (d > c.hb + 0.6) continue;
+    // An den Enden gilt die normale Strecke, solange man noch auf der Straße ist
+    if (Math.abs(k.seite) < S.hw + 1 && (t < 0.2 || t > 0.8) && war !== c) continue;
+    if (t > 0.97 && Math.abs(k.seite) < S.hw + 1) continue;
+    k.aufAbk = c; k.abkT = t;
+    const idx = (c.i + Math.round(t * (c.j - c.i))) % S.N;
+    k.idx = idx;
+    k.fortschritt = k.runde * S.L + idx * S.ds;
+    break;
+  }
+}
+// Pfad als Band auf dem Boden (oder als Brücke in der Luft)
+function abkBand(c, breite, y, mat){
+  const n = c.n, pos = new Float32Array((n + 1) * 6), uv = new Float32Array((n + 1) * 4), nor = new Float32Array((n + 1) * 6);
+  const lx = c.fz, lz = -c.fx;
+  for (let m = 0; m <= n; m++){
+    const x = c.px[m], z = c.pz[m], h = c.ph[m] + y;
+    pos.set([x + lx * breite, h, z + lz * breite, x - lx * breite, h, z - lz * breite], m * 6);
+    uv.set([0, m * 2 / 6, 1, m * 2 / 6], m * 4); nor.set([0, 1, 0, 0, 1, 0], m * 6);
+  }
+  const index = [];
+  for (let m = 0; m < n; m++){ const a = 2 * m; index.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); g.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+  g.setIndex(index);
+  const me = new THREE.Mesh(g, mat); me.receiveShadow = true;
+  return me;
+}
+function abkuerzungenBauen(S, gruppe, th){
+  if (!S.abk.length) return;
+  const erdeTex = canvasTex(128, 256, (c, w, h) => {
+    c.fillStyle = th.deko === 'vulkan' ? '#3a2c26' : th.schnee ? '#c9d6e2' : th.deko === 'kakteen' ? '#b07a45' : th.deko === 'palmen' ? '#d9bd84' : '#8a6238';
+    c.fillRect(0, 0, w, h);
+    koernung(c, w, h, 5000, 0.25);
+    // Fahrspuren
+    c.fillStyle = 'rgba(0,0,0,.16)'; c.fillRect(w * 0.22, 0, 14, h); c.fillRect(w * 0.7, 0, 14, h);
+    for (let n = 0; n < 40; n++){ c.fillStyle = 'rgba(255,255,255,.12)'; c.beginPath(); c.arc(Math.random() * w, Math.random() * h, 2 + Math.random() * 4, 0, TAU); c.fill(); }
+  }, true);
+  const brueckeTex = canvasTex(128, 64, (c, w, h) => {
+    const farben = ['#ff4d6d', '#ff9f1c', '#ffd23f', '#3fd17a', '#3aa0ff', '#8a5cff'];
+    farben.forEach((f, n) => { c.fillStyle = f; c.fillRect(n * w / 6, 0, w / 6, h); });
+    c.fillStyle = 'rgba(0,0,0,.25)'; c.fillRect(0, h - 4, w, 4);
+  }, true);
+  const pfostenMat = std(0x6b4a2a, 0.9), lampeMat = new THREE.MeshBasicMaterial({ color:lin(th.neon) });
+  const inst = new Instanzen();
+  for (const c of S.abk){
+    const bruecke = c.art === 'bruecke';
+    const mat = bruecke
+      ? new THREE.MeshStandardMaterial({ map:brueckeTex, roughness:0.4, emissive:lin(0x222222), side:THREE.DoubleSide })
+      : new THREE.MeshLambertMaterial({ map:erdeTex, polygonOffset:true, polygonOffsetFactor:-1, polygonOffsetUnits:-1 });
+    gruppe.add(abkBand(c, c.hb, bruecke ? 0 : 0.03, mat));
+    const lx = c.fz, lz = -c.fx, yaw = Math.atan2(c.fx, c.fz);
+    for (let m = 2; m < c.n - 1; m += bruecke ? 4 : 3){
+      const x = c.px[m], z = c.pz[m], h = c.ph[m];
+      if (bruecke){
+        // Stützen hinunter in die Wolken, Leuchtpunkte am Rand
+        if (m % 12 === 2) inst.add('stuetze', GEO.zylGrob, MAT.weiss, [x, h - 40, z], [0.5, 80, 0.5]);
+        for (const sg of [-1, 1]) inst.add('licht', GEO.kugelGrob, lampeMat, [x + lx * sg * (c.hb + 0.1), h + 0.15, z + lz * sg * (c.hb + 0.1)], [0.22, 0.22, 0.22]);
+      } else {
+        for (const sg of [-1, 1]) inst.add('pfosten', GEO.zylGrob, pfostenMat, [x + lx * sg * (c.hb + 0.5), h + 0.5, z + lz * sg * (c.hb + 0.5)], [0.14, 1, 0.14]);
+      }
+    }
+    if (bruecke){
+      const unter = abkBand(c, c.hb, -0.4, new THREE.MeshStandardMaterial({ color:lin(0xf4f4ff), roughness:0.6 }));
+      gruppe.add(unter);
+    }
+    // Schild an der Einfahrt
+    const schildTex = canvasTex(256, 96, (cx, w, h) => {
+      cx.fillStyle = '#20232a'; cx.fillRect(0, 0, w, h);
+      cx.strokeStyle = cssFarbe(th.neon); cx.lineWidth = 8; cx.strokeRect(4, 4, w - 8, h - 8);
+      cx.font = '900 40px "Barlow SC", system-ui, sans-serif'; cx.textAlign = 'center'; cx.textBaseline = 'middle';
+      cx.fillStyle = '#ffd23f'; cx.fillText(bruecke ? '🌈 BRÜCKE ➜' : 'ABKÜRZUNG ➜', w / 2, h / 2 + 2);
+    });
+    const schild = new THREE.Group();
+    const m0 = Math.min(c.n, 8), sx = c.px[m0] + lx * (c.hb + 1.6), sz = c.pz[m0] + lz * (c.hb + 1.6);
+    schild.position.set(sx, c.ph[m0], sz); schild.rotation.y = yaw + Math.PI / 2;
+    teil(GEO.box, pfostenMat, schild, 0, 1.4, 0, 0.18, 2.8, 0.18);
+    const brett = teil(GEO.box, new THREE.MeshBasicMaterial({ map:schildTex }), schild, 0, 3.0, 0, 3.2, 1.2, 0.12);
+    brett.material.map.wrapS = THREE.ClampToEdgeWrapping;
+    gruppe.add(schild);
+    // Ein paar Münzen als Belohnung
+    for (const t of [0.35, 0.5, 0.65]){
+      const f = t * c.n, m = Math.floor(f);
+      S.muenzen.push({ x:c.px[m], z:c.pz[m], y:c.ph[m] + 1, aus:0 });
+    }
+  }
+  inst.bauen(gruppe);
+}
+// Computerfahrer: vor der Einfahrt entscheiden, ob sie die Abkürzung nehmen
+function abkZiel(S, k){
+  if (!S.abk.length) return null;
+  if (k.aufAbk){
+    const c = k.aufAbk, t = Math.min(1, k.abkT + 12 / c.d);
+    return [c.ax + (c.bx - c.ax) * t, c.az + (c.bz - c.az) * t];
+  }
+  for (const c of S.abk){
+    let vor = c.i - k.idx; if (vor < -S.N / 2) vor += S.N;
+    vor *= S.ds;
+    if (vor < -6 || vor > 55) continue;
+    const plan = `${c.nr}:${k.runde}`;
+    if (k.abkPlan !== plan){
+      k.abkPlan = plan;
+      const turbo = k.item === 'turbo' || k.item === 'turbo3' || k.item === 'stern' || k.boost > 0;
+      k.abkJa = Math.random() < (c.art === 'bruecke' ? 0.55 : turbo ? 0.85 : 0.3);
+    }
+    if (!k.abkJa) return null;
+    const t = vor > 8 ? 0.02 : 0.15;
+    return [c.ax + (c.bx - c.ax) * t, c.az + (c.bz - c.az) * t];
+  }
+  return null;
+}
+
 /* ---------- Leuchtbögen über der Strecke ---------- */
 function boegenBauen(S, gruppe, th){
   S.boegen = [];
@@ -2104,7 +2372,7 @@ function boegenBauen(S, gruppe, th){
     if (!fuesse.every(([x, z]) => fremdFrei(S, x, z, i, S.hw + S.auslauf + 2))) continue;
     if (S.sperre && fuesse.some(([x, z]) => Math.hypot(x - S.sperre.x, z - S.sperre.z) < S.sperre.r)) continue;
     const g = new THREE.Group();
-    g.position.set(ort.x, 0, ort.z); g.rotation.y = yawBei(S, i);
+    g.position.set(ort.x, ort.h, ort.z); g.rotation.order = 'YXZ'; g.rotation.set(-Math.atan(S.steig[i]), yawBei(S, i), 0);
     const mat = new THREE.MeshBasicMaterial({ color:lin(th.neon) });
     const hofMat = new THREE.MeshBasicMaterial({ color:lin(th.neon), transparent:true, opacity:0.2, blending:THREE.AdditiveBlending, depthWrite:false });
     const bogen = new THREE.Mesh(bogenGeo, mat); bogen.scale.y = 0.72;
@@ -2137,7 +2405,7 @@ function eisBauen(S, gruppe, rnd){
     const lq = S.hw * (0.35 + rnd() * 0.25), la = 9 + rnd() * 6, seite = (rnd() * 2 - 1) * (S.hw - lq);
     const ort = streckenOrt(S, i, seite);
     const m = new THREE.Mesh(GEO.scheibe, mat);
-    m.position.set(ort.x, 0.075, ort.z); m.rotation.y = yawBei(S, i); m.scale.set(lq * 2, 1, la * 2);
+    aufStrasse(m, S, ort, 0.075); m.scale.set(lq * 2, 1, la * 2);
     m.receiveShadow = true;
     gruppe.add(m);
     S.eis.push(Object.assign(ort, { la, lq }));
@@ -2277,7 +2545,7 @@ function kulissenPlatz(S, rnd, innen, aussen){
     const [x, z] = punktBei(S, i, sg * (S.hw + innen + rnd() * (aussen - innen)));
     let ok = true;
     for (let j = 0; j < S.N && ok; j += 3){ const dx = x - S.px[j], dz = z - S.pz[j]; if (dx * dx + dz * dz < (S.hw + innen) ** 2) ok = false; }
-    if (ok && !imMeer(S, x, z) && !(S.sperre && Math.hypot(x - S.sperre.x, z - S.sperre.z) < S.sperre.r + 10)) return [x, z];
+    if (ok && !imMeer(S, x, z) && !abkuerzungDa(S, x, z, 12) && !(S.sperre && Math.hypot(x - S.sperre.x, z - S.sperre.z) < S.sperre.r + 10)) return [x, z];
   }
   return null;
 }
@@ -2513,7 +2781,7 @@ function pfuetzenBauen(S){
     const lq = 2.2 + rnd() * 2, la = 3 + rnd() * 3, seite = (rnd() * 2 - 1) * (S.hw - lq);
     const ort = streckenOrt(S, i, seite);
     const m = new THREE.Mesh(GEO.scheibe, mat);
-    m.position.set(ort.x, 0.08, ort.z); m.rotation.y = yawBei(S, i); m.scale.set(lq * 2, 1, la * 2);
+    aufStrasse(m, S, ort, 0.08); m.scale.set(lq * 2, 1, la * 2);
     S.gruppe.add(m);
     S.pfuetzen.push(Object.assign(ort, { la, lq, mesh:m }));
   }
@@ -2644,7 +2912,7 @@ class Kart {
       item:null, itemNeu:null, itemAnzahl:0, roulette:0, itemTimer:0, fertig:false, zielzeit:Infinity, rundeStart:0, rundenzeiten:[],
       platz:1, lenkAnzeige:0, lenkSanft:0, stand:0, offroad:false, falsch:0, steckt:0, wandZeit:0, padZeit:0, hatteStern:false,
       spur:zufall(-0.5, 0.5), spurZiel:zufall(-0.5, 0.5), spurTimer:zufall(1, 3), gummi:1, camYaw:0, autopilot:false,
-      klein:0, kleinSkala:1, windschatten:0, rampe:0, sprung:false, trick:0, trickOk:false, netzTrick:0, eis:false, bewegYaw:0, muenzen:0
+      klein:0, kleinSkala:1, windschatten:0, aufAbk:null, abkT:0, faellt:0, abkPlan:'', abkJa:false, rampe:0, sprung:false, trick:0, trickOk:false, netzTrick:0, eis:false, bewegYaw:0, muenzen:0, boden:0, vb:0, neig:0
     });
   }
   entfernen(){
@@ -2657,8 +2925,19 @@ function aufStartplatz(k, slot){
   const [x, z] = punktBei(S, i, seite);
   k.x = x; k.z = z; k.yaw = k.camYaw = yawBei(S, i); k.idx = k.idxAlt = i;
   k.fortschritt = i * S.ds;
+  k.boden = bodenHoehe(S, x, z, i);
 }
 
+// Nach einem Absturz: zurück auf die Strecke vor der Abkürzung
+function zurueckSetzen(k){
+  const S = strecke, c = k.abkFall || S.abk[0];
+  const i = c ? c.i : k.idx;
+  const [x, z] = punktBei(S, i, 0);
+  Object.assign(k, { x, z, yaw:yawBei(S, i), bewegYaw:yawBei(S, i), idx:i, v:0, y:0, vy:0, faellt:0, aufAbk:null, drift:0, boost:0, kx:0, kz:0 });
+  k.boden = bodenHoehe(S, x, z, i);
+  muenzenVerlieren(k, 3);
+  if (k.spieler) Ton.effekt('treffer');
+}
 function boost(k, dauer){
   k.boost = Math.max(k.boost, dauer);
   k.v = Math.max(k.v, k.werte.maxV * 1.15);
@@ -2668,7 +2947,7 @@ function boost(k, dauer){
 function treffer(k, art){
   if (k.stern > 0 || k.dreh > 0) return;
   k.dreh = k.drehDauer = art === 'rakete' ? 1.4 : art === 'stoss' ? 0.8 : art === 'blitz' ? 0.7 : 1.1;
-  if (art === 'rakete') k.vy = 7;
+  if (art === 'rakete') k.vy = 7 + (k.y > 0.001 ? 0 : k.vb);
   k.drift = 0; k.boost = 0; k.driftStufe = 0;
   muenzenVerlieren(k, 3);
   for (let n = 0; n < 14; n++){
@@ -2737,8 +3016,10 @@ function kartBewegen(k, dt){
   const neben = Math.abs(k.seite) - S.hw;
   k.offroad = neben > ASPHALT_AUSLAUF;
   let maxV = w.maxV * k.gummi * (1 + 0.012 * k.muenzen);
+  if (k.aufAbk) k.offroad = k.aufAbk.art !== 'bruecke';
   if (k.boost <= 0 && k.stern <= 0){
-    if (k.offroad) maxV *= S.kies[k.idx] ? 0.42 : 0.52;
+    if (k.aufAbk) maxV *= k.aufAbk.art === 'bruecke' ? 1 : 0.62;
+    else if (k.offroad) maxV *= S.kies[k.idx] ? 0.42 : 0.52;
     else if (neben > 1.3) maxV *= 0.86;
   }
   if (k.klein > 0) maxV *= 0.72;
@@ -2760,7 +3041,7 @@ function kartBewegen(k, dt){
   // Trick in der Luft nach einer Schanze: bei der Landung gibt es einen Turbo
   if (k.sprung && e.drift && !k.driftTaste && !k.trickOk && k.dreh <= 0){ k.trick = TRICK_DAUER; k.trickOk = true; if (k.spieler) Ton.effekt('sprung'); }
   // Driften: Hüpfer beim Drücken, Drift sobald gelenkt wird
-  if (aktiv && e.drift && !k.driftTaste && amBoden && k.v > 6 && k.dreh <= 0){ k.vy = 4.2; k.rampe = 0; }
+  if (aktiv && e.drift && !k.driftTaste && amBoden && k.v > 6 && k.dreh <= 0){ k.vy = 4.2 + (k.rampe > 0 ? 0 : k.vb); k.rampe = 0; }
   k.driftTaste = e.drift;
   if (aktiv && !k.drift && e.drift && Math.abs(lenk) > 0.35 && k.v > 11 && k.dreh <= 0){ k.drift = Math.sign(lenk); k.driftZeit = 0; k.driftStufe = 0; }
   if (k.drift && (!e.drift || k.v < 8 || k.dreh > 0)){
@@ -2793,7 +3074,29 @@ function kartBewegen(k, dt){
   k.x += (vx + k.kx) * dt; k.z += (vz + k.kz) * dt;
   const daempf = Math.exp(-5 * dt);
   k.kx *= daempf; k.kz *= daempf;
-  k.vy -= 28 * dt; k.y += k.vy * dt;
+  const bewegt = Math.hypot(vx + k.kx, vz + k.kz) * dt;
+  streckeFolgen(k);
+  abkFolgen(S, k);
+  // Von der Brücke gefallen: in die Tiefe, dann zurück auf die Strecke
+  if (k.faellt){
+    k.faellt += dt; k.vy -= 28 * dt; k.y += k.vy * dt;
+    if (k.faellt > 1.6) zurueckSetzen(k);
+    return;
+  }
+  // Höhe: k.y ist die Höhe über der Straße, k.boden die Straßenhöhe darunter, k.vy die echte Steiggeschwindigkeit
+  const bAlt = k.boden, b = k.aufAbk ? abkPunktH(k.aufAbk, k.abkT) : bodenHoehe(S, k.x, k.z, k.idx), vb = klemm((b - bAlt) / Math.max(dt, 1e-4), -40, 40);
+  k.boden = b;
+  if (k.y > 0.001 || k.vy > 0){ k.vy -= 28 * dt; k.y += k.vy * dt - (b - bAlt); }
+  else if (S.hoch && vb < k.vb - 28 * dt * 1.4 && k.v > 12){
+    // Kuppe: die Straße fällt schneller weg, als die Schwerkraft zieht – das Kart hebt ab
+    k.vy = k.vb; k.y = (k.vb - vb) * dt; k.sprung = true; k.trick = 0; k.trickOk = false;
+    if (!k.mensch && Math.random() < 0.4){ k.trick = TRICK_DAUER; k.trickOk = true; }
+  } else {
+    k.vy = 0;
+    // Bergauf bremst, bergab schiebt
+    if (S.hoch && bewegt > 0.01) k.v -= 11 * klemm((b - bAlt) / bewegt, -0.5, 0.5) * dt * Math.sign(k.v);
+  }
+  k.vb = vb;
   // Sprungschanze: auf der Rampe hochfahren, an der Kante abheben
   const rh = rampeHoehe(S, k);
   if (rh >= 0 && k.y <= rh + 0.25 && k.vy <= 1){ k.y = rh; k.vy = 0; k.rampe = Math.max(rh, 0.001); }
@@ -2805,10 +3108,18 @@ function kartBewegen(k, dt){
     k.y = 0; k.vy = 0;
     if (k.sprung){ k.sprung = false; landen(k); }
   }
-  streckeFolgen(k);
-  // Absperrung
+  // Absperrung; auf einer Abkürzung zählt deren Rand
   const wand = S.hw + S.auslauf;
-  if (Math.abs(k.seite) > wand){
+  if (k.aufAbk){
+    const c = k.aufAbk, [d, , nx, nz] = abkLage(c, k.x, k.z);
+    if (c.art === 'bruecke'){
+      if (d > c.hb + 0.3 && k.y < 0.6){ k.faellt = 0.001; k.abkFall = c; k.vy = Math.min(k.vy, 0); if (k.spieler) meldung('Abgestürzt!', 1.4, true); }
+    } else if (d > c.hb){
+      const f = (d - c.hb) / d;
+      k.x -= (k.x - nx) * f; k.z -= (k.z - nz) * f;
+      k.v *= 1 - 0.6 * dt * 10 * Math.min(1, d - c.hb);
+    }
+  } else if (Math.abs(k.seite) > wand){
     const sg = Math.sign(k.seite), i = k.idx, lx = S.tz[i], lz = -S.tx[i], ueber = Math.abs(k.seite) - wand;
     k.x -= lx * sg * ueber; k.z -= lz * sg * ueber; k.seite = sg * wand;
     const hinein = (fx * lx + fz * lz) * sg * (k.v < 0 ? -1 : 1);
@@ -2832,7 +3143,7 @@ function kartStoesse(){
       const A = karts[a], B = karts[b];
       const dx = B.x - A.x, dz = B.z - A.z, d2 = dx * dx + dz * dz;
       if (A.fern && B.fern) continue;
-      if (d2 > 6.25 || d2 < 1e-6 || Math.abs(A.y - B.y) > 1.5) continue;
+      if (d2 > 6.25 || d2 < 1e-6 || Math.abs(A.boden + A.y - B.boden - B.y) > 1.5) continue;
       const d = Math.sqrt(d2), nx = dx / d, nz = dz / d, ueber = 2.5 - d;
       if (A.stern > 0 && B.stern <= 0 && !B.fern) treffer(B, 'stoss');
       else if (B.stern > 0 && A.stern <= 0 && !A.fern) treffer(A, 'stoss');
@@ -2910,9 +3221,10 @@ function bananeLegen(x, z, idx, id = null){
   for (const [mat, geo] of bananeTeile()){ const m = new THREE.Mesh(geo, mat); m.castShadow = true; g.add(m); }
   const fleck = new THREE.Mesh(GEO.scheibe, MAT.kontakt); fleck.scale.set(1.6, 1, 1.6); fleck.position.y = -0.16;
   g.add(fleck);
-  g.position.set(x, 0.25, z); g.rotation.y = Math.random() * TAU;
+  const h = bodenAn(x, z);
+  g.position.set(x, 0.25 + h, z); g.rotation.y = Math.random() * TAU;
   scene.add(g);
-  const b = { id:id || neueId(), x, z, idx:naechster(strecke, x, z, idx), mesh:g };
+  const b = { id:id || neueId(), x, z, h, idx:naechster(strecke, x, z, idx), mesh:g };
   bananen.push(b);
   if (!id) ereignis({ a:'b', id:b.id, x:rund(x), z:rund(z), idx:b.idx });
 }
@@ -2965,7 +3277,7 @@ function blitzStrahl(k){
   for (const [mat, geo] of mh){ const m = new THREE.Mesh(geo, MAT.blitzGlow); m.frustumCulled = false; g.add(m); }
   const blitz = new THREE.Sprite(MAT.blitzSprite); blitz.scale.set(9, 9, 1); blitz.position.y = 2;
   g.add(blitz);
-  g.position.set(k.x, 0, k.z);
+  g.position.set(k.x, k.boden, k.z);
   scene.add(g);
   blitzStrahlen.push({ g, k, t:0 });
   for (let i = 0; i < 18; i++){
@@ -2983,7 +3295,7 @@ function blitzUpdate(dt){
       blitzStrahlen.splice(i, 1);
       continue;
     }
-    b.g.position.set(b.k.x, 0, b.k.z);
+    b.g.position.set(b.k.x, b.k.boden, b.k.z);
     b.g.visible = (Math.floor(b.t * 36) % 3) !== 2;
   }
   MAT.blitz.opacity = 1; MAT.blitzSprite.opacity = 0.9;
@@ -3053,14 +3365,15 @@ function raketeBauen(r){
   g.add(fl);
   g.userData.flamme = { aussen, kern, glut };
   r.mesh = g;
-  g.position.set(r.x, 0.8, r.z);
+  r.h = bodenHoehe(strecke, r.x, r.z, r.idx);
+  g.position.set(r.x, 0.8 + r.h, r.z);
   scene.add(g);
   raketen.push(r);
   if (nahAmSpieler(r.x, r.z, 50)) Ton.effekt('rakete');
 }
 function raketeWeg(n){
   const r = raketen[n];
-  explosion(r.x, 0.8, r.z);
+  explosion(r.x, 0.8 + r.h - bodenAn(r.x, r.z), r.z);
   if (nahAmSpieler(r.x, r.z, 60)) Ton.effekt('explosion');
   scene.remove(r.mesh); raketen.splice(n, 1);
 }
@@ -3083,13 +3396,14 @@ function raketenUpdate(dt){
     r.yaw += klemm(winkelDiff(Math.atan2(zx - r.x, zz - r.z), r.yaw), -drehMax, drehMax);
     r.x += Math.sin(r.yaw) * 58 * dt; r.z += Math.cos(r.yaw) * 58 * dt;
     r.idx = naechster(S, r.x, r.z, r.idx);
+    r.h += (bodenHoehe(S, r.x, r.z, r.idx) - r.h) * Math.min(1, dt * 12);
     const i = r.idx, seite = (r.x - S.px[i]) * S.tz[i] - (r.z - S.pz[i]) * S.tx[i];
     let weg = r.t > 6 || Math.abs(seite) > S.hw + S.auslauf, melden = false;
     // Treffer prüft jeder nur für die Karts, die er selbst steuert
     for (const k of karts){
       if (k.fern || (k === r.besitzer && r.t < 0.5)) continue;
       const dx = k.x - r.x, dz = k.z - r.z;
-      if (dx * dx + dz * dz < 4.4 && k.y < 2){ treffer(k, 'rakete'); weg = melden = true; break; }
+      if (dx * dx + dz * dz < 4.4 && Math.abs(k.boden + k.y - r.h) < 2){ treffer(k, 'rakete'); weg = melden = true; break; }
     }
     const eigene = !r.besitzer || !r.besitzer.fern;
     for (let b = bananen.length - 1; b >= 0 && !weg; b--){
@@ -3101,14 +3415,15 @@ function raketenUpdate(dt){
       raketeWeg(n);
       continue;
     }
-    r.mesh.position.set(r.x, 0.8 + Math.sin(r.t * 20) * 0.05, r.z);
+    r.mesh.position.set(r.x, 0.8 + r.h + Math.sin(r.t * 20) * 0.05, r.z);
     r.mesh.rotation.y = r.yaw;
     r.mesh.rotation.z = Math.sin(r.t * 17) * 0.06;
     const u = r.mesh.userData.flamme, fk = 0.8 + Math.random() * 0.5;
     u.aussen.scale.y = 0.95 * fk; u.aussen.position.z = -0.47 * fk; u.kern.scale.y = 0.55 * fk; u.kern.position.z = -0.27 * fk; u.glut.scale.setScalar(1.4 + Math.random() * 0.4);
     const bx = r.x - Math.sin(r.yaw) * 1.5, bz = r.z - Math.cos(r.yaw) * 1.5;
-    funken.neu(bx, 0.8, bz, zufall(-1, 1), zufall(0, 1), zufall(-1, 1), 0.3, 1, 0.6, 0.15, 0.5, 0, -1.5);
-    if (grafik.modus !== 'leicht' || Math.random() < 0.5) staub.neu(bx, 0.85, bz, zufall(-0.5, 0.5), zufall(0.5, 1.5), zufall(-0.5, 0.5), 1.0, 0.86, 0.86, 0.88, 0.55, -0.5, 2.0, 0.55);
+    const rh = 0.8 + r.h - bodenAn(bx, bz);
+    funken.neu(bx, rh, bz, zufall(-1, 1), zufall(0, 1), zufall(-1, 1), 0.3, 1, 0.6, 0.15, 0.5, 0, -1.5);
+    if (grafik.modus !== 'leicht' || Math.random() < 0.5) staub.neu(bx, rh + 0.05, bz, zufall(-0.5, 0.5), zufall(0.5, 1.5), zufall(-0.5, 0.5), 1.0, 0.86, 0.86, 0.88, 0.55, -0.5, 2.0, 0.55);
   }
 }
 
@@ -3138,18 +3453,18 @@ function boxenUpdate(dt){
     b.mesh.scale.setScalar(b.wachs);
     b.wuerfel.rotation.set(0.5, zeit * 1.3 + b.phase, 0.3);
     b.kern.rotation.set(zeit * 1.9, -zeit * 2.6 + b.phase, 0);
-    b.mesh.position.y = 1.4 + Math.sin(zeit * 2.2 + b.phase) * 0.18;
-    b.fleck.position.y = 0.1 - b.mesh.position.y;
+    b.mesh.position.y = 1.4 + b.h + Math.sin(zeit * 2.2 + b.phase) * 0.18;
+    b.fleck.position.y = 0.1 + b.h - b.mesh.position.y;
     b.fleck.scale.set(3.2 + Math.sin(zeit * 3 + b.phase) * 0.35, 1, 3.2 + Math.sin(zeit * 3 + b.phase) * 0.35);
     if (funkeln && Math.random() < dt * 3 && nahAmSpieler(b.x, b.z, 70)){
       const w = Math.random() * TAU, c = new THREE.Color().setHSL((hue + Math.random() * 0.3) % 1, 1, 0.7);
-      funken.neu(b.x + Math.cos(w) * 1.1, b.mesh.position.y - 0.6, b.z + Math.sin(w) * 1.1, 0, zufall(0.8, 1.8), 0, zufall(0.7, 1.2), c.r, c.g, c.b, zufall(0.18, 0.32), -0.4);
+      funken.neu(b.x + Math.cos(w) * 1.1, b.mesh.position.y - b.h - 0.6, b.z + Math.sin(w) * 1.1, 0, zufall(0.8, 1.8), 0, zufall(0.7, 1.2), c.r, c.g, c.b, zufall(0.18, 0.32), -0.4);
     }
     if (!['rennen', 'auslauf'].includes(zustand.phase)) return;
     for (const k of karts){
       if (k.fern) continue;
       const dx = k.x - b.x, dz = k.z - b.z;
-      if (dx * dx + dz * dz > 5.5) continue;
+      if (dx * dx + dz * dz > 5.5 || Math.abs(k.boden + k.y - b.h) > 3) continue;
       boxWeg(b);
       ereignis({ a:'x', i:bi });
       if (!k.item && k.roulette <= 0){ k.roulette = 1.1; k.itemNeu = itemZiehen(k); }
@@ -3178,7 +3493,7 @@ function padsPruefen(k){
 function bananenPruefen(k){
   for (let n = bananen.length - 1; n >= 0; n--){
     const b = bananen[n], dx = k.x - b.x, dz = k.z - b.z;
-    if (dx * dx + dz * dz < 3.4 && k.y < 1){
+    if (dx * dx + dz * dz < 3.4 && Math.abs(k.boden + k.y - b.h) < 1){
       bananeWeg(n, true);
       treffer(k, 'banane');
       if (k.spieler || nahAmSpieler(k.x, k.z, 30)) Ton.effekt('banane');
@@ -3204,14 +3519,16 @@ function kiSteuern(k, dt){
     if (Math.abs(bs - seite) < 3) seite = bs + (bs > 0 ? -4.5 : 4.5);
   }
   seite = klemm(seite, -S.hw * 0.85, S.hw * 0.85);
-  const [zx, zz] = punktBei(S, j, seite);
+  let [zx, zz] = punktBei(S, j, seite);
+  const abkZ = abkZiel(S, k);
+  if (abkZ) [zx, zz] = abkZ;
   const diff = winkelDiff(Math.atan2(zx - k.x, zz - k.z), k.yaw);
   e.lenk = klemm(diff * 2.6, -1, 1);
   // Tempo vor Kurven anpassen
   let maxKr = 0;
   for (let m = 6; m <= 42; m += 6) maxKr = Math.max(maxKr, Math.abs(S.kurv[(k.idx + Math.round(m / S.ds)) % S.N]));
   const zielV = st.kurve * k.werte.lenk * 0.9 / Math.max(maxKr, 0.001);
-  if (k.v > zielV + 1.5){ e.gas = false; if (k.v > zielV + 6) e.bremse = true; }
+  if (k.v > zielV + 1.5 && !k.aufAbk){ e.gas = false; if (k.v > zielV + 6) e.bremse = true; }
   // Gummiband: nicht zu weit weg vom Spieler
   const [mn, mx] = zustand.menschen || [Infinity, -Infinity];
   if (!k.mensch && isFinite(mn)){
@@ -3223,14 +3540,14 @@ function kiSteuern(k, dt){
   if (k.steckt > 1){ e.gas = false; e.bremse = true; e.lenk = -e.lenk; }
   if (k.steckt > 3){
     const [x, z] = punktBei(S, k.idx, 0);
-    k.x = x; k.z = z; k.yaw = yawBei(S, k.idx); k.v = 0; k.steckt = 0;
+    k.x = x; k.z = z; k.yaw = yawBei(S, k.idx); k.v = 0; k.steckt = 0; k.y = 0; k.vy = 0; k.boden = bodenHoehe(S, x, z, k.idx);
   }
   // Items
   if (k.item && k.roulette <= 0){
     k.itemTimer += dt;
     const rang = rangliste(), p = rang.indexOf(k), vor = rang[p - 1], hinter = rang[p + 1];
     switch (k.item){
-      case 'turbo': case 'turbo3': if (k.itemTimer > 0.7 && maxKr < 0.02) e.item = true; break;
+      case 'turbo': case 'turbo3': if ((k.itemTimer > 0.7 && maxKr < 0.02) || (k.aufAbk && k.aufAbk.art !== 'bruecke')) e.item = true; break;
       case 'stern': if (k.itemTimer > 0.5) e.item = true; break;
       case 'blitz': if (k.itemTimer > 1.2) e.item = true; break;
       case 'rakete': {
@@ -3256,7 +3573,13 @@ const nahAmSpieler = (x, z, r) => { const f = spieler || vorschau; if (!f) retur
 /* ---------- Darstellung eines Karts ---------- */
 function kartDarstellen(k, dt){
   const m = k.m, g = m.gruppe;
-  g.position.set(k.x, k.y, k.z);
+  g.position.set(k.x, k.boden + k.y, k.z);
+  // Neigung bergauf/bergab, in der Luft nach der Flugbahn
+  const S = strecke;
+  const neigZiel = k.y > 0.05 ? -Math.atan(klemm(k.vy / Math.max(8, Math.abs(k.v)), -0.6, 0.6)) * 0.7
+    : S.hoch ? -Math.atan(S.steig[k.idx] * Math.cos(k.yaw - yawBei(S, k.idx))) : 0;
+  k.neig += (neigZiel - k.neig) * Math.min(1, dt * 10);
+  g.rotation.x = k.neig;
   k.kleinSkala += ((k.klein > 0 ? 0.55 : 1) - k.kleinSkala) * Math.min(1, dt * 6);
   g.scale.setScalar(k.kleinSkala);
   k.driftVisuell += (k.drift * 0.4 - k.driftVisuell) * Math.min(1, dt * 8);
@@ -3317,7 +3640,7 @@ function spurenUpdate(dt){
     if (k.y > 0.1 || k.offroad || Math.abs(k.v) < 7 || !(k.drift || k.eingabe.bremse) || !nahAmSpieler(k.x,k.z,85)) continue;
     const w = k.yaw + k.driftVisuell, fx = Math.sin(w), fz = Math.cos(w);
     for (const seite of [-1,1]){
-      spurObj.position.set(k.x - fx + fz * seite, 0.065, k.z - fz - fx * seite);
+      spurObj.position.set(k.x - fx + fz * seite, 0.065 + k.boden, k.z - fz - fx * seite);
       spurObj.rotation.set(0,w,0); spurObj.scale.set(1,1,Math.min(2.8,Math.abs(k.v)*intervall+0.1)); spurObj.updateMatrix();
       spuren.setMatrixAt(spurNr,spurObj.matrix); spurNr = (spurNr+1) % SPUR_ANZAHL;
       spuren.count = Math.min(SPUR_ANZAHL,spuren.count+1);
@@ -3402,7 +3725,7 @@ function vorschauZeigen(){
   if (vorschau) vorschau.entfernen();
   vorschau = new Kart(FAHRER[wahl.fahrer], true, { teile:garage.wahl });
   const S = strecke, i = idxBei(S, 24);
-  vorschau.x = S.px[i]; vorschau.z = S.pz[i]; vorschau.yaw = yawBei(S, i); vorschau.idx = i;
+  vorschau.x = S.px[i]; vorschau.z = S.pz[i]; vorschau.yaw = yawBei(S, i); vorschau.idx = i; vorschau.boden = S.hy[i];
 }
 
 // opts (nur online): { strecke, stufe, slots:[{ fahrer, name, mensch, ich, fern }] }
@@ -3708,8 +4031,8 @@ function kameraUpdate(dt){
   if (zustand.phase === 'menue'){
     zustand.orbit += dt * 0.25;
     const w = k.yaw + 0.9 + Math.sin(zustand.orbit) * 0.9;
-    camera.position.set(k.x + Math.sin(w) * 7.8, 2.8, k.z + Math.cos(w) * 7.8);
-    blick.set(k.x, 1.1, k.z);
+    camera.position.set(k.x + Math.sin(w) * 7.8, 2.8 + k.boden, k.z + Math.cos(w) * 7.8);
+    blick.set(k.x, 1.1 + k.boden, k.z);
     camera.lookAt(blick);
     if (innerWidth > 700){
       rechtsV.set(1, 0, 0).applyQuaternion(camera.quaternion);
@@ -3721,24 +4044,24 @@ function kameraUpdate(dt){
     const t = klemm(zustand.t / 3.2, 0, 1), e = t * t * (3 - 2 * t);
     const w = k.yaw + Math.PI * (1 - e) * 0.85;
     const r = 9.5 - 2.1 * e;
-    camera.position.set(k.x - Math.sin(w) * r, 2.4 + 0.6 * e, k.z - Math.cos(w) * r);
-    camera.lookAt(k.x + Math.sin(k.yaw) * 6 * e, 1.2, k.z + Math.cos(k.yaw) * 6 * e);
+    camera.position.set(k.x - Math.sin(w) * r, 2.4 + 0.6 * e + k.boden, k.z - Math.cos(w) * r);
+    camera.lookAt(k.x + Math.sin(k.yaw) * 6 * e, 1.2 + k.boden, k.z + Math.cos(k.yaw) * 6 * e);
     k.camYaw = k.yaw;
     zustand.fov = 68;
   } else if (zustand.phase === 'auslauf' || zustand.phase === 'ergebnis'){
     zustand.orbit += dt * 0.3;
     const w = k.yaw + Math.PI * 0.75 + Math.sin(zustand.orbit) * 0.5;
-    ziel.set(k.x + Math.sin(w) * 8.5, 3.2, k.z + Math.cos(w) * 8.5);
+    ziel.set(k.x + Math.sin(w) * 8.5, 3.2 + k.boden + k.y, k.z + Math.cos(w) * 8.5);
     camera.position.lerp(ziel, 1 - Math.exp(-3 * dt));
-    camera.lookAt(k.x, 1.2, k.z);
+    camera.lookAt(k.x, 1.2 + k.boden + k.y, k.z);
     zustand.fov = 60;
   } else {
     k.camYaw += winkelDiff(k.yaw, k.camYaw) * (1 - Math.exp(-7 * dt));
     const s = Math.sin(k.camYaw), c = Math.cos(k.camYaw);
     const abstand = 7.4 + klemm(k.v / k.werte.maxV, 0, 1.4) * 0.65;
-    ziel.set(k.x - s * abstand, 3.25 + k.y * 0.5, k.z - c * abstand);
+    ziel.set(k.x - s * abstand, 3.25 + k.boden + k.y * 0.5, k.z - c * abstand);
     camera.position.lerp(ziel, 1 - Math.exp(-12 * dt));
-    blick.set(k.x + s * 6, 1.3 + k.y * 0.3, k.z + c * 6);
+    blick.set(k.x + s * 6, 1.3 + k.boden + k.y * 0.3, k.z + c * 6);
     if (zustand.wackeln > 0){
       const a = zustand.wackeln * 0.6;
       camera.position.x += zufall(-a, a); camera.position.y += zufall(-a, a) * 0.5;
@@ -3753,7 +4076,8 @@ function kameraUpdate(dt){
   camera.updateProjectionMatrix();
   // Sonne und Himmel folgen
   sonne.position.set(k.x + SONNE_VERSATZ.x, SONNE_VERSATZ.y, k.z + SONNE_VERSATZ.z);
-  sonne.target.position.set(k.x, 0, k.z);
+  sonne.target.position.set(k.x, k.boden, k.z);
+  sonne.position.y += k.boden;
   himmel.position.copy(camera.position);
   const skala = renderer.domElement.height / (2 * Math.tan(camera.fov * Math.PI / 360));
   funken.mat.uniforms.skala.value = staub.mat.uniforms.skala.value = skala;
@@ -3810,6 +4134,9 @@ function geistZeigen(t, dt){
     k.lenkAnzeige += (klemm(winkelDiff(k.yaw, yawAlt) / dt * 0.6, -1, 1) - k.lenkAnzeige) * Math.min(1, dt * 8);
   } else k.yaw = d[p + 3];
   k.x = x; k.z = z; k.y = d[p + 2] + (d[q + 2] - d[p + 2]) * a;
+  k.idx = dt > 0 ? naechster(strecke, x, z, k.idx) : naechsterGlobal(strecke, x, z);
+  k.seite = (x - strecke.px[k.idx]) * strecke.tz[k.idx] - (z - strecke.pz[k.idx]) * strecke.tx[k.idx];
+  k.boden = bodenUnter(strecke, k);
   k.boost = d[p + 4] & 1 ? 0.1 : 0;
   // Ein Trick des Geists dreht sich wie beim echten Kart
   const trick = (d[p + 4] & 2) > 0;
@@ -4047,6 +4374,7 @@ function fernBewegen(k, dt){
   k.idx = naechster(S, k.x, k.z, k.idx);
   const i = k.idx;
   k.seite = (k.x - S.px[i]) * S.tz[i] - (k.z - S.pz[i]) * S.tx[i];
+  k.boden = bodenUnter(S, k);
 }
 
 // Wird man während des Rennens Host, übernimmt man die Computerfahrer
@@ -4375,7 +4703,7 @@ function schritt(dt){
   boxenUpdate(dt);
   muenzenUpdate(dt);
   spurenUpdate(dt);
-  for (const b of bananen){ b.mesh.rotation.y += dt * 0.5; b.mesh.position.y = 0.25 + Math.sin(zeit * 3 + b.x) * 0.05; }
+  for (const b of bananen){ b.mesh.rotation.y += dt * 0.5; b.mesh.position.y = 0.25 + b.h + Math.sin(zeit * 3 + b.x) * 0.05; }
   funken.update(dt); staub.update(dt);
   blitzUpdate(dt);
   gefahrenUpdate(dt);
