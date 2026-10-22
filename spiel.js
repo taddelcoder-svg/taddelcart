@@ -605,9 +605,7 @@ function kartTeile(){
     T(GEO.kugelMittel, LACK, x * 0.96, 0.77, -1.02, 0.4, 0.2, 0.64);
     kein(T(GEO.kugelMittel, MAT.licht, x * 0.42, 0.63, 1.75, 0.13, 0.1, 0.08));
     kein(T(rb(0.25, 0.1, 0.08, 0.03), MAT.ruecklicht, x * 0.6, 0.7, -1.24));
-    // Heckfluegel-Endplatten, Auspuff
-    T(rb(0.06, 0.5, 0.62, 0.02), LACK, x * 1.0, 1.3, -1.55);
-    T(rb(0.1, 0.5, 0.1, 0.03), MAT.dunkel, x * 0.6, 1.2, -1.5);
+    // Auspuff (der Heckflügel ist ein Garagen-Teil, siehe fluegelTeile)
     const rohr = T(GEO.zyl16, MAT.metall, x * 0.3, 0.95, -1.7, 0.1, 0.55, 0.1); rohr.rotation.x = Math.PI / 2;
     const loch = kein(T(GEO.zyl16, MAT.auge, x * 0.3, 0.95, -1.97, 0.066, 0.03, 0.066)); loch.rotation.x = Math.PI / 2;
   }
@@ -615,8 +613,6 @@ function kartTeile(){
   T(rb(0.9, 0.46, 0.55, 0.1), MAT.metall, 0, 0.95, -1.3);
   for (const z of [-1.18, -1.32, -1.46]) kein(T(GEO.box, MAT.dunkel, 0, 1.2, z, 0.8, 0.05, 0.05));
   T(rb(1.4, 0.14, 0.3, 0.05), MAT.dunkel, 0, 0.45, -1.7);
-  T(rb(2.0, 0.09, 0.5, 0.04), LACK, 0, 1.47, -1.55);
-  kein(T(GEO.box, MAT.weiss, 0, 1.52, -1.55, 1.6, 0.012, 0.1));
   // Zierstreifen auf der Haube, Lenkrad mit Lenksaeule
   for (const x of [-0.34, 0.34]) kein(T(GEO.box, MAT.weiss, x, 0.758, 1.2, 0.09, 0.015, 0.95));
   T(GEO.lenkrad, MAT.dunkel, 0, 1.12, 0.45).rotation.x = -0.6;
@@ -637,8 +633,60 @@ function kartTeile(){
   return kartVorlage;
 }
 
-function kartModell(f){
+/* ---------- Garage: Teile nur für die Optik, damit Rennen fair bleiben ---------- */
+const TEILE = {
+  reifen:[
+    { name:'Standard', preis:0 }, { name:'Slicks', preis:30 }, { name:'Monster', preis:80 }, { name:'Goldfelgen', preis:120 }
+  ],
+  fluegel:[
+    { name:'Standard', preis:0 }, { name:'Ohne', preis:15 }, { name:'Riesenflügel', preis:60 }, { name:'Raketen', preis:110 }
+  ],
+  lack:[
+    { name:'Fahrerfarbe', preis:0 }, { name:'Chrom', preis:50 }, { name:'Neon', preis:90 },
+    { name:'Gold', preis:150, pokal:true }, { name:'Regenbogen', preis:250 }
+  ]
+};
+const TEIL_ARTEN = ['reifen', 'fluegel', 'lack'];
+const teileOk = t => TEIL_ARTEN.map((a, i) => { const v = Array.isArray(t) ? t[i] : 0; return Number.isInteger(v) && TEILE[a][v] ? v : 0; });
+// Garage: gekaufte Teile und die aktuelle Auswahl [Reifen, Flügel, Lack]
+const garage = Object.assign({ besitz:[], wahl:[0, 0, 0] }, lesen('garage', {}));
+if (!Array.isArray(garage.besitz)) garage.besitz = [];
+garage.wahl = teileOk(garage.wahl).map((v, i) => !TEILE[TEIL_ARTEN[i]][v].preis || garage.besitz.includes(`${TEIL_ARTEN[i]}:${v}`) ? v : 0);
+const fluegelVorlagen = {};
+function fluegelTeile(art){
+  if (fluegelVorlagen[art]) return fluegelVorlagen[art];
+  const k = new THREE.Group();
+  const rb = (w, h, d, r) => geteilt(rundBox(w, h, d, r));
+  const T = (geo, mat, x, y, z, sx = 1, sy = 1, sz = 1) => teil(geo, mat, k, x, y, z, sx, sy, sz);
+  if (art === 0 || art === 2){
+    const g = art === 2 ? 1.35 : 1, hoch = art === 2 ? 0.55 : 0;
+    for (const x of [-1, 1]){
+      T(rb(0.06, 0.5 + hoch, 0.62 * g, 0.02), LACK, x * 1.0 * g, 1.3 + hoch / 2, -1.55);
+      T(rb(0.1, 0.5 + hoch, 0.1, 0.03), MAT.dunkel, x * 0.6, 1.2 + hoch / 2, -1.5);
+    }
+    T(rb(2.0 * g, 0.09, 0.5 * g, 0.04), LACK, 0, 1.47 + hoch, -1.55);
+    T(GEO.box, MAT.weiss, 0, 1.52 + hoch, -1.55, 1.6 * g, 0.012, 0.1).castShadow = false;
+    if (art === 2) T(rb(2.0 * g, 0.07, 0.3, 0.03), MAT.dunkel, 0, 1.47 + hoch - 0.28, -1.75);
+  } else if (art === 3){
+    // Zwei Raketen-Booster an den Seiten
+    for (const x of [-1, 1]){
+      T(GEO.zyl16, MAT.metall, x * 0.95, 1.15, -1.45, 0.24, 1.3, 0.24).rotation.x = Math.PI / 2;
+      T(GEO.kegel, LACK, x * 0.95, 1.15, -0.62, 0.24, 0.4, 0.24).rotation.x = Math.PI / 2;
+      T(GEO.zyl16, MAT.auge, x * 0.95, 1.15, -2.11, 0.17, 0.04, 0.17).rotation.x = Math.PI / 2;
+      for (const w of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]){
+        const fl = T(GEO.box, MAT.rot, x * 0.95 + Math.cos(w) * 0.3, 1.15 + Math.sin(w) * 0.3, -1.95, 0.04, 0.3, 0.35);
+        fl.rotation.z = w;
+      }
+    }
+  }
+  fluegelVorlagen[art] = verschmelzen(k);
+  return fluegelVorlagen[art];
+}
+const goldMat = geteilt(Object.assign(std(0xe0b030, 0.25, 0.9), { envMapIntensity:1.1 }));
+
+function kartModell(f, teile = [0, 0, 0]){
   const V = kartTeile();
+  const [reifenArt, fluegelArt, lackArt] = teileOk(teile);
   const g = new THREE.Group();
   const koerper = new THREE.Group();
   g.add(koerper);
@@ -646,9 +694,13 @@ function kartModell(f){
   // Die Szene ist hell beleuchtet (Sonne 2.2): helle Fahrerfarben wuerden sonst Richtung Weiss ausbrennen.
   const abdunkeln = c => c.multiplyScalar(0.85 - 0.33 * Math.min(1, (0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b) * 2.4));
   const lack = new THREE.MeshPhysicalMaterial({ color:abdunkeln(lin(f.farbe)), roughness:0.36, metalness:0.05, clearcoat:0.8, clearcoatRoughness:0.2, envMapIntensity:0.4 });
+  if (lackArt === 1) Object.assign(lack, { metalness:1, roughness:0.12, envMapIntensity:1.3 }), lack.color.setRGB(0.75, 0.78, 0.82);
+  if (lackArt === 2) lack.emissive.copy(lack.color).multiplyScalar(0.9);
+  if (lackArt === 3) Object.assign(lack, { metalness:0.9, roughness:0.22, envMapIntensity:1.1 }), lack.color.copy(lin(0xe0a820));
   const anzug = new THREE.MeshStandardMaterial({ color:abdunkeln(new THREE.Color(f.farbe).lerp(new THREE.Color(0xffffff), 0.3).convertSRGBToLinear()), roughness:0.75 });
   const ersatz = m => m === LACK ? lack : m === ANZUG ? anzug : m;
   for (const [mat, geo] of V.koerper){ const m = new THREE.Mesh(geo, ersatz(mat)); m.castShadow = true; koerper.add(m); }
+  for (const [mat, geo] of fluegelTeile(fluegelArt)){ const m = new THREE.Mesh(geo, ersatz(mat)); m.castShadow = true; koerper.add(m); }
   // Startnummer auf der Haube
   const nr = FAHRER.indexOf(f) + 1;
   const schild = new THREE.Mesh(V.schildGeo, new THREE.MeshBasicMaterial({ map:nummernSchild(f, nr), transparent:true, polygonOffset:true, polygonOffsetFactor:-2 }));
@@ -672,12 +724,15 @@ function kartModell(f){
     .forEach(([x, y, z, istVorne]) => {
       const halter = new THREE.Group();
       halter.position.set(x, y, z);
+      // Monster: große Räder, weiter außen; Slicks: breit und flach
+      if (reifenArt === 2){ halter.scale.setScalar(1.45); halter.position.set(x * 1.12, y * 1.45, z); }
+      if (reifenArt === 1) halter.scale.set(1.35, 0.92, 0.92);
       g.add(halter);
       const r = new THREE.Group();
       r.rotation.z = Math.PI / 2;
       const reifen = new THREE.Mesh(istVorne ? V.reifenV : V.reifenH, MAT.reifen); reifen.castShadow = true;
       r.add(reifen);
-      for (const [mat, geo] of (istVorne ? V.radV : V.radH)) r.add(new THREE.Mesh(geo, ersatz(mat)));
+      for (const [mat, geo] of (istVorne ? V.radV : V.radH)) r.add(new THREE.Mesh(geo, reifenArt === 3 && mat === MAT.metall ? goldMat : ersatz(mat)));
       halter.add(r);
       raeder.push(r);
       if (istVorne) vorne.push(halter);
@@ -695,7 +750,7 @@ function kartModell(f){
     return fl;
   });
   g.scale.setScalar(0.95);
-  return { gruppe:g, koerper, raeder, vorne, kopf, flammen, lack, anzug, kontakt, schal };
+  return { gruppe:g, koerper, raeder, vorne, kopf, flammen, lack, anzug, kontakt, schal, hoch:reifenArt === 2 ? 0.32 : 0, regenbogen:lackArt === 4, grundGlanz:lack.emissive.clone() };
 }
 
 /* =========================================================
@@ -2402,7 +2457,8 @@ class Kart {
     this.fern = !!extra.fern;
     this.slot = extra.slot == null ? -1 : extra.slot;
     this.netz = null;
-    this.m = kartModell(fahrer);
+    this.teile = teileOk(extra.teile);
+    this.m = kartModell(fahrer, this.teile);
     if (extra.schild){ this.schild = namensSchild(this.name); this.m.gruppe.add(this.schild); }
     scene.add(this.m.gruppe);
     this.werte = werteVon(fahrer, !istSpieler);
@@ -3041,7 +3097,7 @@ function kartDarstellen(k, dt){
   m.kontakt.position.y = 0.09 - k.y;
   m.kontakt.scale.setScalar(1 + Math.max(0, k.y) * 0.12);
   m.kontakt.visible = k.y < 3;
-  m.koerper.position.y = Math.sin(zeit * 30 + k.phase) * 0.015 * tempo + (k.offroad ? Math.sin(zeit * 47 + k.phase) * 0.05 * tempo : 0);
+  m.koerper.position.y = m.hoch + Math.sin(zeit * 30 + k.phase) * 0.015 * tempo + (k.offroad ? Math.sin(zeit * 47 + k.phase) * 0.05 * tempo : 0);
   const radDreh = k.v * dt / 0.48;
   for (const r of m.raeder) r.rotation.x += radDreh;
   for (const h of m.vorne) h.rotation.y = k.lenkAnzeige * 0.45;
@@ -3065,7 +3121,8 @@ function kartDarstellen(k, dt){
     const c = new THREE.Color().setHSL((zeit * 2 + k.phase) % 1, 1, 0.45);
     m.lack.emissive.copy(c); m.anzug.emissive.copy(c).multiplyScalar(0.6);
     k.hatteStern = true;
-  } else if (k.hatteStern){ m.lack.emissive.setRGB(0, 0, 0); m.anzug.emissive.setRGB(0, 0, 0); k.hatteStern = false; }
+  } else if (k.hatteStern){ m.lack.emissive.copy(m.grundGlanz); m.anzug.emissive.setRGB(0, 0, 0); k.hatteStern = false; }
+  else if (m.regenbogen) m.lack.color.setHSL((zeit * 0.15 + k.phase) % 1, 0.85, 0.42).convertSRGBToLinear();
 }
 
 const SPUR_ANZAHL = 900;
@@ -3170,7 +3227,7 @@ function vorschauZeigen(){
   itemsLeeren(); geistEntfernen(); zustand.zeitfahren = false;
   for (const b of strecke.boxen){ b.aus = 0; b.mesh.visible = true; }
   if (vorschau) vorschau.entfernen();
-  vorschau = new Kart(FAHRER[wahl.fahrer], true);
+  vorschau = new Kart(FAHRER[wahl.fahrer], true, { teile:garage.wahl });
   const S = strecke, i = idxBei(S, 24);
   vorschau.x = S.px[i]; vorschau.z = S.pz[i]; vorschau.yaw = yawBei(S, i); vorschau.idx = i;
 }
@@ -3192,15 +3249,17 @@ function rennenStarten(opts = null){
   for (const m of S.muenzen) m.aus = 0;
   zustand.muenzRennen = 0;
   let slots = opts && opts.slots;
-  if (!slots && zustand.zeitfahren) slots = [{ fahrer:wahl.fahrer, ich:true }];
+  if (!slots && zustand.zeitfahren) slots = [{ fahrer:wahl.fahrer, ich:true, teile:garage.wahl }];
   if (!slots){
     // Im Cup fahren in allen Rennen dieselben Gegner
     if (!cup.aktiv || !cup.gegner) cup.gegner = mischen(FAHRER.map((f, i) => i).filter(i => i !== wahl.fahrer)).slice(0, 7);
     const andere = cup.gegner.slice();
-    slots = Array.from({ length:8 }, (x, slot) => slot === SPIELER_STARTPLATZ ? { fahrer:wahl.fahrer, ich:true } : { fahrer:andere.pop() });
+    // Computerfahrer bekommen ab und zu auch schicke Teile
+    const botTeile = () => TEIL_ARTEN.map(a => Math.random() < 0.3 ? Math.floor(Math.random() * TEILE[a].length) : 0);
+    slots = Array.from({ length:8 }, (x, slot) => slot === SPIELER_STARTPLATZ ? { fahrer:wahl.fahrer, ich:true, teile:garage.wahl } : { fahrer:andere.pop(), teile:botTeile() });
   }
   slots.forEach((sl, slot) => {
-    const k = new Kart(FAHRER[sl.fahrer] || FAHRER[0], !!sl.ich, { name:sl.name, mensch:sl.mensch, fern:sl.fern, slot, schild:sl.mensch && !sl.ich });
+    const k = new Kart(FAHRER[sl.fahrer] || FAHRER[0], !!sl.ich, { name:sl.name, mensch:sl.mensch, fern:sl.fern, slot, schild:sl.mensch && !sl.ich, teile:sl.teile });
     aufStartplatz(k, slot);
     karts.push(k);
     if (sl.ich) spieler = k;
@@ -3543,7 +3602,7 @@ function geistStarten(){
   const d = lesen('geist:' + geistSchluessel(), null);
   if (!d || !Array.isArray(d.d) || d.d.length < 10 || !d.d.every(zahlOk)) return;
   geist.daten = d;
-  const k = new Kart(FAHRER[d.fahrer] || FAHRER[0], false, { name:'Geist', schild:true });
+  const k = new Kart(FAHRER[d.fahrer] || FAHRER[0], false, { name:'Geist', schild:true, teile:d.teile });
   // Durchsichtig und ohne Schatten: jedes Teil bekommt eine eigene Materialkopie
   k.m.gruppe.traverse(o => {
     if (!o.isMesh && !o.isSprite) return;
@@ -3602,7 +3661,7 @@ function zeitfahrErgebnis(){
     + `<tr class="ich"><td>Gesamt</td><td class="r">${zeitText(k.zielzeit)}</td><td class="r">${geistVergleich(RUNDEN - 1, k.zielzeit)}</td></tr></table>`;
   if (!(alt <= k.zielzeit)){
     geistZeiten[schluessel] = k.zielzeit; schreiben('geistzeiten', geistZeiten);
-    schreiben('geist:' + schluessel, { zeit:k.zielzeit, fahrer:wahl.fahrer, runden:geist.marken, d:geist.aufnahme });
+    schreiben('geist:' + schluessel, { zeit:k.zielzeit, fahrer:wahl.fahrer, teile:garage.wahl, runden:geist.marken, d:geist.aufnahme });
     html += `<p class="neu">${alt ? `Neue Bestzeit, ${(alt - k.zielzeit).toFixed(2).replace('.', ',')} s schneller!` : 'Erste Zeit gesetzt!'} Ab jetzt fährt dieser Geist mit.</p>`;
   } else html += `<p class="rekord" style="margin-top:10px">Dein Geist war ${(k.zielzeit - alt).toFixed(2).replace('.', ',')} s schneller · Bestzeit ${zeitText(alt)}</p>`;
   $('ergebnisTitel').textContent = `⏱️ Zeitfahren · ${zeitText(k.zielzeit)}`;
@@ -3630,6 +3689,35 @@ function wahlKnopf(inhalt, aktiv, fn, danach = menueBauen){
   b.onclick = () => { Ton.start(); Ton.effekt('klick'); fn(); danach(); };
   return b;
 }
+const ART_NAME = { reifen:'Reifen', fluegel:'Heck', lack:'Lack' };
+const hatPokal = () => Object.values(pokale).some(p => p === 1);
+function garageBauen(){
+  $('kontoAnzeige').textContent = `${konto.muenzen} 🪙`;
+  const gw = $('garagewahl'); gw.innerHTML = '';
+  TEIL_ARTEN.forEach((art, ai) => {
+    const zeile = document.createElement('div'); zeile.className = 'garageZeile';
+    zeile.innerHTML = `<span>${ART_NAME[art]}</span>`;
+    const reihe = document.createElement('div'); reihe.className = 'reihe klein';
+    TEILE[art].forEach((t, i) => {
+      const besitzt = !t.preis || garage.besitz.includes(`${art}:${i}`), gesperrt = t.pokal && !hatPokal();
+      const info = besitzt ? (garage.wahl[ai] === i ? 'Ausgewählt' : 'Gekauft') : gesperrt ? '🔒 Cup gewinnen' : `${t.preis} 🪙`;
+      const b = wahlKnopf(`<b>${t.name}</b><small class="${!besitzt && !gesperrt && konto.muenzen < t.preis ? 'zuTeuer' : ''}">${info}</small>`, garage.wahl[ai] === i, () => {
+        if (!besitzt){
+          if (gesperrt || konto.muenzen < t.preis) return;
+          konto.muenzen -= t.preis; schreiben('konto', konto.muenzen);
+          garage.besitz.push(`${art}:${i}`);
+          Ton.effekt('muenze');
+        }
+        garage.wahl[ai] = i; schreiben('garage', garage);
+        vorschauZeigen();
+        if (online.aktiv) Netz.senden({ t:'fahrer', fahrer:wahl.fahrer, teile:garage.wahl });
+      });
+      reihe.appendChild(b);
+    });
+    zeile.appendChild(reihe);
+    gw.appendChild(zeile);
+  });
+}
 function menueBauen(){
   const fw = $('fahrerwahl'); fw.innerHTML = '';
   FAHRER.forEach((f, i) => fw.appendChild(wahlKnopf(`<span class="gesicht">${f.gesicht}</span>${f.name}`, i === wahl.fahrer, () => {
@@ -3639,6 +3727,7 @@ function menueBauen(){
   const f = FAHRER[wahl.fahrer];
   const balken = w => `<div class="balken"><i style="width:${w * 20}%"></i></div>`;
   $('fahrerinfo').innerHTML = `<span>Tempo</span>${balken(f.tempo)}<span>Beschleunigung</span>${balken(f.beschl)}<span>Kurven</span>${balken(f.lenk)}`;
+  garageBauen();
   const mw = $('moduswahl'); mw.innerHTML = '';
   [['einzel', 'Einzelrennen', 'Gegen den Computer'], ['cup', 'Cups', 'Mehrere Rennen, Punkte'], ['zeit', 'Zeitfahren', 'Gegen deinen Geist'], ['online', 'Online', 'Mit Freunden fahren']].forEach(([id, name, info]) =>
     mw.appendChild(wahlKnopf(`<b>${name}</b><small>${info}</small>`, wahl.modus === id, () => { wahl.modus = id; schreiben('wahl', wahl); })));
@@ -3855,7 +3944,7 @@ Netz.on('start', m => {
     const ich = sl.id === online.ich;
     return {
       fahrer:klemm(sl.fahrer | 0, 0, FAHRER.length - 1), name:sl.bot ? null : String(sl.name || 'Fahrer').slice(0, 16),
-      mensch:!sl.bot, ich, fern:!ich && !(sl.bot && online.host)
+      mensch:!sl.bot, ich, fern:!ich && !(sl.bot && online.host), teile:teileOk(sl.teile)
     };
   });
   if (!slots.some(sl => sl.ich)) return;
@@ -3997,7 +4086,7 @@ function lobbyBauen(){
   const lf = $('lobbyFahrer');
   lf.innerHTML = '';
   FAHRER.forEach((f, i) => lf.appendChild(wahlKnopf(`<span class="gesicht">${f.gesicht}</span>${f.name}`, i === meinFahrer, () => {
-    wahl.fahrer = i; schreiben('wahl', wahl); vorschauZeigen(); Netz.senden({ t:'fahrer', fahrer:i });
+    wahl.fahrer = i; schreiben('wahl', wahl); vorschauZeigen(); Netz.senden({ t:'fahrer', fahrer:i, teile:garage.wahl });
   }, () => {})));
   const ei = $('lobbyEinst');
   ei.innerHTML = '';
@@ -4061,7 +4150,7 @@ setInterval(olympInfoText, 250);
 async function olympLos(){
   $('onlineFehler').textContent = 'Verbinde mit dem Olympia-Rennen …';
   try { await Netz.verbinden(); } catch (e) { $('onlineFehler').textContent = 'Keine Verbindung zum Server – neuer Versuch …'; setTimeout(olympLos, 3000); return; }
-  Netz.senden({ t:'olymp', ticket:olympia.ticket, fahrer:wahl.fahrer });
+  Netz.senden({ t:'olymp', ticket:olympia.ticket, fahrer:wahl.fahrer, teile:garage.wahl });
 }
 
 $('nameFeld').value = lesen('name', '');
@@ -4071,7 +4160,7 @@ async function onlineLos(nachricht){
   schreiben('name', name);
   $('onlineFehler').textContent = 'Verbinde …';
   try { await Netz.verbinden(); } catch (e) { $('onlineFehler').textContent = 'Keine Verbindung zum Server. Bist du online?'; return; }
-  Netz.senden({ ...nachricht, name, fahrer:wahl.fahrer });
+  Netz.senden({ ...nachricht, name, fahrer:wahl.fahrer, teile:garage.wahl });
 }
 $('raumNeu').onclick = () => { Ton.start(); Ton.effekt('klick'); onlineLos({ t:'erstellen' }); };
 $('raumRein').onclick = () => {

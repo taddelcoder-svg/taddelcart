@@ -119,6 +119,13 @@
   .reihe{display:flex;flex-wrap:wrap;gap:8px}
   .reihe .wahl{flex:1 1 0;min-width:120px;padding:10px 8px;text-align:center}
   .reihe .wahl b{font-size:1.05rem}
+  .konto{float:right;color:#ffd75a;font-size:.95rem;letter-spacing:0}
+  .garageZeile{display:grid;grid-template-columns:52px 1fr;gap:8px;align-items:center;margin-bottom:8px}
+  .garageZeile>span{font-size:.85rem;color:var(--text-weich);font-weight:700}
+  .reihe.klein .wahl{min-width:84px;padding:6px 4px}
+  .reihe.klein .wahl b{font-size:.9rem}
+  .wahl small.zuTeuer{color:#ff8a7a}
+  .garageHinweis{font-size:.8rem;margin:2px 0 0}
   #fahrerinfo{margin-top:12px;display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:.9rem;color:var(--text-weich);font-weight:500}
   .balken{height:8px;align-self:center;border-radius:4px;background:rgba(255,255,255,.12);overflow:hidden}
   .balken i{display:block;height:100%;background:linear-gradient(90deg,var(--akzent-2),var(--akzent));border-radius:4px;transition:width .25s}
@@ -327,6 +334,12 @@
     <h2>Fahrer</h2>
     <div id="fahrerwahl" class="raster" role="radiogroup" aria-label="Fahrer"></div>
     <div id="fahrerinfo"></div>
+    </section>
+
+    <section class="sektion">
+    <h2>Garage <span id="kontoAnzeige" class="konto"></span></h2>
+    <div id="garagewahl"></div>
+    <p class="leise garageHinweis">Münzen sammelst du in Rennen. Die Teile ändern nur das Aussehen, nicht das Tempo.</p>
     </section>
 
     <section class="sektion">

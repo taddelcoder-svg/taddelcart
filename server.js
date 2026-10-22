@@ -93,6 +93,9 @@ function cupWerten(raum, rang){
 }
 const nameOk = n => String(n || '').replace(/[\u0000-\u001f\u007f<>&"]/g, '').trim().slice(0, 16) || 'Fahrer';
 const ganz = (v, min, max, std) => (Number.isInteger(v) && v >= min && v <= max ? v : std);
+// Garagen-Teile [Reifen, Flügel, Lack], nur Optik
+const TEIL_ANZAHL = [4, 4, 5];
+const teileOk = t => TEIL_ANZAHL.map((n, i) => ganz(Array.isArray(t) ? t[i] : 0, 0, n - 1, 0));
 function mischen(a){ for (let i = a.length - 1; i > 0; i--){ const j = crypto.randomInt(i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; }
 function neuerCode(){
   for (;;){
@@ -108,7 +111,7 @@ function darf(ws, raum, slot){
 }
 
 function beitreten(ws, raum, m){
-  raum.spieler.set(ws.id, { id:ws.id, ws, name:nameOk(m.name), fahrer:ganz(m.fahrer, 0, ANZAHL_FAHRER - 1, 0), olympId:ws.olympId || null });
+  raum.spieler.set(ws.id, { id:ws.id, ws, name:nameOk(m.name), fahrer:ganz(m.fahrer, 0, ANZAHL_FAHRER - 1, 0), teile:teileOk(m.teile), olympId:ws.olympId || null });
   ws.raum = raum.code;
   olympPruefen(raum);
   raumSenden(raum);
@@ -166,7 +169,7 @@ function olympBeitreten(ws, raum, m){
   if (ziel.spieler.size >= MAX_SPIELER) return sende(ws, { t:'fehler', text:'Der Raum ist voll (8 Fahrer).' });
   if (raum) raumVerlassen(ws);
   ws.olympId = t.s;
-  beitreten(ws, ziel, { name:t.n, fahrer:m.fahrer });
+  beitreten(ws, ziel, { name:t.n, fahrer:m.fahrer, teile:m.teile });
 }
 function zeitText(s){ const m = Math.floor(s / 60), r = s - m * 60; return `${m}:${r < 10 ? '0' : ''}${r.toFixed(2).replace('.', ',')}`; }
 function olympMelden(raum, rang){
@@ -237,7 +240,7 @@ function rennenStarten(raum){
     botFahrer = raum.cupLauf.bots.filter(f => !genommen.has(f)).concat(botFahrer.filter(f => !raum.cupLauf.bots.includes(f)));
   }
   raum.slots = new Array(anzahl);
-  menschen.forEach((s, i) => { raum.slots[plaetze[i]] = { id:s.id, name:s.name, fahrer:s.fahrer, olympId:s.olympId }; });
+  menschen.forEach((s, i) => { raum.slots[plaetze[i]] = { id:s.id, name:s.name, fahrer:s.fahrer, teile:s.teile, olympId:s.olympId }; });
   for (const slot of plaetze.slice(menschen.length)){
     raum.slots[slot] = { id:null, name:null, fahrer:botFahrer.length ? botFahrer.shift() : crypto.randomInt(ANZAHL_FAHRER) };
   }
@@ -248,7 +251,7 @@ function rennenStarten(raum){
   timerAus(raum);
   raum.endeTimer = setTimeout(() => rennenEnde(raum), MAX_RENNDAUER);
   hostPruefen(raum);
-  anAlle(raum, { t:'start', strecke:raum.strecke, stufe:raum.stufe, cup:raum.cupLauf ? { id:raum.cup, nr:raum.cupLauf.nr } : null, slots:raum.slots.map(s => ({ id:s.id, name:s.name, fahrer:s.fahrer, bot:!s.id })) });
+  anAlle(raum, { t:'start', strecke:raum.strecke, stufe:raum.stufe, cup:raum.cupLauf ? { id:raum.cup, nr:raum.cupLauf.nr } : null, slots:raum.slots.map(s => ({ id:s.id, name:s.name, fahrer:s.fahrer, teile:s.teile, bot:!s.id })) });
   raumSenden(raum);
 }
 
@@ -320,7 +323,7 @@ wss.on('connection', ws => {
         if (raum) hostPruefen(raum);
         break;
       case 'fahrer':
-        if (raum){ raum.spieler.get(ws.id).fahrer = ganz(m.fahrer, 0, ANZAHL_FAHRER - 1, 0); raumSenden(raum); }
+        if (raum){ const sp = raum.spieler.get(ws.id); sp.fahrer = ganz(m.fahrer, 0, ANZAHL_FAHRER - 1, 0); sp.teile = teileOk(m.teile); raumSenden(raum); }
         break;
       case 'einst':
         if (istHost && raum.phase !== 'rennen' && !raum.olymp){
