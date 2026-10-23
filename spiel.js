@@ -117,7 +117,7 @@ const STRECKEN = [
   { id:'himmel', name:'Wolkenreich', info:'Achterbahn über den Wolken mit Überführung', thema:'himmel', breite:16, saat:77,
     ecken:[[0,0,0],[200,0,35],[260,70,40],[230,140,30],[-20,320,35],[-30,420,40],[100,480,45],[230,420,40],[220,320,35],[-30,140,30],[-70,60,35],[-50,0,25]],
     profil:[[0,0],[0.08,0],[0.2,14],[0.28,22],[0.365,22],[0.39,8],[0.45,7],[0.53,24],[0.64,30],[0.665,13],[0.72,4],[0.8,2],[0.86,10],[0.92,4],[0.97,0]],
-    abk:[[0.41, 0.5, 0.69, 0.78, 'bruecke']] }
+    abk:[[0.1, 0.6, 0.3, 0.9, 'bruecke']] }
 ];
 const CUPS = [
   { id:'loewe',  name:'Löwen-Cup',  info:'Wiese, Canyon, Frost',    strecken:[0, 1, 2] },
@@ -2342,9 +2342,27 @@ function abkPunkt(c, t){
   const u = 1 - t, a = u * u * u, b = 3 * u * u * t, e = 3 * u * t * t, f = t * t * t;
   return [a * c.ax + b * c.k1x + e * c.k2x + f * c.bx, a * c.az + b * c.k1z + e * c.k2z + f * c.bz];
 }
-const abkHoehe = (S, c, t) => S.hy[c.i] + (S.hy[c.j] - S.hy[c.i]) * t + (c.art === 'bruecke' ? Math.sin(t * Math.PI) * 6 : 0);
+// Höhe des Wegs: an den Enden genau wie die Straße daneben, dazwischen gleichmäßig, Brücken in der Mitte gewölbt
+function abkHoehe(S, c, t){
+  const sm = f => { f = klemm(f, 0, 1); return f * f * (3 - 2 * f); };
+  const hA = S.hy[(c.i + Math.round(t * c.d / S.ds)) % S.N], hB = S.hy[(c.j - Math.round((1 - t) * c.d / S.ds) + S.N) % S.N];
+  const linear = S.hy[c.i] + (S.hy[c.j] - S.hy[c.i]) * t;
+  let h = t < 0.5 ? hA + (linear - hA) * sm(t / 0.25) : hB + (linear - hB) * sm((1 - t) / 0.25);
+  if (c.art === 'bruecke') h += Math.sin(Math.PI * sm((t - 0.2) / 0.6)) * 6;
+  return h;
+}
 // Der Weg muss die Strecke schnell verlassen und darf sonst nirgends in ihre Nähe kommen
 function abkPruefen(S, c){
+  // Fahrbar: nicht zu spitz abzweigen, keine engen Kehren
+  const sehne = Math.atan2(c.bx - c.ax, c.bz - c.az);
+  const maxWinkel = c.art === 'bruecke' ? 1.22 : 1.45;
+  if (Math.abs(winkelDiff(sehne, yawBei(S, c.i))) > maxWinkel || Math.abs(winkelDiff(sehne, yawBei(S, c.j))) > maxWinkel) return false;
+  let [x0, z0] = abkPunkt(c, 0), [x1, z1] = abkPunkt(c, 0.02), a0 = Math.atan2(x1 - x0, z1 - z0);
+  for (let m = 2; m <= 50; m++){
+    const [x2, z2] = abkPunkt(c, m / 50), a1 = Math.atan2(x2 - x1, z2 - z1), l = Math.hypot(x2 - x1, z2 - z1);
+    if (Math.abs(winkelDiff(a1, a0)) / Math.max(l, 0.01) > 1 / (c.art === 'bruecke' ? 35 : 26)) return false;
+    x1 = x2; z1 = z2; a0 = a1;
+  }
   const n = Math.ceil(c.d / 3), rand = S.hw + S.auslauf + 4;
   for (let m = 1; m < n; m++){
     const t = m / n, s = t * c.d, [x, z] = abkPunkt(c, t), h = abkHoehe(S, c, t);
@@ -2368,7 +2386,7 @@ function abkFertig(S, c){
     [c.px[m], c.pz[m]] = abkPunkt(c, t); c.ph[m] = abkHoehe(S, c, t);
     gitterEintragen(S, c.px[m], c.pz[m], c.ph[m]);
   }
-  c.n = n; c.hb = ABK_BREITE;
+  c.n = n; c.hb = c.art === 'bruecke' ? 6.5 : ABK_BREITE;
   // Richtung quer zum Weg an jedem Punkt
   c.lx = new Float32Array(n + 1); c.lz = new Float32Array(n + 1);
   for (let m = 0; m <= n; m++){
@@ -2403,11 +2421,15 @@ function abkFolgen(S, k){
     if (d > c.hb + (t < 0.25 || t > 0.75 ? 2.5 : 0.6)) continue;
     // An den Enden gilt die normale Strecke, solange man noch auf der Straße ist
     if (Math.abs(k.seite) < S.hw + 1 && (t < 0.2 || t > 0.8) && war !== c) continue;
-    if ((t > 0.97 || (d > c.hb && (t < 0.2 || t > 0.8))) && Math.abs(k.seite) < S.hw + S.auslauf) continue;
-    k.aufAbk = c; k.abkT = t;
-    const idx = (c.i + Math.round(t * (c.j - c.i))) % S.N;
-    k.idx = idx;
-    k.fortschritt = k.runde * S.L + idx * S.ds;
+    if (t > 0.97 && Math.abs(k.seite) < S.hw + S.auslauf) continue;
+    k.aufAbk = c; k.abkT = t; k.abkD = d;
+    // Erst wenn das Kart wirklich weg von der Straße ist, folgen Index und Fortschritt dem Weg
+    // (sonst verliert die Spurerkennung die Straße, an der es noch entlangfährt)
+    if (Math.abs(k.seite) > S.hw + S.auslauf + 2 || (t > 0.3 && t < 0.7)){
+      const idx = (c.i + Math.round(t * (c.j - c.i))) % S.N;
+      k.idx = idx;
+      k.fortschritt = k.runde * S.L + idx * S.ds;
+    }
     break;
   }
 }
@@ -3453,7 +3475,7 @@ function kartBewegen(k, dt){
   streckeFolgen(k);
   abkFolgen(S, k);
   // Höhe: k.y ist die Höhe über der Straße, k.boden die Straßenhöhe darunter, k.vy die echte Steiggeschwindigkeit
-  const bAlt = k.boden, b = k.aufAbk ? abkPunktH(k.aufAbk, k.abkT) : bodenHoehe(S, k.x, k.z, k.idx), vb = klemm((b - bAlt) / Math.max(dt, 1e-4), -40, 40);
+  const bAlt = k.boden, b = k.aufAbk && k.abkD <= k.aufAbk.hb + 0.5 ? abkPunktH(k.aufAbk, k.abkT) : bodenHoehe(S, k.x, k.z, k.idx), vb = klemm((b - bAlt) / Math.max(dt, 1e-4), -40, 40);
   k.boden = b;
   if (k.y > 0.001 || k.vy > 0){ k.vy -= 28 * dt; k.y += k.vy * dt - (b - bAlt); }
   else if (S.hoch && vb < k.vb - 28 * dt * 1.4 && k.v > 12){
@@ -3481,9 +3503,10 @@ function kartBewegen(k, dt){
   const wand = S.hw + S.auslauf;
   if (k.aufAbk){
     const c = k.aufAbk, [d, , nx, nz] = abkLage(c, k.x, k.z);
-    if (c.art === 'bruecke'){
-      if (d > c.hb + 0.3 && k.y < 0.6 && Math.abs(k.seite) > wand + 1){ k.faellt = 0.001; k.abkFall = c; k.vy = Math.min(k.vy, 0); if (k.spieler) meldung('Abgestürzt!', 1.4, true); }
-    } else if (d > c.hb){
+    const mitte = c.art === 'bruecke' && k.abkT > 0.15 && k.abkT < 0.85;
+    if (mitte){
+      if (d > c.hb + 0.6 && k.y < 0.6 && Math.abs(k.seite) > wand + 1){ k.faellt = 0.001; k.abkFall = c; k.vy = Math.min(k.vy, 0); if (k.spieler) meldung('Abgestürzt!', 1.4, true); }
+    } else if (d > c.hb && Math.abs(k.seite) > wand - 0.5){
       const f = (d - c.hb) / d;
       k.x -= (k.x - nx) * f; k.z -= (k.z - nz) * f;
       k.v *= 1 - 0.6 * dt * 10 * Math.min(1, d - c.hb);
