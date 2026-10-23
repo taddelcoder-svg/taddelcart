@@ -929,6 +929,7 @@ const Ton = (() => {
     ziel:() => [523, 659, 784, 1047, 784, 1047].forEach((f, i) => ton(f, i === 5 ? 0.8 : 0.16, 'square', 0.14, null, [0, .12, .24, .36, .6, .72][i])),
     klick:() => ton(900, 0.05, 'triangle', 0.08),
     blitz:() => { geraeusch(0.9, 2400, 0.4, 0, 'highpass'); ton(1800, 0.5, 'sawtooth', 0.08, 120); geraeusch(1.2, 120, 0.5, 0.15, 'lowpass'); },
+    platzen:() => { geraeusch(0.12, 2200, 0.4, 0, 'highpass'); ton(900, 0.12, 'triangle', 0.1, 200); },
     donner:() => { geraeusch(2.2, 70, 0.7, 0, 'lowpass'); geraeusch(0.5, 300, 0.35, 0.05, 'lowpass'); },
     muenze:() => { ton(988, 0.07, 'square', 0.09); ton(1319, 0.18, 'square', 0.09, null, 0.06); },
     sprung:() => { geraeusch(0.45, 900, 0.2, 0, 'bandpass', sfx, 0.7); ton(260, 0.35, 'triangle', 0.08, 640); },
@@ -1379,8 +1380,9 @@ function boxenGebaeude(S, gruppe){
 function streckeLaden(nr){
   if (strecke && strecke.nr === nr) return strecke;
   if (strecke){ scene.remove(strecke.gruppe); entsorgen(strecke.gruppe); if (strecke.schnee){ scene.remove(strecke.schnee); strecke.schnee.geometry.dispose(); strecke.schnee.material.dispose(); } }
-  const def = STRECKEN[nr], th = THEMEN[def.thema];
+  const def = streckeDef(nr), th = THEMEN[def.thema];
   const S = streckeRechnen(def);
+  if (def.arena){ S.minX = S.minZ = -ARENA_RADIUS - 2; S.maxX = S.maxZ = ARENA_RADIUS + 2; }
   S.nr = nr; S.th = th;
   const gruppe = new THREE.Group();
   S.gruppe = gruppe;
@@ -1417,6 +1419,19 @@ function streckeLaden(nr){
   boden.rotation.x = -Math.PI / 2; boden.receiveShadow = true;
   if (!th.schwebend) gruppe.add(boden);
   if (th.meer) meerBauen(S, gruppe);
+  if (def.arena){
+    arenaBauen(S, gruppe, th, rnd);
+    dekoBauen(S, th, gruppe, rnd, (x, z) => Math.hypot(x, z) > ARENA_RADIUS + 10);
+    S.karte = document.createElement('canvas');
+    S.karte.width = S.karte.height = 380;
+    const kc = S.karte.getContext('2d');
+    S.kSkala = 330 / (2 * ARENA_RADIUS + 4); S.kOx = S.kOz = 190;
+    kc.fillStyle = 'rgba(255,255,255,.85)'; kc.strokeStyle = 'rgba(0,0,0,.55)'; kc.lineWidth = 8;
+    kc.beginPath(); kc.arc(190, 190, ARENA_RADIUS * S.kSkala, 0, TAU); kc.fill(); kc.stroke();
+    wetterGrundMerken(S);
+    strecke = S;
+    return S;
+  }
 
   // Rennstrecke wie in der F1: Asphalt-Auslauf, Kiesbett und Curbs in den Kurven, kein Mittelstreifen
   const [wandA, wandB] = th.wand;
@@ -2156,7 +2171,11 @@ function rampenBauen(S, gruppe, th){
   const erste = kandidaten[Math.floor(kandidaten.length / 2)];
   let zweite = -1, weit = 150;
   for (const i of kandidaten){ const d = ringAbstand(S, i, erste); if (d > weit){ weit = d; zweite = i; } }
-  const L = RAMPE_LAENGE, H = RAMPE_HOEHE, w = S.hw * 0.42;
+  rampenSetzen(S, gruppe, th, (zweite >= 0 ? [erste, zweite] : [erste]).map(i => streckenOrt(S, i, 0)), S.hw * 0.42);
+}
+// Schanzen an Orten { x, z, h, fx, fz } bauen (Blickrichtung fx/fz), halbe Breite w
+function rampenSetzen(S, gruppe, th, orte, w){
+  const L = RAMPE_LAENGE, H = RAMPE_HOEHE;
   const tex = chevronTex(th.neon);
   tex.repeat.set(1, 1.5);
   const bahnMat = new THREE.MeshStandardMaterial({ map:tex, roughness:0.7, metalness:0.05, envMapIntensity:0.3 });
@@ -2170,10 +2189,9 @@ function rampenBauen(S, gruppe, th){
   ], 3));
   keil.computeVertexNormals();
   const keilMat = new THREE.MeshStandardMaterial({ color:lin(0x2c3038), roughness:0.6, metalness:0.3, side:THREE.DoubleSide });
-  for (const i of zweite >= 0 ? [erste, zweite] : [erste]){
-    const ort = streckenOrt(S, i, 0);
+  for (const ort of orte){
     const g = new THREE.Group();
-    g.position.set(ort.x, ort.h, ort.z); g.rotation.y = yawBei(S, i);
+    g.position.set(ort.x, ort.h, ort.z); g.rotation.y = Math.atan2(ort.fx, ort.fz);
     const bahn = new THREE.Mesh(bahnGeo, bahnMat); bahn.receiveShadow = true; bahn.castShadow = true;
     const k = new THREE.Mesh(keil, keilMat); k.castShadow = true;
     // Leuchtkante an der Absprungkante, dazu Pfosten mit Lampen
@@ -2995,6 +3013,214 @@ function wetterWuerfeln(){
 }
 
 /* =========================================================
+   Ballon-Battle: runde Arena, jedes Kart hat 3 Ballons.
+   Jeder Treffer kostet einen Ballon, ohne Ballons ist man raus.
+   Gewonnen hat, wer zuletzt übrig ist oder nach Ablauf der Zeit die meisten Ballons hat.
+   ========================================================= */
+const ARENA_NR = 100;
+const ARENA = { id:'arena', name:'Löwen-Arena', info:'Ballon-Battle', thema:'wiese', breite:92, saat:88, arena:true,
+  ecken:Array.from({ length:12 }, (x, n) => [Math.cos(n / 12 * TAU) * 16, Math.sin(n / 12 * TAU) * 16, 0]) };
+const ARENA_RADIUS = 69, BATTLE_ZEIT = 150, BALLONS = 3;
+const streckeDef = nr => nr === ARENA_NR ? ARENA : STRECKEN[nr];
+
+function arenaBauen(S, gruppe, th, rnd){
+  const R = ARENA_RADIUS;
+  // Boden: Asphalt mit Ringen und Schriftzug
+  const tex = canvasTex(1024, 1024, (c, w, h) => {
+    c.fillStyle = th.strasse; c.fillRect(0, 0, w, h);
+    koernung(c, w, h, 40000, 0.07);
+    c.strokeStyle = 'rgba(255,255,255,.85)'; c.lineWidth = 10;
+    for (const r of [0.97, 0.62, 0.3]){ c.beginPath(); c.arc(w / 2, h / 2, r * w / 2, 0, TAU); c.stroke(); }
+    c.fillStyle = cssFarbe(th.neon); c.globalAlpha = 0.35; c.beginPath(); c.arc(w / 2, h / 2, 0.3 * w / 2, 0, TAU); c.fill(); c.globalAlpha = 1;
+    c.font = '900 64px "Barlow SC", system-ui, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillStyle = '#fff'; c.fillText('LÖWEN-ARENA', w / 2, h / 2);
+    for (let n = 0; n < 16; n++){
+      const a = n / 16 * TAU;
+      c.fillStyle = n % 2 ? '#e1251b' : '#f7f7f2';
+      c.beginPath(); c.arc(w / 2, h / 2, w / 2 - 4, a, a + TAU / 16); c.arc(w / 2, h / 2, w / 2 - 30, a + TAU / 16, a, true); c.fill();
+    }
+  });
+  const bodenMat = new THREE.MeshStandardMaterial({ map:tex, roughness:0.85, envMapIntensity:0.25, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-2 });
+  const scheibe = new THREE.Mesh(new THREE.CircleGeometry(R + 1.5, 72), bodenMat);
+  scheibe.rotation.x = -Math.PI / 2; scheibe.position.y = 0.04; scheibe.receiveShadow = true;
+  gruppe.add(scheibe);
+  S.strasseMat = bodenMat;
+  // Bande rundherum
+  const [wandA, wandB] = th.wand, wand = new Instanzen();
+  const n = Math.round(TAU * (R + 1.2) / 2.2);
+  for (let m = 0; m < n; m++){
+    const a = m / n * TAU, x = Math.cos(a) * (R + 1.2), z = Math.sin(a) * (R + 1.2), yaw = -a;
+    wand.add('mauer', GEO.box, MAT.bunt, [x, 0.6, z], [0.6, 1.2, 2.3], [0, yaw, 0], lin(0xd9dce1));
+    wand.add('bande', GEO.box, MAT.bunt, [x - Math.cos(a) * 0.32, 0.65, z - Math.sin(a) * 0.32], [0.05, 0.8, 2.2], [0, yaw, 0], lin(m % 2 ? wandA : wandB));
+  }
+  wand.bauen(gruppe);
+  // Vier Schanzen auf dem mittleren Ring, im Kreis ausgerichtet
+  S.rampen = [];
+  rampenSetzen(S, gruppe, th, [0, 1, 2, 3].map(q => {
+    const a = q / 4 * TAU + 0.4;
+    return { i:0, x:Math.cos(a) * 34, z:Math.sin(a) * 34, h:0, fx:-Math.sin(a), fz:Math.cos(a) };
+  }), 3.4);
+  // Item-Boxen auf zwei Ringen
+  S.boxen = [];
+  for (const [r, anzahl, versatz] of [[18, 4, 0.4], [48, 8, 0]]){
+    for (let q = 0; q < anzahl; q++){
+      const a = q / anzahl * TAU + versatz, x = Math.cos(a) * r, z = Math.sin(a) * r;
+      const m = new THREE.Group();
+      m.position.set(x, 1.3, z);
+      const wuerfel = new THREE.Mesh(GEO.box16, MAT.itemBox); wuerfel.castShadow = true;
+      const kern = new THREE.Mesh(GEO.okta, MAT.itemKern); kern.scale.set(0.42, 0.62, 0.42);
+      const halo = new THREE.Sprite(MAT.itemHalo); halo.scale.set(3.6, 3.6, 1);
+      const fleck = new THREE.Mesh(GEO.scheibe, MAT.itemFleck); fleck.scale.set(3.4, 1, 3.4);
+      m.add(wuerfel, kern, halo, fleck);
+      gruppe.add(m);
+      S.boxen.push({ x, z, h:0, mesh:m, wuerfel, kern, fleck, aus:0, wachs:1, phase:rnd() * TAU });
+    }
+  }
+  // Tribünen-Wimpel und Fahnenmasten rundherum
+  const fahnen = new Instanzen();
+  for (let q = 0; q < 16; q++){
+    const a = q / 16 * TAU, x = Math.cos(a) * (R + 4), z = Math.sin(a) * (R + 4);
+    fahnen.add('mast', GEO.zylGrob, MAT.bunt, [x, 4, z], [0.12, 8, 0.12], [0, 0, 0], lin(0xdadde2));
+    fahnen.add('fahne', GEO.box, MAT.bunt, [x, 7.2, z + 0.7], [0.05, 1.1, 1.4], [0, 0, 0], lin([wandA, 0xffd23f, 0x2c6fd8, 0x3fae49][q % 4]));
+  }
+  fahnen.bauen(gruppe);
+  Object.assign(S, { pads:[], boegen:[], eis:[], gefahren:[], gefahrTimer:Infinity, abk:[], ampel:[], muenzen:[],
+    kulisse:{ ballons:[], rotoren:[], delfine:[], boote:[], polarlicht:null, feuerwerk:0 } });
+  S.muenzMesh = new THREE.InstancedMesh(muenzGeo, muenzMat, 1);
+  S.muenzMesh.count = 0;
+  gruppe.add(S.muenzMesh);
+}
+
+// Start: alle im Kreis mit Blick zur Mitte
+function battleStartplatz(k, slot){
+  const a = slot / 8 * TAU, r = 52;
+  k.x = Math.cos(a) * r; k.z = Math.sin(a) * r;
+  k.yaw = k.camYaw = k.bewegYaw = Math.atan2(-k.x, -k.z);
+  k.idx = k.idxAlt = naechsterGlobal(strecke, k.x, k.z);
+  k.boden = 0;
+}
+const ballonGeo = geteilt(new THREE.SphereGeometry(0.42, 14, 10));
+function ballonsGeben(k){
+  k.ballons = BALLONS; k.rausZeit = Infinity; k.schutz = 0;
+  const mat = new THREE.MeshStandardMaterial({ color:new THREE.Color(k.f.farbe).lerp(new THREE.Color(0xffffff), 0.2).convertSRGBToLinear(), roughness:0.25, metalness:0.05, emissive:lin(k.f.farbe).multiplyScalar(0.25) });
+  k.ballonMeshes = [-0.55, 0, 0.55].map((x, n) => {
+    const g = new THREE.Group();
+    g.position.set(x, 2.5 + (n === 1 ? 0.35 : 0), -1.2);
+    const b = new THREE.Mesh(ballonGeo, mat); b.scale.set(1, 1.18, 1); b.position.y = 0.55; b.castShadow = true;
+    const faden = new THREE.Mesh(GEO.zylGrob, MAT.dunkel); faden.scale.set(0.012, 0.9, 0.012); faden.position.y = -0.1;
+    g.add(b, faden);
+    k.m.koerper.add(g);
+    return g;
+  });
+}
+function ballonVerlieren(k){
+  if (!zustand.battle || k.ballons <= 0 || k.schutz > 0) return;
+  k.ballons--;
+  k.schutz = 2.6;
+  const g = k.ballonMeshes[k.ballons];
+  if (g){
+    g.visible = false;
+    const p = new THREE.Vector3(); g.getWorldPosition(p);
+    const c = new THREE.Color(k.f.farbe);
+    for (let n = 0; n < 24; n++){ const w = Math.random() * TAU; funken.neu(p.x, p.y - k.boden, p.z, Math.cos(w) * zufall(2, 6), zufall(1, 6), Math.sin(w) * zufall(2, 6), zufall(0.3, 0.6), c.r, c.g, c.b, zufall(0.4, 0.8), 10); }
+  }
+  if (nahAmSpieler(k.x, k.z, 60)) Ton.effekt('platzen');
+  if (k.ballons <= 0){
+    k.rausZeit = zustand.rt;
+    if (k.spieler) meldung('Keine Ballons mehr!', 2, true);
+    else if (spieler && nahAmSpieler(k.x, k.z, 200)) meldung(`${k.f.gesicht} ${k.name} ist raus!`, 1.4, true);
+  }
+}
+const imSpiel = k => !zustand.battle || k.ballons > 0;
+function battleUpdate(dt){
+  for (const k of karts){
+    k.schutz = Math.max(0, (k.schutz || 0) - dt);
+    // Ballons wippen; im Schutz nach einem Treffer blinkt das Kart
+    k.ballonMeshes.forEach((g, n) => { g.rotation.x = 0.25 + Math.sin(zeit * 3 + n + k.phase) * 0.12; g.rotation.z = Math.sin(zeit * 2.3 + n * 2) * 0.15; });
+    k.m.gruppe.visible = k.schutz <= 0 || Math.floor(zeit * 12) % 2 === 0;
+    if (k.ballons <= 0){ k.m.gruppe.visible = true; k.v *= Math.exp(-2 * dt); }
+  }
+  if (zustand.phase !== 'rennen') return;
+  const lebend = karts.filter(k => k.ballons > 0);
+  if (zustand.rt >= BATTLE_ZEIT || lebend.length <= 1 || spieler.ballons <= 0){
+    zustand.phase = 'auslauf';
+    zustand.ergebnisIn = 2.5;
+    spieler.autopilot = true;
+    const sieger = rangliste()[0];
+    meldung(sieger === spieler ? 'SIEG!' : zustand.rt >= BATTLE_ZEIT ? 'Zeit um!' : 'Vorbei!', 2.2);
+    Ton.effekt(sieger === spieler ? 'ziel' : 'letzte');
+  }
+}
+// Rakete im Battle: das nächste Kart grob vor (oder hinter) dem Werfer
+function battleZiel(k, rueck){
+  const fx = Math.sin(k.yaw) * (rueck ? -1 : 1), fz = Math.cos(k.yaw) * (rueck ? -1 : 1);
+  let best = null, bd = Infinity;
+  for (const o of karts){
+    if (o === k || o.ballons <= 0) continue;
+    const dx = o.x - k.x, dz = o.z - k.z, d = Math.hypot(dx, dz), vorn = (dx * fx + dz * fz) / (d || 1);
+    const wert = d * (vorn > 0.3 ? 1 : 3);
+    if (wert < bd){ bd = wert; best = o; }
+  }
+  return best;
+}
+// Computerfahrer im Battle: jagen das nächste Kart, holen sich vorher ein Item
+function kiBattle(k, dt){
+  const e = k.eingabe;
+  e.gas = true; e.bremse = false; e.drift = false; e.item = false; e.rueck = false;
+  if (k.ballons <= 0){ e.gas = false; e.lenk = 0; return; }
+  let ziel = null, zd = Infinity;
+  if (!k.item && k.roulette <= 0){
+    for (const b of strecke.boxen){ if (b.aus > 0) continue; const d = Math.hypot(b.x - k.x, b.z - k.z); if (d < zd){ zd = d; ziel = [b.x, b.z]; } }
+  }
+  const gegner = battleZiel(k, false);
+  if (gegner && (!ziel || Math.hypot(gegner.x - k.x, gegner.z - k.z) < 14)){
+    // etwas vorhalten, wohin der Gegner fährt
+    ziel = [gegner.x + Math.sin(gegner.yaw) * gegner.v * 0.4, gegner.z + Math.cos(gegner.yaw) * gegner.v * 0.4];
+  }
+  if (!ziel) ziel = [0, 0];
+  let [zx, zz] = ziel;
+  // Nicht in die Bande: weiter draußen Richtung Mitte lenken
+  const r = Math.hypot(k.x, k.z);
+  if (r > ARENA_RADIUS - 12){ const f = (r - ARENA_RADIUS + 12) / 12; zx = zx * (1 - f); zz = zz * (1 - f); }
+  const diff = winkelDiff(Math.atan2(zx - k.x, zz - k.z), k.yaw);
+  e.lenk = klemm(diff * 2.4, -1, 1);
+  if (Math.abs(diff) > 1.6 && k.v > 14) e.gas = false;
+  // Festgefahren an der Bande: kurz zurück
+  if (zustand.rt > 3 && Math.abs(k.v) < 2.5 && k.dreh <= 0) k.steckt += dt; else k.steckt = Math.max(0, k.steckt - dt);
+  if (k.steckt > 1){ e.gas = false; e.bremse = true; e.lenk = -e.lenk; if (k.steckt > 2.2) k.steckt = 0; }
+  if (k.item && k.roulette <= 0){
+    k.itemTimer += dt;
+    const d = gegner ? Math.hypot(gegner.x - k.x, gegner.z - k.z) : Infinity;
+    const vorn = gegner ? Math.abs(winkelDiff(Math.atan2(gegner.x - k.x, gegner.z - k.z), k.yaw)) < 0.5 : false;
+    switch (k.item){
+      case 'rakete': if ((vorn && d < 30 && k.itemTimer > 1.2) || k.itemTimer > 10) e.item = true; break;
+      case 'banane': {
+        const hinten = karts.some(o => o !== k && o.ballons > 0 && Math.hypot(o.x - k.x, o.z - k.z) < 14 && Math.abs(winkelDiff(Math.atan2(o.x - k.x, o.z - k.z), k.yaw)) > 2.2);
+        if ((hinten && k.itemTimer > 0.5) || k.itemTimer > 6) e.item = true;
+        break;
+      }
+      case 'stern': if (k.itemTimer > 0.3) e.item = true; break;
+      default: if (k.itemTimer > 0.6 && (d > 25 || (vorn && d < 12))) e.item = true;
+    }
+  }
+}
+function battleErgebnis(){
+  const rang = rangliste(), platz = rang.indexOf(spieler) + 1;
+  $('ergebnisTitel').textContent = platz === 1 ? '🏆 Battle gewonnen!' : `${platz}. Platz im Battle`;
+  let html = '<table>' + rang.map((k, i) =>
+    `<tr class="${k.spieler ? 'ich' : ''}"><td>${i + 1}.</td><td>${k.f.gesicht} ${esc(k.name)}</td><td class="r">${k.ballons > 0 ? '🎈'.repeat(k.ballons) : 'raus ' + zeitText(k.rausZeit)}</td></tr>`).join('') + '</table>';
+  $('ergebnisText').innerHTML = html + muenzenGutschreiben(platz);
+  const knoepfe = $('ergebnisKnoepfe');
+  knoepfe.innerHTML = '';
+  const knopf = (text, haupt, fn) => { const b = document.createElement('button'); b.className = 'knopf' + (haupt ? ' haupt' : ''); b.textContent = text; b.onclick = () => { Ton.effekt('klick'); fn(); }; knoepfe.appendChild(b); };
+  knopf('Nochmal', true, rennenStarten);
+  knopf('Menü', false, menueZeigen);
+  $('ergebnis').hidden = false;
+  $('touch').hidden = true;
+  knoepfe.querySelector('button').focus();
+}
+
+/* =========================================================
    Karts
    ========================================================= */
 let karts = [], spieler = null, vorschau = null;
@@ -3043,6 +3269,7 @@ class Kart {
     this.werte = werteVon(fahrer, !istSpieler);
     this.eingabe = { gas:false, bremse:false, lenk:0, drift:false, item:false };
     this.phase = Math.random() * TAU;
+    this.ballons = 0; this.ballonMeshes = []; this.rausZeit = Infinity; this.schutz = 0;
     this.zuruecksetzen();
   }
   zuruecksetzen(){
@@ -3085,7 +3312,8 @@ function boost(k, dauer){
 }
 
 function treffer(k, art){
-  if (k.stern > 0 || k.dreh > 0) return;
+  if (k.stern > 0 || k.dreh > 0 || k.schutz > 0) return;
+  ballonVerlieren(k);
   k.dreh = k.drehDauer = art === 'rakete' ? 1.4 : art === 'stoss' ? 0.8 : art === 'blitz' ? 0.7 : 1.1;
   if (art === 'rakete') k.vy = 7 + (k.y > 0.001 ? 0 : k.vb);
   k.drift = 0; k.boost = 0; k.driftStufe = 0;
@@ -3110,6 +3338,7 @@ function streckeFolgen(k){
 }
 
 function rundeUeber(k, r){
+  if (zustand.battle) return;
   k.runde += r;
   if (r < 0 || k.runde <= k.maxRunde) return;
   k.maxRunde = k.runde;
@@ -3305,6 +3534,12 @@ function kartStoesse(){
 
 /* ---------- Items ---------- */
 function itemZiehen(k){
+  if (zustand.battle){
+    const t = [['banane', 0.38], ['rakete', 0.22], ['turbo', 0.27], ['stern', 0.13]];
+    let r = Math.random();
+    for (const [n, w] of t){ r -= w; if (r <= 0) return n; }
+    return 'rakete';
+  }
   const f = karts.length > 1 ? (k.platz - 1) / (karts.length - 1) : 0;
   const tabelle = [
     ['banane', 0.55 - 0.45 * f], ['rakete', 0.3], ['turbo', 0.15 + 0.15 * f],
@@ -3376,7 +3611,7 @@ function bananeWeg(n, senden = false){
 // rueck: nach hinten auf den Verfolger schießen
 function raketeStarten(k, rueck = false){
   const rang = rangliste(), pos = rang.indexOf(k);
-  const ziel = rueck ? rang[pos + 1] || null : pos > 0 ? rang[pos - 1] : null;
+  const ziel = zustand.battle ? battleZiel(k, rueck) : rueck ? rang[pos + 1] || null : pos > 0 ? rang[pos - 1] : null;
   const yaw = k.yaw + (rueck ? Math.PI : 0), fx = Math.sin(yaw), fz = Math.cos(yaw);
   const r = { id:neueId(), x:k.x + fx * 2.8, z:k.z + fz * 2.8, yaw, idx:k.idx, seite:k.seite, besitzer:k, ziel, t:0, rueck };
   raketeBauen(r);
@@ -3527,6 +3762,7 @@ function raketenUpdate(dt){
     const z = r.ziel;
     if (z){ zielAbstand = Math.hypot(z.x - r.x, z.z - r.z); }
     if (z && zielAbstand < 45){ zx = z.x; zz = z.z; }
+    else if (S.def.arena){ zx = r.x + Math.sin(r.yaw); zz = r.z + Math.cos(r.yaw); }
     else {
       const j = (r.idx + (r.rueck ? -1 : 1) * Math.round(14 / S.ds) + S.N) % S.N;
       r.seite *= Math.exp(-dt * 1.2);
@@ -3705,6 +3941,7 @@ function kiSteuern(k, dt){
 }
 
 function rangliste(){
+  if (zustand.battle) return karts.slice().sort((a, b) => b.ballons - a.ballons || b.rausZeit - a.rausZeit);
   return karts.slice().sort((a, b) => {
     if (a.fertig && b.fertig) return a.zielzeit - b.zielzeit;
     if (a.fertig !== b.fertig) return a.fertig ? -1 : 1;
@@ -3876,13 +4113,15 @@ function rennenStarten(opts = null){
   eingabenLeeren();
   spurenLeeren();
   rennStufe = opts ? opts.stufe : wahl.stufe;
-  const S = streckeLaden(opts ? opts.strecke : wahl.strecke);
+  zustand.battle = !opts && !cup.aktiv && wahl.modus === 'battle';
+  const S = streckeLaden(opts ? opts.strecke : zustand.battle ? ARENA_NR : wahl.strecke);
+  $('runde').firstChild.textContent = zustand.battle ? 'ZEIT ' : 'RUNDE ';
   ampelSetzen(0);
   if (vorschau){ vorschau.entfernen(); vorschau = null; }
   karts.forEach(k => k.entfernen());
   karts = []; spieler = null;
   itemsLeeren(); funken.leeren(); staub.leeren();
-  zustand.zeitfahren = !opts && !cup.aktiv && wahl.modus === 'zeit';
+  zustand.zeitfahren = !opts && !cup.aktiv && !zustand.battle && wahl.modus === 'zeit';
   // Im Zeitfahren gibt es keine Item-Boxen, dafür drei Turbos zum Start
   for (const b of S.boxen){ b.aus = zustand.zeitfahren ? Infinity : 0; b.mesh.visible = !zustand.zeitfahren; }
   for (const m of S.muenzen) m.aus = 0;
@@ -3901,7 +4140,7 @@ function rennenStarten(opts = null){
   }
   slots.forEach((sl, slot) => {
     const k = new Kart(FAHRER[sl.fahrer] || FAHRER[0], !!sl.ich, { name:sl.name, mensch:sl.mensch, fern:sl.fern, slot, schild:sl.mensch && !sl.ich, teile:sl.teile });
-    aufStartplatz(k, slot);
+    if (zustand.battle){ battleStartplatz(k, slot); ballonsGeben(k); } else aufStartplatz(k, slot);
     karts.push(k);
     if (sl.ich) spieler = k;
   });
@@ -3975,6 +4214,7 @@ function rennenUpdate(dt){
   for (const k of karts){
     if (k.fern){ fernBewegen(k, dt); continue; }
     if (k.spieler && !k.autopilot && !zustand.autopilot) k.eingabe = spielerEingabe();
+    else if (zustand.battle) kiBattle(k, dt);
     else kiSteuern(k, dt);
     if (k.roulette > 0){
       const vorher = k.roulette;
@@ -3995,7 +4235,7 @@ function rennenUpdate(dt){
   raketenUpdate(dt);
   // Falsche Richtung
   const S = strecke, k = spieler;
-  if (!k.fertig && k.v > 3 && Math.sin(k.yaw) * S.tx[k.idx] + Math.cos(k.yaw) * S.tz[k.idx] < -0.3) k.falsch += dt; else k.falsch = 0;
+  if (!zustand.battle && !k.fertig && k.v > 3 && Math.sin(k.yaw) * S.tx[k.idx] + Math.cos(k.yaw) * S.tz[k.idx] < -0.3) k.falsch += dt; else k.falsch = 0;
   if (zustand.phase === 'auslauf'){
     zustand.ergebnisIn -= dt;
     if (zustand.ergebnisIn <= 0) ergebnisZeigen();
@@ -4005,6 +4245,7 @@ function rennenUpdate(dt){
 function ergebnisZeigen(){
   zustand.phase = 'ergebnis';
   if (zustand.zeitfahren){ zeitfahrErgebnis(); return; }
+  if (zustand.battle){ battleErgebnis(); return; }
   // Wer noch fährt, bekommt eine geschätzte Zeit
   for (const k of karts){
     if (k.fertig) continue;
@@ -4110,7 +4351,7 @@ function hudUpdate(){
   setzen('platz', `${platz}<small>.</small>`, true);
   const kl = 'schild ' + (platz === 1 ? 'p1' : platz === 2 ? 'p2' : platz === 3 ? 'p3' : platz >= 6 ? 'hinten' : '');
   if ($('platz').className !== kl) $('platz').className = kl;
-  setzen('rundeZahl', `${klemm(k.runde, 1, RUNDEN)}/${RUNDEN}`);
+  setzen('rundeZahl', zustand.battle ? zeitText(Math.max(0, BATTLE_ZEIT - zustand.rt)).slice(0, -3) : `${klemm(k.runde, 1, RUNDEN)}/${RUNDEN}`);
   setzen('zeitGesamt', zeitText(k.fertig ? k.zielzeit : zustand.rt));
   setzen('rundenzeiten', k.rundenzeiten.map((t, i) => `R${i + 1} ${zeitText(t)}`).join('<br>'), true);
   setzen('tempo', `${Math.round(Math.abs(k.v) * 4)} km/h`);
@@ -4128,7 +4369,7 @@ function hudUpdate(){
   $('itemSlot').classList.toggle('dreh', k.roulette > 0);
   // Rangliste
   const rang = rangliste();
-  setzen('liste', rang.map((r, i) => `<div class="${r.spieler ? 'ich' : ''}"><b>${i + 1}</b>${r.f.gesicht} ${esc(r.name)}</div>`).join(''), true);
+  setzen('liste', rang.map((r, i) => `<div class="${r.spieler ? 'ich' : ''}${zustand.battle && r.ballons <= 0 ? ' raus' : ''}"><b>${i + 1}</b>${r.f.gesicht} ${esc(r.name)}${zustand.battle ? ` <span class="ballons">${'🎈'.repeat(Math.max(0, r.ballons))}</span>` : ''}</div>`).join(''), true);
   // Drift-Anzeige
   const da = $('driftAnzeige');
   const dFarben = ['#fff3c4', '#5aa8ff', '#ff9a1a', '#d85aff'];
@@ -4375,8 +4616,12 @@ function menueBauen(){
   $('fahrerinfo').innerHTML = `<span>Tempo</span>${balken(f.tempo)}<span>Beschleunigung</span>${balken(f.beschl)}<span>Kurven</span>${balken(f.lenk)}`;
   garageBauen();
   const mw = $('moduswahl'); mw.innerHTML = '';
-  [['einzel', 'Einzelrennen', 'Gegen den Computer'], ['cup', 'Cups', 'Mehrere Rennen, Punkte'], ['zeit', 'Zeitfahren', 'Gegen deinen Geist'], ['online', 'Online', 'Mit Freunden fahren']].forEach(([id, name, info]) =>
-    mw.appendChild(wahlKnopf(`<b>${name}</b><small>${info}</small>`, wahl.modus === id, () => { wahl.modus = id; schreiben('wahl', wahl); })));
+  [['einzel', 'Einzelrennen', 'Gegen den Computer'], ['cup', 'Cups', 'Mehrere Rennen, Punkte'], ['zeit', 'Zeitfahren', 'Gegen deinen Geist'], ['battle', 'Ballon-Battle', 'Wer behält seine Ballons?'], ['online', 'Online', 'Mit Freunden fahren']].forEach(([id, name, info]) =>
+    mw.appendChild(wahlKnopf(`<b>${name}</b><small>${info}</small>`, wahl.modus === id, () => {
+      const war = wahl.modus;
+      wahl.modus = id; schreiben('wahl', wahl);
+      if ((war === 'battle') !== (id === 'battle')){ streckeLaden(id === 'battle' ? ARENA_NR : wahl.strecke); vorschauZeigen(); }
+    })));
   $('streckenBlock').hidden = wahl.modus !== 'einzel' && wahl.modus !== 'zeit';
   $('cupBlock').hidden = wahl.modus !== 'cup';
   const cw = $('cupwahl'); cw.innerHTML = '';
@@ -4413,7 +4658,8 @@ function menueZeigen(ansicht = 'menue'){
   $('hud').hidden = true; $('oben').hidden = true; $('touch').hidden = true;
   $('ergebnis').hidden = true; $('pause').hidden = true;
   wahl.strecke = klemm(wahl.strecke, 0, STRECKEN.length - 1);
-  streckeLaden(ansicht === 'lobby' && online.raum ? online.raum.strecke : wahl.strecke);
+  zustand.battle = false;
+  streckeLaden(ansicht === 'lobby' && online.raum ? online.raum.strecke : wahl.modus === 'battle' ? ARENA_NR : wahl.strecke);
   vorschauZeigen();
   menueBauen();
   if (ansicht === 'lobby') lobbyBauen();
@@ -4842,6 +5088,7 @@ function schritt(dt){
     rennenUpdate(dt);
   }
   for (const k of karts){ kartDarstellen(k, dt); kartEffekte(k); }
+  if (zustand.battle && karts.length) battleUpdate(dt);
   geistUpdate(dt);
   boxenUpdate(dt);
   muenzenUpdate(dt);
