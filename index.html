@@ -137,6 +137,7 @@
   .knopf{min-height:44px;border:1px solid var(--rand-stark);background:rgba(255,255,255,.08);color:var(--text);border-radius:14px;padding:10px 16px;font-weight:800;
     transition:transform .08s,background .12s,filter .12s}
   .knopf:hover{background:rgba(255,255,255,.17)}
+  .cloudKnopf{display:block;margin:0 auto 12px}
   .knopf:active{transform:translateY(2px) scale(.98)}
   details{color:var(--text-weich);font-size:.95rem;margin-bottom:12px;padding:12px 16px;border-radius:16px;background:var(--karte-hell);border:1px solid var(--rand-fein)}
   summary{cursor:pointer;color:var(--text);font-weight:800;min-height:24px}
@@ -333,6 +334,7 @@
   <div class="menue-karte">
     <h1>Löwen-<span>Kart</span></h1>
     <p class="unter">Driften, Items werfen, als Erste oder Erster ins Ziel.</p>
+    <button class="knopf cloudKnopf" data-sl-cloud hidden>☁️ Spielstand auf allen Geräten</button>
 
     <section class="sektion">
     <h2>Fahrer</h2>
@@ -576,6 +578,7 @@ window.SLRangAdapter=function(){
   return{punkte:p,progress:Math.min(100,Object.keys(ids).length/6*100)}
 };
 </script>
-<script src="https://rangliste-aoee.onrender.com/melder.js" data-spiel="Löwen-Kart" defer></script>
+<!-- data-speicher: diese Einträge sind der Spielstand, der über die Cloud auf andere Geräte kommt -->
+<script src="https://rangliste-aoee.onrender.com/melder.js" data-spiel="Löwen-Kart" data-speicher="loewenkart:" data-speicher-ohne="loewenkart:grafik,loewenkart:ton" defer></script>
 </body>
 </html>
