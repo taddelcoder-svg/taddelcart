@@ -53,37 +53,50 @@ const THEMEN = {
     himmelWolke:['#ffffff', 0.85],
     himmel:['#2f7fd8', '#cfe9ff'], nebel:'#cfe6fb', nebelWeit:[260, 1150], sonne:'#fff1d8', sonnenKraft:2.2,
     hemi:['#dcefff', '#6d8a45'], hemiKraft:0.95, gras:['#5ea944', '#4f9838', '#6bbb50'], auslauf:'#b79b64',
-    strasse:'#595d64', wand:[0xe8322a, 0xf5f5f5], berge:0x5d8b52, staub:[0.55, 0.45, 0.3], deko:'baeume', wolken:true
+    strasse:'#595d64', wand:[0xe8322a, 0xf5f5f5], berge:0x5d8b52, staub:[0.55, 0.45, 0.3], deko:'baeume', wolken:true,
+    neon:0xffc21f, kulisse:['ballons', 'windraeder']
   },
   wueste: {
     himmelWolke:['#ffe0bc', 0.45],
     himmel:['#d9683a', '#ffd6a0'], nebel:'#f5c793', nebelWeit:[220, 1000], sonne:'#ffd9a8', sonnenKraft:2.4,
     hemi:['#ffe2bd', '#a0643a'], hemiKraft:0.85, gras:['#e2bb78', '#d6aa63', '#ebc98a'], auslauf:'#c4935a',
-    strasse:'#65605c', wand:[0xff8a1a, 0xfff1dc], berge:0xc0683a, staub:[0.85, 0.66, 0.4], deko:'kakteen', wolken:false
+    strasse:'#65605c', wand:[0xff8a1a, 0xfff1dc], berge:0xc0683a, staub:[0.85, 0.66, 0.4], deko:'kakteen', wolken:false,
+    neon:0xff6a1a, gefahr:'steppe'
   },
   frost: {
     himmelWolke:['#f3f7fc', 0.9],
     himmel:['#7aa5d8', '#eef4fb'], nebel:'#e4edf6', nebelWeit:[130, 820], sonne:'#f4f8ff', sonnenKraft:1.7,
     hemi:['#eef5ff', '#9aa9ba'], hemiKraft:1.15, gras:['#f1f5fa', '#e3eaf2', '#fbfdff'], auslauf:'#c3d2e2',
-    strasse:'#4a4f57', wand:[0x2f7fd8, 0xf4f8ff], berge:0xdbe5f0, staub:[0.95, 0.97, 1], deko:'tannen', wolken:true, schnee:true
+    strasse:'#4a4f57', wand:[0x2f7fd8, 0xf4f8ff], berge:0xdbe5f0, staub:[0.95, 0.97, 1], deko:'tannen', wolken:true, schnee:true,
+    neon:0x4fd2ff, gefahr:'eis', kulisse:['polarlicht']
   },
   strand: {
     himmelWolke:['#ffffff', 0.75],
     himmel:['#1f8fe0', '#c4ecff'], nebel:'#cdeefa', nebelWeit:[260, 1200], sonne:'#fff4dc', sonnenKraft:2.3,
     hemi:['#e2f4ff', '#c9a66b'], hemiKraft:1.0, gras:['#e9d29a', '#dfc386', '#f3e0b0'], auslauf:'#c9a46a',
-    strasse:'#5c6068', wand:[0x1fb5c9, 0xfff6e0], berge:0x4f9a5a, staub:[0.92, 0.84, 0.62], deko:'palmen', wolken:true, meer:true
+    strasse:'#5c6068', wand:[0x1fb5c9, 0xfff6e0], berge:0x4f9a5a, staub:[0.92, 0.84, 0.62], deko:'palmen', wolken:true, meer:true,
+    neon:0x18e0c8, kulisse:['ballons', 'delfine', 'boote']
   },
   vulkan: {
     himmelWolke:['#4a2620', 0.8],
     himmel:['#2a1416', '#c4502a'], nebel:'#6a3424', nebelWeit:[160, 950], sonne:'#ffb07a', sonnenKraft:1.7,
     hemi:['#ffa070', '#2a1a18'], hemiKraft:0.95, gras:['#2f2a2a', '#3a3232', '#262222'], auslauf:'#4f413a',
-    strasse:'#3c3d42', wand:[0xff5a1a, 0x2a2a2e], berge:0x3a2a26, staub:[0.32, 0.28, 0.26], deko:'vulkan', wolken:false, glut:true
+    strasse:'#3c3d42', wand:[0xff5a1a, 0x2a2a2e], berge:0x3a2a26, staub:[0.32, 0.28, 0.26], deko:'vulkan', wolken:false, glut:true,
+    neon:0xff3a0a, gefahr:'meteor'
   },
   nacht: {
     himmelWolke:['#28366a', 0.4],
     himmel:['#060b24', '#2d3d72'], nebel:'#1b2550', nebelWeit:[150, 950], sonne:'#b9c8ff', sonnenKraft:1.2,
     hemi:['#8090d8', '#1d2a3a'], hemiKraft:0.9, gras:['#2c5a3a', '#264f33', '#336843'], auslauf:'#5a5a66',
-    strasse:'#3d4250', wand:[0xb35cff, 0xf0f0ff], berge:0x1f2c4a, staub:[0.4, 0.42, 0.5], deko:'laternen', wolken:false, sterne:true
+    strasse:'#3d4250', wand:[0xb35cff, 0xf0f0ff], berge:0x1f2c4a, staub:[0.4, 0.42, 0.5], deko:'laternen', wolken:false, sterne:true,
+    neon:0xc45aff, kulisse:['feuerwerk'], skyline:true
+  },
+  himmel: {
+    himmelWolke:['#fff0f8', 0.55],
+    himmel:['#3b2f86', '#ffb59a'], nebel:'#f3c4c8', nebelWeit:[300, 1500], sonne:'#ffd8b0', sonnenKraft:2.0,
+    hemi:['#ffe9f4', '#8f7cc4'], hemiKraft:1.1, gras:['#8fdc72', '#7ccf62', '#a3e886'], auslauf:'#cfc6e8',
+    strasse:'#4d4b66', wand:[0xff5fa8, 0xf6f2ff], berge:0xffffff, staub:[0.96, 0.92, 1], deko:'himmel', wolken:true,
+    neon:0xff6ad5, schwebend:true, kulisse:['ballons']
   }
 };
 // Strecken nach F1-Vorbildern: Ecken [x, z, Kurvenradius]; Radius 0 = Punkt auf einer Geraden
@@ -99,12 +112,18 @@ const STRECKEN = [
   { id:'vulkan', name:'Vulkankrater', info:'Kurvenwechsel wie in Interlagos', thema:'vulkan', breite:16, saat:55,
     ecken:[[0,0,0],[170,0,16],[185,40,16],[140,70,28],[200,140,30],[150,210,18],[70,170,22],[100,110,14],[30,90,14],[-30,170,30],[-120,140,16],[-90,80,14],[-160,40,30],[-110,0,40]] },
   { id:'nacht', name:'Sternenpark', info:'Stadtkurs bei Nacht wie in Las Vegas', thema:'nacht', breite:16, saat:66,
-    ecken:[[0,0,0],[240,0,12],[240,90,12],[170,90,12],[150,120,12],[170,150,12],[170,220,14],[-40,220,12],[-40,170,12],[-100,150,12],[-100,60,12],[-60,40,12],[-60,0,12]] }
+    ecken:[[0,0,0],[240,0,12],[240,90,12],[170,90,12],[150,120,12],[170,150,12],[170,220,14],[-40,220,12],[-40,170,12],[-100,150,12],[-100,60,12],[-60,40,12],[-60,0,12]] },
+  // Achterbahn über den Wolken: kreuzt sich selbst (oben die Überführung), Kuppen zum Abheben, Regenbogenbrücke als Abkürzung
+  { id:'himmel', name:'Wolkenreich', info:'Achterbahn über den Wolken mit Überführung', thema:'himmel', breite:16, saat:77,
+    ecken:[[0,0,0],[200,0,35],[260,70,40],[230,140,30],[-20,320,35],[-30,420,40],[100,480,45],[230,420,40],[220,320,35],[-30,140,30],[-70,60,35],[-50,0,25]],
+    profil:[[0,0],[0.08,0],[0.2,14],[0.28,22],[0.365,22],[0.39,8],[0.45,7],[0.53,24],[0.64,30],[0.665,13],[0.72,4],[0.8,2],[0.86,10],[0.92,4],[0.97,0]],
+    abk:[[0.41, 0.5, 0.69, 0.78, 'bruecke']] }
 ];
 const CUPS = [
   { id:'loewe',  name:'Löwen-Cup',  info:'Wiese, Canyon, Frost',    strecken:[0, 1, 2] },
   { id:'vulkan', name:'Vulkan-Cup', info:'Bucht, Krater, Nacht',    strecken:[3, 4, 5] },
-  { id:'meister', name:'Meister-Cup', info:'Alle 6 Strecken am Stück', strecken:[0, 3, 1, 4, 2, 5] }
+  { id:'meister', name:'Meister-Cup', info:'Alle 7 Strecken am Stück', strecken:[0, 3, 1, 4, 2, 5, 6] },
+  { id:'himmel', name:'Himmels-Cup', info:'Nacht, Frost, Wolken',      strecken:[5, 2, 6] }
 ];
 const ITEM_ICON = { turbo:'⚡', turbo3:'⚡', banane:'🍌', rakete:'🚀', stern:'⭐', blitz:'🌩️' };
 const RUNDEN = 3;
@@ -599,9 +618,7 @@ function kartTeile(){
     T(GEO.kugelMittel, LACK, x * 0.96, 0.77, -1.02, 0.4, 0.2, 0.64);
     kein(T(GEO.kugelMittel, MAT.licht, x * 0.42, 0.63, 1.75, 0.13, 0.1, 0.08));
     kein(T(rb(0.25, 0.1, 0.08, 0.03), MAT.ruecklicht, x * 0.6, 0.7, -1.24));
-    // Heckfluegel-Endplatten, Auspuff
-    T(rb(0.06, 0.5, 0.62, 0.02), LACK, x * 1.0, 1.3, -1.55);
-    T(rb(0.1, 0.5, 0.1, 0.03), MAT.dunkel, x * 0.6, 1.2, -1.5);
+    // Auspuff (der Heckflügel ist ein Garagen-Teil, siehe fluegelTeile)
     const rohr = T(GEO.zyl16, MAT.metall, x * 0.3, 0.95, -1.7, 0.1, 0.55, 0.1); rohr.rotation.x = Math.PI / 2;
     const loch = kein(T(GEO.zyl16, MAT.auge, x * 0.3, 0.95, -1.97, 0.066, 0.03, 0.066)); loch.rotation.x = Math.PI / 2;
   }
@@ -609,8 +626,6 @@ function kartTeile(){
   T(rb(0.9, 0.46, 0.55, 0.1), MAT.metall, 0, 0.95, -1.3);
   for (const z of [-1.18, -1.32, -1.46]) kein(T(GEO.box, MAT.dunkel, 0, 1.2, z, 0.8, 0.05, 0.05));
   T(rb(1.4, 0.14, 0.3, 0.05), MAT.dunkel, 0, 0.45, -1.7);
-  T(rb(2.0, 0.09, 0.5, 0.04), LACK, 0, 1.47, -1.55);
-  kein(T(GEO.box, MAT.weiss, 0, 1.52, -1.55, 1.6, 0.012, 0.1));
   // Zierstreifen auf der Haube, Lenkrad mit Lenksaeule
   for (const x of [-0.34, 0.34]) kein(T(GEO.box, MAT.weiss, x, 0.758, 1.2, 0.09, 0.015, 0.95));
   T(GEO.lenkrad, MAT.dunkel, 0, 1.12, 0.45).rotation.x = -0.6;
@@ -631,18 +646,75 @@ function kartTeile(){
   return kartVorlage;
 }
 
-function kartModell(f){
+/* ---------- Garage: Teile nur für die Optik, damit Rennen fair bleiben ---------- */
+const TEILE = {
+  reifen:[
+    { name:'Standard', preis:0 }, { name:'Slicks', preis:30 }, { name:'Monster', preis:80 }, { name:'Goldfelgen', preis:120 }
+  ],
+  fluegel:[
+    { name:'Standard', preis:0 }, { name:'Ohne', preis:15 }, { name:'Riesenflügel', preis:60 }, { name:'Raketen', preis:110 }
+  ],
+  lack:[
+    { name:'Fahrerfarbe', preis:0 }, { name:'Chrom', preis:50 }, { name:'Neon', preis:90 },
+    { name:'Gold', preis:150, pokal:true }, { name:'Regenbogen', preis:250 }
+  ]
+};
+const TEIL_ARTEN = ['reifen', 'fluegel', 'lack'];
+const teileOk = t => TEIL_ARTEN.map((a, i) => { const v = Array.isArray(t) ? t[i] : 0; return Number.isInteger(v) && TEILE[a][v] ? v : 0; });
+// Garage: gekaufte Teile und die aktuelle Auswahl [Reifen, Flügel, Lack]
+const garage = Object.assign({ besitz:[], wahl:[0, 0, 0] }, lesen('garage', {}));
+if (!Array.isArray(garage.besitz)) garage.besitz = [];
+garage.wahl = teileOk(garage.wahl).map((v, i) => !TEILE[TEIL_ARTEN[i]][v].preis || garage.besitz.includes(`${TEIL_ARTEN[i]}:${v}`) ? v : 0);
+const fluegelVorlagen = {};
+function fluegelTeile(art){
+  if (fluegelVorlagen[art]) return fluegelVorlagen[art];
+  const k = new THREE.Group();
+  const rb = (w, h, d, r) => geteilt(rundBox(w, h, d, r));
+  const T = (geo, mat, x, y, z, sx = 1, sy = 1, sz = 1) => teil(geo, mat, k, x, y, z, sx, sy, sz);
+  if (art === 0 || art === 2){
+    const g = art === 2 ? 1.35 : 1, hoch = art === 2 ? 0.55 : 0;
+    for (const x of [-1, 1]){
+      T(rb(0.06, 0.5 + hoch, 0.62 * g, 0.02), LACK, x * 1.0 * g, 1.3 + hoch / 2, -1.55);
+      T(rb(0.1, 0.5 + hoch, 0.1, 0.03), MAT.dunkel, x * 0.6, 1.2 + hoch / 2, -1.5);
+    }
+    T(rb(2.0 * g, 0.09, 0.5 * g, 0.04), LACK, 0, 1.47 + hoch, -1.55);
+    T(GEO.box, MAT.weiss, 0, 1.52 + hoch, -1.55, 1.6 * g, 0.012, 0.1).castShadow = false;
+    if (art === 2) T(rb(2.0 * g, 0.07, 0.3, 0.03), MAT.dunkel, 0, 1.47 + hoch - 0.28, -1.75);
+  } else if (art === 3){
+    // Zwei Raketen-Booster an den Seiten
+    for (const x of [-1, 1]){
+      T(GEO.zyl16, MAT.metall, x * 0.95, 1.15, -1.45, 0.24, 1.3, 0.24).rotation.x = Math.PI / 2;
+      T(GEO.kegel, LACK, x * 0.95, 1.15, -0.62, 0.24, 0.4, 0.24).rotation.x = Math.PI / 2;
+      T(GEO.zyl16, MAT.auge, x * 0.95, 1.15, -2.11, 0.17, 0.04, 0.17).rotation.x = Math.PI / 2;
+      for (const w of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]){
+        const fl = T(GEO.box, MAT.rot, x * 0.95 + Math.cos(w) * 0.3, 1.15 + Math.sin(w) * 0.3, -1.95, 0.04, 0.3, 0.35);
+        fl.rotation.z = w;
+      }
+    }
+  }
+  fluegelVorlagen[art] = verschmelzen(k);
+  return fluegelVorlagen[art];
+}
+const goldMat = geteilt(Object.assign(std(0xe0b030, 0.25, 0.9), { envMapIntensity:1.1 }));
+
+function kartModell(f, teile = [0, 0, 0]){
   const V = kartTeile();
+  const [reifenArt, fluegelArt, lackArt] = teileOk(teile);
   const g = new THREE.Group();
+  g.rotation.order = 'YXZ';
   const koerper = new THREE.Group();
   g.add(koerper);
   // Lack: weniger Metall und Spiegelung, damit die Fahrerfarbe satt statt ausgewaschen aussieht
   // Die Szene ist hell beleuchtet (Sonne 2.2): helle Fahrerfarben wuerden sonst Richtung Weiss ausbrennen.
   const abdunkeln = c => c.multiplyScalar(0.85 - 0.33 * Math.min(1, (0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b) * 2.4));
   const lack = new THREE.MeshPhysicalMaterial({ color:abdunkeln(lin(f.farbe)), roughness:0.36, metalness:0.05, clearcoat:0.8, clearcoatRoughness:0.2, envMapIntensity:0.4 });
+  if (lackArt === 1) Object.assign(lack, { metalness:1, roughness:0.12, envMapIntensity:1.3 }), lack.color.setRGB(0.75, 0.78, 0.82);
+  if (lackArt === 2) lack.emissive.copy(lack.color).multiplyScalar(0.9);
+  if (lackArt === 3) Object.assign(lack, { metalness:0.9, roughness:0.22, envMapIntensity:1.1 }), lack.color.copy(lin(0xe0a820));
   const anzug = new THREE.MeshStandardMaterial({ color:abdunkeln(new THREE.Color(f.farbe).lerp(new THREE.Color(0xffffff), 0.3).convertSRGBToLinear()), roughness:0.75 });
   const ersatz = m => m === LACK ? lack : m === ANZUG ? anzug : m;
   for (const [mat, geo] of V.koerper){ const m = new THREE.Mesh(geo, ersatz(mat)); m.castShadow = true; koerper.add(m); }
+  for (const [mat, geo] of fluegelTeile(fluegelArt)){ const m = new THREE.Mesh(geo, ersatz(mat)); m.castShadow = true; koerper.add(m); }
   // Startnummer auf der Haube
   const nr = FAHRER.indexOf(f) + 1;
   const schild = new THREE.Mesh(V.schildGeo, new THREE.MeshBasicMaterial({ map:nummernSchild(f, nr), transparent:true, polygonOffset:true, polygonOffsetFactor:-2 }));
@@ -666,12 +738,15 @@ function kartModell(f){
     .forEach(([x, y, z, istVorne]) => {
       const halter = new THREE.Group();
       halter.position.set(x, y, z);
+      // Monster: große Räder, weiter außen; Slicks: breit und flach
+      if (reifenArt === 2){ halter.scale.setScalar(1.45); halter.position.set(x * 1.12, y * 1.45, z); }
+      if (reifenArt === 1) halter.scale.set(1.35, 0.92, 0.92);
       g.add(halter);
       const r = new THREE.Group();
       r.rotation.z = Math.PI / 2;
       const reifen = new THREE.Mesh(istVorne ? V.reifenV : V.reifenH, MAT.reifen); reifen.castShadow = true;
       r.add(reifen);
-      for (const [mat, geo] of (istVorne ? V.radV : V.radH)) r.add(new THREE.Mesh(geo, ersatz(mat)));
+      for (const [mat, geo] of (istVorne ? V.radV : V.radH)) r.add(new THREE.Mesh(geo, reifenArt === 3 && mat === MAT.metall ? goldMat : ersatz(mat)));
       halter.add(r);
       raeder.push(r);
       if (istVorne) vorne.push(halter);
@@ -689,7 +764,7 @@ function kartModell(f){
     return fl;
   });
   g.scale.setScalar(0.95);
-  return { gruppe:g, koerper, raeder, vorne, kopf, flammen, lack, anzug, kontakt, schal };
+  return { gruppe:g, koerper, raeder, vorne, kopf, flammen, lack, anzug, kontakt, schal, hoch:reifenArt === 2 ? 0.32 : 0, regenbogen:lackArt === 4, grundGlanz:lack.emissive.clone() };
 }
 
 /* =========================================================
@@ -700,7 +775,7 @@ class Partikel {
     this.max = max; this.n = 0;
     this.pos = new Float32Array(max * 3); this.farbe = new Float32Array(max * 4); this.gr = new Float32Array(max);
     this.v = new Float32Array(max * 3); this.leben = new Float32Array(max); this.maxLeben = new Float32Array(max);
-    this.grav = new Float32Array(max); this.wachs = new Float32Array(max); this.a0 = new Float32Array(max);
+    this.grav = new Float32Array(max); this.wachs = new Float32Array(max); this.a0 = new Float32Array(max); this.boden = new Float32Array(max);
     const g = new THREE.BufferGeometry();
     this.aPos = new THREE.BufferAttribute(this.pos, 3).setUsage(THREE.DynamicDrawUsage);
     this.aFarbe = new THREE.BufferAttribute(this.farbe, 4).setUsage(THREE.DynamicDrawUsage);
@@ -720,15 +795,16 @@ class Partikel {
   }
   neu(x, y, z, vx, vy, vz, leben, r, gg, b, groesse, grav = 0, wachs = 0, alpha = 1){
     if (this.n >= this.max) return;
-    const i = this.n++;
-    this.pos.set([x, y, z], i * 3); this.v.set([vx, vy, vz], i * 3); this.farbe.set([r, gg, b, alpha], i * 4);
+    const i = this.n++, hb = bodenAn(x, z);
+    this.boden[i] = hb;
+    this.pos.set([x, y + hb, z], i * 3); this.v.set([vx, vy, vz], i * 3); this.farbe.set([r, gg, b, alpha], i * 4);
     this.gr[i] = groesse; this.leben[i] = this.maxLeben[i] = leben; this.grav[i] = grav; this.wachs[i] = wachs; this.a0[i] = alpha;
   }
   kopieren(von, nach){
     this.pos.copyWithin(nach * 3, von * 3, von * 3 + 3); this.v.copyWithin(nach * 3, von * 3, von * 3 + 3);
     this.farbe.copyWithin(nach * 4, von * 4, von * 4 + 4);
     this.gr[nach] = this.gr[von]; this.leben[nach] = this.leben[von]; this.maxLeben[nach] = this.maxLeben[von];
-    this.grav[nach] = this.grav[von]; this.wachs[nach] = this.wachs[von]; this.a0[nach] = this.a0[von];
+    this.grav[nach] = this.grav[von]; this.wachs[nach] = this.wachs[von]; this.a0[nach] = this.a0[von]; this.boden[nach] = this.boden[von];
   }
   update(dt){
     let i = 0;
@@ -738,7 +814,7 @@ class Partikel {
       const p = i * 3;
       this.v[p + 1] -= this.grav[i] * dt;
       this.pos[p] += this.v[p] * dt; this.pos[p + 1] += this.v[p + 1] * dt; this.pos[p + 2] += this.v[p + 2] * dt;
-      if (this.pos[p + 1] < 0.05){ this.pos[p + 1] = 0.05; this.v[p + 1] *= -0.3; }
+      if (this.pos[p + 1] < this.boden[i] + 0.05){ this.pos[p + 1] = this.boden[i] + 0.05; this.v[p + 1] *= -0.3; }
       this.gr[i] += this.wachs[i] * dt;
       this.farbe[i * 4 + 3] = this.a0[i] * Math.min(1, this.leben[i] / this.maxLeben[i] * 1.5);
       i++;
@@ -770,8 +846,8 @@ function buntStoss(x, y, z){
    Ton: alles mit WebAudio synthetisiert
    ========================================================= */
 const Ton = (() => {
-  let ctx = null, master, sfx, musikBus, rauschen, motorOsc1, motorOsc2, motorFilter, motorGain, driftGain, driftFilter;
-  let an = lesen('ton', true), lied = null, schritt = 0, naechste = 0;
+  let ctx = null, regenGain, master, sfx, musikBus, rauschen, motorOsc1, motorOsc2, motorFilter, motorGain, driftGain, driftFilter;
+  let an = lesen('ton', true), lied = null, schritt = 0, naechste = 0, regenWunsch = 0;
   const note = m => 440 * Math.pow(2, (m - 69) / 12);
   const LIEDER = {
     menue:  { bpm:112, akkorde:[[60, 64, 67], [57, 60, 64], [53, 57, 60], [55, 59, 62]] },
@@ -780,7 +856,8 @@ const Ton = (() => {
     frost:  { bpm:134, akkorde:[[53, 57, 60], [62, 65, 69], [58, 62, 65], [60, 64, 67]] },
     strand: { bpm:126, akkorde:[[65, 69, 72], [62, 65, 69], [58, 62, 65], [60, 64, 67]] },
     vulkan: { bpm:150, akkorde:[[57, 60, 64], [53, 57, 60], [55, 58, 62], [52, 56, 59]] },
-    nacht:  { bpm:118, akkorde:[[57, 60, 64], [60, 64, 67], [55, 59, 62], [53, 57, 60]] }
+    nacht:  { bpm:118, akkorde:[[57, 60, 64], [60, 64, 67], [55, 59, 62], [53, 57, 60]] },
+    himmel: { bpm:136, akkorde:[[64, 67, 71], [60, 64, 67], [62, 65, 69], [59, 62, 67]] }
   };
   const MELODIE = [0, -1, 2, -1, 1, -1, 2, 3, -1, 2, -1, 1, 0, -1, -1, -1];
 
@@ -809,6 +886,11 @@ const Ton = (() => {
     driftFilter = ctx.createBiquadFilter(); driftFilter.type = 'bandpass'; driftFilter.frequency.value = 1800; driftFilter.Q.value = 5;
     driftGain = ctx.createGain(); driftGain.gain.value = 0;
     dq.connect(driftFilter); driftFilter.connect(driftGain); driftGain.connect(sfx); dq.start();
+    // Regenrauschen
+    const rq = ctx.createBufferSource(); rq.buffer = rauschen; rq.loop = true;
+    const rf = ctx.createBiquadFilter(); rf.type = 'highpass'; rf.frequency.value = 1400;
+    regenGain = ctx.createGain(); regenGain.gain.value = regenWunsch * 0.05;
+    rq.connect(rf); rf.connect(regenGain); regenGain.connect(sfx); rq.start();
     naechste = ctx.currentTime + 0.1;
     setInterval(planen, 30);
   }
@@ -847,6 +929,11 @@ const Ton = (() => {
     ziel:() => [523, 659, 784, 1047, 784, 1047].forEach((f, i) => ton(f, i === 5 ? 0.8 : 0.16, 'square', 0.14, null, [0, .12, .24, .36, .6, .72][i])),
     klick:() => ton(900, 0.05, 'triangle', 0.08),
     blitz:() => { geraeusch(0.9, 2400, 0.4, 0, 'highpass'); ton(1800, 0.5, 'sawtooth', 0.08, 120); geraeusch(1.2, 120, 0.5, 0.15, 'lowpass'); },
+    platzen:() => { geraeusch(0.12, 2200, 0.4, 0, 'highpass'); ton(900, 0.12, 'triangle', 0.1, 200); },
+    donner:() => { geraeusch(2.2, 70, 0.7, 0, 'lowpass'); geraeusch(0.5, 300, 0.35, 0.05, 'lowpass'); },
+    muenze:() => { ton(988, 0.07, 'square', 0.09); ton(1319, 0.18, 'square', 0.09, null, 0.06); },
+    sprung:() => { geraeusch(0.45, 900, 0.2, 0, 'bandpass', sfx, 0.7); ton(260, 0.35, 'triangle', 0.08, 640); },
+    trick:() => [784, 988, 1175, 1568].forEach((f, i) => ton(f, 0.12, 'square', 0.1, null, i * 0.05)),
     windschatten:() => { geraeusch(0.5, 2600, 0.18, 0, 'bandpass', sfx, 2); ton(520, 0.35, 'triangle', 0.08, 1040); }
   };
   function planen(){
@@ -886,6 +973,7 @@ const Ton = (() => {
       driftGain.gain.setTargetAtTime(stufe >= 0 ? 0.03 : 0, t, 0.05);
       driftFilter.frequency.setTargetAtTime(1500 + Math.max(0, stufe) * 350, t, 0.1);
     },
+    regen(st){ regenWunsch = st; if (ctx) regenGain.gain.setTargetAtTime(st * 0.05, ctx.currentTime, 0.5); },
     pause(p){ if (ctx){ if (p) ctx.suspend(); else ctx.resume(); } },
     umschalten(){ an = !an; schreiben('ton', an); if (master) master.gain.value = an ? 0.8 : 0; return an; },
     istAn:() => an
@@ -1097,6 +1185,21 @@ function streckeRechnen(def){
     const j = (i + k) % N;
     S.kurv[i] = winkelDiff(Math.atan2(S.tx[j], S.tz[j]), Math.atan2(S.tx[i], S.tz[i])) / (k * S.ds);
   }
+  // Höhenprofil (nur Strecken mit profil:[[Anteil, Höhe], …]); weiche Übergänge zwischen den Stützpunkten
+  S.hy = new Float32Array(N); S.steig = new Float32Array(N); S.hoch = !!def.profil;
+  if (S.hoch){
+    const pr = def.profil;
+    for (let i = 0; i < N; i++){
+      const u = i / N;
+      let a = pr[pr.length - 1], b = pr[0], ua = a[0] - 1, ub = b[0];
+      for (let n = 0; n < pr.length; n++){ if (pr[n][0] <= u){ a = pr[n]; ua = a[0]; b = pr[(n + 1) % pr.length]; ub = n + 1 < pr.length ? b[0] : b[0] + 1; } }
+      const f = klemm((u - ua) / Math.max(1e-6, ub - ua), 0, 1), e = f * f * (3 - 2 * f);
+      S.hy[i] = a[1] + (b[1] - a[1]) * e;
+    }
+    for (let i = 0; i < N; i++) S.steig[i] = (S.hy[(i + 1) % N] - S.hy[(i - 1 + N) % N]) / (2 * S.ds);
+  }
+  S.gitter = new Map();
+  if (S.hoch) for (let i = 0; i < N; i++) gitterEintragen(S, S.px[i], S.pz[i], S.hy[i]);
   // Kurvenbereiche: dort liegen Curbs, Kiesbett und Reifenstapel
   S.ecke = new Uint8Array(N); S.kies = new Uint8Array(N);
   const vor = Math.round(10 / S.ds), nach = Math.round(3 / S.ds), kiesNach = Math.round(14 / S.ds);
@@ -1134,6 +1237,42 @@ function naechsterGlobal(S, x, z){
   for (let i = 0; i < S.N; i++){ const dx = x - S.px[i], dz = z - S.pz[i], d = dx * dx + dz * dz; if (d < bd){ bd = d; best = i; } }
   return best;
 }
+// Boden unter einem Kart, das nicht selbst gerechnet wird (Fernfahrer, Geist)
+function bodenUnter(S, k){
+  if (!S.hoch) return 0;
+  if (Math.abs(k.seite) > S.hw + 1) for (const c of S.abk){ const [d, t] = abkLage(c, k.x, k.z); if (d < c.hb + 0.6) return abkPunktH(c, t); }
+  return bodenHoehe(S, k.x, k.z, k.idx);
+}
+// Liegt (x, z) auf einer Abkürzung (mit Rand)?
+function abkuerzungDa(S, x, z, rand){
+  for (const c of S.abk || []){ const [d] = abkLage(c, x, z); if (d < c.hb + rand) return true; }
+  return false;
+}
+// Straßenhöhe am Punkt (x, z) in der Nähe von Index i
+function bodenHoehe(S, x, z, i){
+  if (!S.hoch) return 0;
+  const vor = (x - S.px[i]) * S.tx[i] + (z - S.pz[i]) * S.tz[i], j = vor >= 0 ? (i + 1) % S.N : (i - 1 + S.N) % S.N;
+  return S.hy[i] + (S.hy[j] - S.hy[i]) * Math.min(1, Math.abs(vor) / S.ds);
+}
+// Straßenhöhe irgendwo in der Welt (für Partikel, Bananen): nächster Punkt aus einem groben Raster
+function bodenAn(x, z){
+  const S = strecke;
+  if (!S || !S.hoch) return 0;
+  // An Kreuzungen liegen zwei Ebenen übereinander: die auf Höhe des eigenen Karts gewinnt
+  const f = spieler || vorschau, hint = f ? f.boden : 0;
+  let best = 0, bd = Infinity;
+  const cx = Math.floor(x / 16), cz = Math.floor(z / 16);
+  for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++){
+    const liste = S.gitter.get((cx + a) * 100003 + cz + b);
+    if (liste) for (const [px, pz, h] of liste){ const d = (px - x) ** 2 + (pz - z) ** 2 + (h - hint) ** 2 * 0.5; if (d < bd){ bd = d; best = h; } }
+  }
+  return best;
+}
+function gitterEintragen(S, x, z, h){
+  const key = Math.floor(x / 16) * 100003 + Math.floor(z / 16);
+  if (!S.gitter.has(key)) S.gitter.set(key, []);
+  S.gitter.get(key).push([x, z, h]);
+}
 const idxBei = (S, s) => ((Math.round(s / S.ds) % S.N) + S.N) % S.N;
 const punktBei = (S, i, seite) => [S.px[i] + S.tz[i] * seite, S.pz[i] - S.tx[i] * seite];
 const yawBei = (S, i) => Math.atan2(S.tx[i], S.tz[i]);
@@ -1144,7 +1283,8 @@ function band(S, links, rechts, y, vLaenge, mat, von = 0, laenge = S.N){
   const pos = new Float32Array(n * 6), uv = new Float32Array(n * 4), nor = new Float32Array(n * 6);
   for (let j = 0; j < n; j++){
     const i = (von + j) % S.N, lx = S.tz[i], lz = -S.tx[i];
-    pos.set([S.px[i] + lx * links, y, S.pz[i] + lz * links, S.px[i] + lx * rechts, y, S.pz[i] + lz * rechts], j * 6);
+    const h = y + S.hy[i];
+    pos.set([S.px[i] + lx * links, h, S.pz[i] + lz * links, S.px[i] + lx * rechts, h, S.pz[i] + lz * rechts], j * 6);
     const v = j * S.ds / vLaenge;
     uv.set([0, v, 1, v], j * 4);
     nor.set([0, 1, 0, 0, 1, 0], j * 6);
@@ -1240,8 +1380,9 @@ function boxenGebaeude(S, gruppe){
 function streckeLaden(nr){
   if (strecke && strecke.nr === nr) return strecke;
   if (strecke){ scene.remove(strecke.gruppe); entsorgen(strecke.gruppe); if (strecke.schnee){ scene.remove(strecke.schnee); strecke.schnee.geometry.dispose(); strecke.schnee.material.dispose(); } }
-  const def = STRECKEN[nr], th = THEMEN[def.thema];
+  const def = streckeDef(nr), th = THEMEN[def.thema];
   const S = streckeRechnen(def);
+  if (def.arena){ S.minX = S.minZ = -ARENA_RADIUS - 2; S.maxX = S.maxZ = ARENA_RADIUS + 2; }
   S.nr = nr; S.th = th;
   const gruppe = new THREE.Group();
   S.gruppe = gruppe;
@@ -1276,8 +1417,21 @@ function streckeLaden(nr){
   };
   const boden = new THREE.Mesh(new THREE.PlaneGeometry(4000, 4000), bodenMat);
   boden.rotation.x = -Math.PI / 2; boden.receiveShadow = true;
-  gruppe.add(boden);
+  if (!th.schwebend) gruppe.add(boden);
   if (th.meer) meerBauen(S, gruppe);
+  if (def.arena){
+    arenaBauen(S, gruppe, th, rnd);
+    dekoBauen(S, th, gruppe, rnd, (x, z) => Math.hypot(x, z) > ARENA_RADIUS + 10);
+    S.karte = document.createElement('canvas');
+    S.karte.width = S.karte.height = 380;
+    const kc = S.karte.getContext('2d');
+    S.kSkala = 330 / (2 * ARENA_RADIUS + 4); S.kOx = S.kOz = 190;
+    kc.fillStyle = 'rgba(255,255,255,.85)'; kc.strokeStyle = 'rgba(0,0,0,.55)'; kc.lineWidth = 8;
+    kc.beginPath(); kc.arc(190, 190, ARENA_RADIUS * S.kSkala, 0, TAU); kc.fill(); kc.stroke();
+    wetterGrundMerken(S);
+    strecke = S;
+    return S;
+  }
 
   // Rennstrecke wie in der F1: Asphalt-Auslauf, Kiesbett und Curbs in den Kurven, kein Mittelstreifen
   const [wandA, wandB] = th.wand;
@@ -1291,7 +1445,10 @@ function streckeLaden(nr){
     for (let n = 0; n < 500; n++){ c.fillStyle = `rgba(${n % 2 ? '255,255,255' : '0,0,0'},.18)`; c.fillRect(Math.random() * w, Math.random() * h, 2, 2); }
   }, true);
   const kiesMat = new THREE.MeshLambertMaterial({ map:kiesTex, side:THREE.DoubleSide, polygonOffset:true, polygonOffsetFactor:-1, polygonOffsetUnits:-1 });
-  for (const [von, laenge] of abschnitte(S, S.kies)){
+  if (th.schwebend){
+    gruppe.add(band(S, S.hw + S.auslauf + 1.4, S.hw + ASPHALT_AUSLAUF - 0.1, 0.02, 10, auslaufMat));
+    gruppe.add(band(S, -S.hw - ASPHALT_AUSLAUF + 0.1, -S.hw - S.auslauf - 1.4, 0.02, 10, auslaufMat));
+  } else for (const [von, laenge] of abschnitte(S, S.kies)){
     gruppe.add(band(S, S.hw + S.auslauf + 0.8, S.hw + ASPHALT_AUSLAUF, 0.025, 6, kiesMat, von, laenge));
     gruppe.add(band(S, -S.hw - ASPHALT_AUSLAUF, -S.hw - S.auslauf - 0.8, 0.025, 6, kiesMat, von, laenge));
   }
@@ -1320,11 +1477,12 @@ function streckeLaden(nr){
   }, true);
   const strasseMat = new THREE.MeshStandardMaterial({ map:strasseTex, roughness:th.schnee ? 0.58 : 0.88, metalness:0.02, envMapIntensity:0.25, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-2 });
   gruppe.add(band(S, S.hw + 0.5, -S.hw - 0.5, 0.04, 22, strasseMat));
+  S.strasseMat = strasseMat;
 
   // Startlinie und Startaufstellung (weiße Grid-Markierungen)
   const karoTex = canvasTex(128, 32, (c, w, h) => { for (let x = 0; x < 16; x++) for (let y = 0; y < 4; y++){ c.fillStyle = (x + y) % 2 ? '#111' : '#fff'; c.fillRect(x * 8, y * 8, 8, 8); } });
   const linie = new THREE.Mesh(new THREE.PlaneGeometry(S.hw * 2, 2.4), new THREE.MeshLambertMaterial({ map:karoTex, polygonOffset:true, polygonOffsetFactor:-4, polygonOffsetUnits:-4 }));
-  linie.position.set(S.px[0], 0.07, S.pz[0]); linie.receiveShadow = true;
+  linie.position.set(S.px[0], 0.07 + S.hy[0], S.pz[0]); linie.receiveShadow = true;
   linie.rotation.order = 'YXZ'; linie.rotation.set(-Math.PI / 2, yawBei(S, 0), 0);
   gruppe.add(linie);
   const gridGeo = new THREE.PlaneGeometry(1, 1); gridGeo.rotateX(-Math.PI / 2);
@@ -1333,14 +1491,15 @@ function streckeLaden(nr){
   for (let slot = 0; slot < 8; slot++){
     const [i, seite] = startPlatz(S, slot), yaw = yawBei(S, i), fx = Math.sin(yaw), fz = Math.cos(yaw);
     const [x, z] = punktBei(S, i, seite);
-    grid.add('grid', gridGeo, gridMat, [x + fx * 1.9, 0.08, z + fz * 1.9], [3.2, 1, 0.25], [0, yaw, 0]);
-    for (const q of [-1, 1]) grid.add('grid', gridGeo, gridMat, [x + fx * 1.4 + fz * q * 1.5, 0.08, z + fz * 1.4 - fx * q * 1.5], [0.25, 1, 1.2], [0, yaw, 0]);
+    const h = S.hy[i] + 0.08;
+    grid.add('grid', gridGeo, gridMat, [x + fx * 1.9, h, z + fz * 1.9], [3.2, 1, 0.25], [0, yaw, 0]);
+    for (const q of [-1, 1]) grid.add('grid', gridGeo, gridMat, [x + fx * 1.4 + fz * q * 1.5, h, z + fz * 1.4 - fx * q * 1.5], [0.25, 1, 1.2], [0, yaw, 0]);
   }
   grid.bauen(gruppe, false);
 
   // Startbrücke mit Banner und fünf Ampelpaaren, die im Countdown angehen
   const tor = new THREE.Group();
-  tor.position.set(S.px[0], 0, S.pz[0]); tor.rotation.y = yawBei(S, 0);
+  tor.position.set(S.px[0], S.hy[0], S.pz[0]); tor.rotation.y = yawBei(S, 0);
   const bannerTex = canvasTex(1024, 160, (c, w, h) => {
     const g = c.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#ffd23f'); g.addColorStop(1, '#ff8a1a');
     c.fillStyle = g; c.fillRect(0, 0, w, h);
@@ -1365,6 +1524,7 @@ function streckeLaden(nr){
 
   // Boxengebäude gegenüber der Tribüne
   boxenGebaeude(S, gruppe);
+  abkuerzungenFinden(S);
 
   // Tribüne rechts neben der Startgeraden: Sitzreihen in Streifen, Dach mit Blende, Wimpel und jubelnde Zuschauer
   const trib = new THREE.Group();
@@ -1427,7 +1587,13 @@ function streckeLaden(nr){
     for (let i = 0; i < S.N; i += schritt){ const dx = x - S.px[i], dz = z - S.pz[i]; if (dx * dx + dz * dz < a2) return false; }
     return true;
   };
-  const freiDeko = (x, z, abstand, schritt) => frei(x, z, abstand, schritt) && !(S.sperre && Math.hypot(x - S.sperre.x, z - S.sperre.z) < S.sperre.r);
+  const freiDeko = (x, z, abstand, schritt) => frei(x, z, abstand, schritt) && !(S.sperre && Math.hypot(x - S.sperre.x, z - S.sperre.z) < S.sperre.r) && !abkuerzungDa(S, x, z, 5);
+  // Auf Strecken mit Höhen zählt ein anderer Streckenteil nur, wenn er auf ähnlicher Höhe liegt (Brücken)
+  const wandFrei = (x, z, abstand, h) => {
+    const a2 = abstand * abstand;
+    for (let i = 0; i < S.N; i += 2){ const dx = x - S.px[i], dz = z - S.pz[i]; if (dx * dx + dz * dz < a2 && Math.abs(S.hy[i] - h) < 5) return false; }
+    return !abkuerzungDa(S, x, z, 2.5);
+  };
   const wand = new Instanzen();
   const wandAbstand = S.hw + S.auslauf + 1.0;
   let farbe = 0;
@@ -1435,16 +1601,17 @@ function streckeLaden(nr){
     const reifen = S.kies[i], yaw = yawBei(S, i), lx = S.tz[i], lz = -S.tx[i];
     if (!reifen && i % Math.max(1, Math.round(2.2 / S.ds))) continue;
     farbe++;
+    const h = S.hy[i], neig = -Math.atan(S.steig[i]);
     for (const sg of [1, -1]){
       const [x, z] = punktBei(S, i, sg * wandAbstand);
-      if (!frei(x, z, wandAbstand - 0.4, 2)) continue;
+      if (!wandFrei(x, z, wandAbstand - 0.4, h)) continue;
       const vx = -lx * sg, vz = -lz * sg;
-      if (reifen){
+      if (reifen && !S.hoch){
         for (const y of [0.17, 0.5, 0.83]) wand.add('reifen', GEO.zylGrob, MAT.bunt, [x, y, z], [0.5, 0.32, 0.5], [0, 0, 0], lin(0x1d1d20));
         wand.add('gurt', GEO.box, MAT.bunt, [x + vx * 0.52, 0.5, z + vz * 0.52], [0.05, 0.9, 1.08], [0, yaw, 0], lin(Math.floor(farbe / 2) % 2 ? wandA : wandB));
       } else {
-        wand.add('mauer', GEO.box, MAT.bunt, [x, 0.55, z], [0.6, 1.1, 2.3], [0, yaw, 0], lin(0xd9dce1));
-        wand.add('bande', GEO.box, MAT.bunt, [x + vx * 0.32, 0.6, z + vz * 0.32], [0.05, 0.75, 2.2], [0, yaw, 0], lin(farbe % 2 ? wandA : wandB));
+        wand.add('mauer', GEO.box, MAT.bunt, [x, 0.55 + h, z], [0.6, 1.1, 2.3], [neig, yaw, 0, 'YXZ'], lin(0xd9dce1));
+        wand.add('bande', GEO.box, MAT.bunt, [x + vx * 0.32, 0.6 + h, z + vz * 0.32], [0.05, 0.75, 2.2], [neig, yaw, 0, 'YXZ'], lin(farbe % 2 ? wandA : wandB));
       }
     }
   }
@@ -1458,14 +1625,14 @@ function streckeLaden(nr){
       const [x, z] = punktBei(S, i, q * S.hw);
       // Glaswuerfel mit drehendem Kristallkern, Leuchthof und Lichtfleck auf dem Boden
       const m = new THREE.Group();
-      m.position.set(x, 1.3, z);
+      m.position.set(x, 1.3 + S.hy[i], z);
       const wuerfel = new THREE.Mesh(GEO.box16, MAT.itemBox); wuerfel.castShadow = true;
       const kern = new THREE.Mesh(GEO.okta, MAT.itemKern); kern.scale.set(0.42, 0.62, 0.42);
       const halo = new THREE.Sprite(MAT.itemHalo); halo.scale.set(3.6, 3.6, 1);
       const fleck = new THREE.Mesh(GEO.scheibe, MAT.itemFleck); fleck.scale.set(3.4, 1, 3.4);
       m.add(wuerfel, kern, halo, fleck);
       gruppe.add(m);
-      S.boxen.push({ x, z, mesh:m, wuerfel, kern, fleck, aus:0, wachs:1, phase:rnd() * TAU });
+      S.boxen.push({ x, z, h:S.hy[i], mesh:m, wuerfel, kern, fleck, aus:0, wachs:1, phase:rnd() * TAU });
     }
   }
   // Turbo-Felder
@@ -1474,8 +1641,8 @@ function streckeLaden(nr){
     const i = Math.round(S.N * anteil), seite = q * S.hw;
     const [x, z] = punktBei(S, i, seite);
     const m = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 6), MAT.pad);
-    m.rotation.order = 'YXZ'; m.rotation.set(-Math.PI / 2, yawBei(S, i), 0);
-    m.position.set(x, 0.08, z);
+    m.rotation.order = 'YXZ'; m.rotation.set(-Math.PI / 2 - Math.atan(S.steig[i]), yawBei(S, i), 0);
+    m.position.set(x, 0.08 + S.hy[i], z);
     gruppe.add(m);
     S.pads.push({ i, seite });
   });
@@ -1483,7 +1650,7 @@ function streckeLaden(nr){
   dekoBauen(S, th, gruppe, rnd, freiDeko);
   // Streckenrand mit Grasbuescheln, Steinen oder Eiskristallen, gebuendelt gezeichnet.
   const details = new Instanzen();
-  for (let n = 0; n < 520; n++){
+  for (let n = 0; n < (th.schwebend ? 0 : 520); n++){
     const i = Math.floor(rnd() * S.N), sg = rnd() < 0.5 ? -1 : 1;
     const [x, z] = punktBei(S, i, sg * (S.hw + S.auslauf + 2.5 + rnd() * 15));
     if (!freiDeko(x, z, S.hw + S.auslauf + 1.7) || imMeer(S, x, z)) continue;
@@ -1498,6 +1665,7 @@ function streckeLaden(nr){
     }
   }
   details.bauen(gruppe, false);
+  streckenExtras(S, gruppe, th);
 
   // Minikarte vorberechnen
   S.karte = document.createElement('canvas');
@@ -1508,11 +1676,23 @@ function streckeLaden(nr){
   S.kOx = 190 - (S.minX + S.maxX) / 2 * S.kSkala; S.kOz = 190 - (S.minZ + S.maxZ) / 2 * S.kSkala;
   kc.lineJoin = kc.lineCap = 'round';
   const pfad = () => { kc.beginPath(); for (let i = 0; i <= S.N; i += 4){ const j = i % S.N; kc.lineTo(S.px[j] * S.kSkala + S.kOx, S.pz[j] * S.kSkala + S.kOz); } kc.closePath(); };
+  // Abkürzungen gestrichelt unter der Strecke
+  kc.setLineDash([10, 8]); kc.strokeStyle = 'rgba(255,214,90,.9)'; kc.lineWidth = 7;
+  for (const c of S.abk){ kc.beginPath(); for (let m = 0; m <= c.n; m += 2) kc.lineTo(c.px[m] * S.kSkala + S.kOx, c.pz[m] * S.kSkala + S.kOz); kc.stroke(); }
+  kc.setLineDash([]);
   pfad(); kc.strokeStyle = 'rgba(0,0,0,.55)'; kc.lineWidth = 22; kc.stroke();
   pfad(); kc.strokeStyle = 'rgba(255,255,255,.92)'; kc.lineWidth = 12; kc.stroke();
   const [sx1, sz1] = punktBei(S, 0, S.hw), [sx2, sz2] = punktBei(S, 0, -S.hw);
   kc.strokeStyle = '#111'; kc.lineWidth = 5; kc.lineCap = 'butt';
   kc.beginPath(); kc.moveTo(sx1 * S.kSkala + S.kOx, sz1 * S.kSkala + S.kOz); kc.lineTo(sx2 * S.kSkala + S.kOx, sz2 * S.kSkala + S.kOz); kc.stroke();
+  // Eisflächen hellblau, Schanzen als Pfeil in Streckenrichtung
+  kc.fillStyle = 'rgba(150,220,255,.95)';
+  for (const e of S.eis){ kc.beginPath(); kc.arc(e.x * S.kSkala + S.kOx, e.z * S.kSkala + S.kOz, 8, 0, TAU); kc.fill(); }
+  kc.fillStyle = cssFarbe(th.neon); kc.strokeStyle = '#111'; kc.lineWidth = 2;
+  for (const r of S.rampen){
+    const x = r.x * S.kSkala + S.kOx, y = r.z * S.kSkala + S.kOz, fx = r.fx * 11, fy = r.fz * 11;
+    kc.beginPath(); kc.moveTo(x + fx, y + fy); kc.lineTo(x - fx - fy * 0.7, y - fy + fx * 0.7); kc.lineTo(x - fx + fy * 0.7, y - fy - fx * 0.7); kc.closePath(); kc.fill(); kc.stroke();
+  }
 
   // Schneefall, im Vulkan aufsteigende Glut
   if (th.schnee || th.glut){
@@ -1528,6 +1708,7 @@ function streckeLaden(nr){
     scene.add(S.schnee);
   }
   if (th.sterne) himmelNacht(S, gruppe, rnd);
+  wetterGrundMerken(S);
   strecke = S;
   return S;
 }
@@ -1640,20 +1821,135 @@ function grosserVulkan(S, gruppe, cx, cz, R){
   }
 }
 
+// Sternenpark: Hochhäuser mit erleuchteten Fenstern statt Bergen, oben rote Warnlichter
+function skylineBauen(S, gruppe, cx, cz, R, rnd){
+  const fenster = canvasTex(128, 256, (c, w, h) => {
+    c.fillStyle = '#0c1024'; c.fillRect(0, 0, w, h);
+    for (let y = 6; y < h - 4; y += 12) for (let x = 6; x < w - 4; x += 12){
+      const r = Math.random();
+      c.fillStyle = r < 0.45 ? '#141a36' : r < 0.75 ? '#ffd890' : r < 0.9 ? '#9fd4ff' : '#ff9ad8';
+      c.fillRect(x, y, 7, 8);
+    }
+  });
+  const mat = new THREE.MeshBasicMaterial({ map:fenster });
+  const haeuser = new Instanzen(), lichter = new Instanzen();
+  for (let n = 0; n < 70; n++){
+    const w = n / 70 * TAU + rnd() * 0.08, r = R + 40 + rnd() * 300;
+    const x = cx + Math.cos(w) * r, z = cz + Math.sin(w) * r;
+    const h = 40 + rnd() * rnd() * 180, b = 24 + rnd() * 30;
+    haeuser.add('haus', GEO.box, mat, [x, h / 2, z], [b, h, b * (0.7 + rnd() * 0.6)], [0, rnd(), 0], new THREE.Color().setHSL(0.6 + rnd() * 0.2, 0.4, 0.75 + rnd() * 0.25));
+    if (h > 140) lichter.add('licht', GEO.kugelGrob, MAT.ruecklicht, [x, h + 2, z], [1.6, 1.6, 1.6]);
+  }
+  haeuser.bauen(gruppe, false);
+  lichter.bauen(gruppe, false);
+}
+
+// Wolkenreich: Wolkenmeer tief unten, Startinsel, Stützpfeiler, Unterseite der Fahrbahn, schwebende Inseln und Regenbögen
+function schwebendBauen(S, gruppe, cx, cz, R, rnd){
+  const wolkenTex = canvasTex(256, 256, (c, w, h) => {
+    c.fillStyle = '#f6e6f2'; c.fillRect(0, 0, w, h);
+    for (let n = 0; n < 160; n++){
+      const x = Math.random() * w, y = Math.random() * h, r = 10 + Math.random() * 40;
+      for (const [dx, dy] of [[0, 0], [-w, 0], [w, 0], [0, -h], [0, h]]){
+        const g = c.createRadialGradient(x + dx, y + dy, 0, x + dx, y + dy, r);
+        g.addColorStop(0, Math.random() < 0.5 ? 'rgba(255,255,255,.7)' : 'rgba(225,200,235,.5)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+        c.fillStyle = g; c.fillRect(x + dx - r, y + dy - r, r * 2, r * 2);
+      }
+    }
+  }, true);
+  wolkenTex.repeat.set(30, 30);
+  const meer = new THREE.Mesh(new THREE.PlaneGeometry(6000, 6000), new THREE.MeshLambertMaterial({ map:wolkenTex, emissive:lin(0x40303c) }));
+  meer.rotation.x = -Math.PI / 2; meer.position.set(cx, -55, cz);
+  gruppe.add(meer);
+  S.wolkenMeer = wolkenTex;
+  // Dicke Wolkenballen knapp über dem Meer
+  const ballen = new Instanzen(), wMat = new THREE.MeshLambertMaterial({ color:0xffffff, emissive:lin(0x6a5a70) });
+  for (let n = 0; n < 90; n++){
+    const w = rnd() * TAU, r = rnd() * (R + 500), x = cx + Math.cos(w) * r, z = cz + Math.sin(w) * r, s = 14 + rnd() * 26;
+    ballen.add('ballen', GEO.kugelGrob, wMat, [x, -52 + rnd() * 6, z], [s * 1.6, s * 0.55, s], [0, rnd() * TAU, 0]);
+  }
+  ballen.bauen(gruppe, false);
+  // Startinsel: trägt Startgerade, Tribüne und Boxengebäude
+  const insel = new Instanzen(), grasMat = new THREE.MeshLambertMaterial({ color:lin(0x7ccf62) }), felsMat = new THREE.MeshLambertMaterial({ color:lin(0x8a6f7e), flatShading:true });
+  for (let d = -110; d <= 70; d += 18){
+    const i = idxBei(S, d), [x, z] = punktBei(S, i, 0);
+    insel.add('oben', GEO.zyl16, grasMat, [x, -0.3, z], [48, 0.5, 48]);
+    insel.add('unten', GEO.kegelGrob, felsMat, [x, -18.5, z], [46, 36, 46], [Math.PI, rnd() * TAU, 0]);
+  }
+  insel.bauen(gruppe, false);
+  // Fahrbahn: Unterseite, Seitenblenden und Pfeiler bis in die Wolken
+  const unterMat = new THREE.MeshLambertMaterial({ color:lin(0xe9e4f6), side:THREE.DoubleSide });
+  const breit = S.hw + S.auslauf + 1.4;
+  gruppe.add(band(S, breit, -breit, -0.7, 10, unterMat));
+  for (const sg of [1, -1]){
+    const n = S.N + 1, pos = new Float32Array(n * 6), nor = new Float32Array(n * 6), uv = new Float32Array(n * 4);
+    for (let j = 0; j < n; j++){
+      const i = j % S.N, x = S.px[i] + S.tz[i] * sg * breit, z = S.pz[i] - S.tx[i] * sg * breit, h = S.hy[i];
+      pos.set([x, h + 0.03, z, x, h - 0.7, z], j * 6); nor.set([S.tz[i] * sg, 0, -S.tx[i] * sg, S.tz[i] * sg, 0, -S.tx[i] * sg], j * 6); uv.set([0, j, 1, j], j * 4);
+    }
+    const index = [];
+    for (let j = 0; j < S.N; j++){ const a = 2 * j; index.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.BufferAttribute(nor, 3)); g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+    g.setIndex(index);
+    gruppe.add(new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color:lin(S.th.neon), side:THREE.DoubleSide })));
+  }
+  const pfeiler = new Instanzen(), pfeilerMat = new THREE.MeshLambertMaterial({ color:lin(0xf4f0ff) });
+  const schritt = Math.round(32 / S.ds);
+  for (let i = 0; i < S.N; i += schritt){
+    if (S.hy[i] < 2 && ringAbstand(S, i, 0) < 120) continue;
+    // Nicht durch eine tiefer liegende Fahrbahn hindurch
+    let frei = true;
+    for (let j = 0; j < S.N && frei; j += 2){
+      if (S.hy[j] < S.hy[i] - 3 && Math.hypot(S.px[j] - S.px[i], S.pz[j] - S.pz[i]) < breit + 4) frei = false;
+    }
+    if (!frei) continue;
+    const h = S.hy[i] + 55;
+    pfeiler.add('pfeiler', GEO.zyl16, pfeilerMat, [S.px[i], S.hy[i] - 0.7 - h / 2, S.pz[i]], [1.6, h, 1.6]);
+    pfeiler.add('kopf', GEO.box, pfeilerMat, [S.px[i], S.hy[i] - 1.1, S.pz[i]], [breit * 1.2, 0.8, 2.4], [0, yawBei(S, i), 0]);
+  }
+  pfeiler.bauen(gruppe);
+  // Regenbögen weit draußen
+  const farben = [0xff4d6d, 0xff9f1c, 0xffd23f, 0x3fd17a, 0x3aa0ff, 0x8a5cff];
+  for (const [w, r] of [[0.9, R + 380], [3.6, R + 460]]){
+    const g = new THREE.Group();
+    g.position.set(cx + Math.cos(w) * r, -40, cz + Math.sin(w) * r);
+    g.lookAt(cx, -40, cz);
+    farben.forEach((f, n) => {
+      const m = new THREE.Mesh(new THREE.TorusGeometry(260 - n * 9, 4.5, 6, 48, Math.PI), new THREE.MeshBasicMaterial({ color:lin(f), transparent:true, opacity:0.55, fog:false, depthWrite:false }));
+      g.add(m);
+    });
+    gruppe.add(g);
+  }
+}
+// Schwebende Inseln mit Bäumchen und Fels darunter
+function inselSetzen(inst, x, y, z, s, rnd, farbe){
+  inst.add('inselGras', GEO.kugelGrob, MAT.laub, [x, y, z], [6 * s, 1.4 * s, 6 * s], [0, rnd() * TAU, 0], farbe(0.28 + rnd() * 0.05, 0.5, 0.45));
+  inst.add('inselFels', GEO.kegelGrob, MAT.laub, [x, y - 5 * s, z], [5.6 * s, 10 * s, 5.6 * s], [Math.PI, rnd() * TAU, 0], farbe(0.85 + rnd() * 0.08, 0.15, 0.45));
+  for (let n = 0; n < 3; n++){
+    const a = rnd() * TAU, r = rnd() * 3.5 * s, tx = x + Math.cos(a) * r, tz = z + Math.sin(a) * r;
+    inst.add('stamm', GEO.zylGrob, MAT.stamm, [tx, y + 1.6 * s, tz], [0.25 * s, 2.4 * s, 0.25 * s]);
+    inst.add('krone', GEO.kugelGrob, MAT.laub, [tx, y + 3.4 * s, tz], [1.5 * s, 1.5 * s, 1.5 * s], [0, rnd() * TAU, 0], farbe(rnd() < 0.5 ? 0.92 : 0.3, 0.6, 0.72));
+  }
+}
+
 function dekoBauen(S, th, gruppe, rnd, frei){
   const inst = new Instanzen();
   const rand = 150;
-  const ziel = th.deko === 'kakteen' ? 170 : th.deko === 'palmen' ? 150 : th.deko === 'vulkan' ? 190 : 280;
+  const ziel = th.deko === 'kakteen' ? 170 : th.deko === 'palmen' ? 150 : th.deko === 'vulkan' ? 190 : th.deko === 'himmel' ? 45 : 280;
   const lava = new Instanzen();
   const farbe = (h, s, l) => new THREE.Color().setHSL(h, s, l).convertSRGBToLinear();
   let gesetzt = 0;
   for (let versuch = 0; versuch < ziel * 6 && gesetzt < ziel; versuch++){
     const x = S.minX - rand + rnd() * (S.maxX - S.minX + 2 * rand);
     const z = S.minZ - rand + rnd() * (S.maxZ - S.minZ + 2 * rand);
-    if (!frei(x, z, S.hw + S.auslauf + 4) || imMeer(S, x, z)) continue;
+    if (!frei(x, z, S.hw + S.auslauf + (th.deko === 'himmel' ? 30 : 4)) || imMeer(S, x, z)) continue;
     gesetzt++;
     const s = 0.7 + rnd() * 0.9, dreh = rnd() * TAU;
-    if (th.deko === 'palmen'){
+    if (th.deko === 'himmel'){
+      // Unter oder neben der Strecke, nie im Weg
+      inselSetzen(inst, x, -12 - rnd() * 30 + (rnd() < 0.3 ? 40 : 0), z, 0.8 + rnd() * 1.2, rnd, farbe);
+    } else if (th.deko === 'palmen'){
       if (rnd() < 0.25){
         inst.add('busch', GEO.kugelGrob, MAT.laub, [x, 0.45 * s, z], [1.3 * s, 0.9 * s, 1.3 * s], [0, dreh, 0], farbe(0.27 + rnd() * 0.05, 0.5, 0.32));
       } else palmeSetzen(inst, x, z, s, dreh, rnd, farbe);
@@ -1751,7 +2047,9 @@ function dekoBauen(S, th, gruppe, rnd, frei){
   const cx = (S.minX + S.maxX) / 2, cz = (S.minZ + S.maxZ) / 2;
   const R = Math.max(S.maxX - S.minX, S.maxZ - S.minZ) / 2 + 300;
   const bergMat = new THREE.MeshPhongMaterial({ color:0xffffff, flatShading:true, shininess:0, specular:0x000000 });
-  for (let n = 0; n < 22; n++){
+  if (th.skyline) skylineBauen(S, gruppe, cx, cz, R, rnd);
+  if (th.schwebend) schwebendBauen(S, gruppe, cx, cz, R, rnd);
+  for (let n = 0; n < (th.skyline || th.schwebend ? 0 : 22); n++){
     const w = n / 22 * TAU + rnd() * 0.2, r = R + rnd() * 260;
     const x = cx + Math.cos(w) * r, z = cz + Math.sin(w) * r;
     const h = 90 + rnd() * 150, b = h * (0.9 + rnd() * 0.5);
@@ -1789,6 +2087,1137 @@ function dekoBauen(S, th, gruppe, rnd, frei){
     S.wolken = wg;
     gruppe.add(wg);
   }
+}
+
+/* =========================================================
+   Strecken-Extras: Sprungschanzen, Leuchtbögen, Glatteis,
+   Meteore, Steppenläufer und lebendige Kulisse
+   ========================================================= */
+const RAMPE_LAENGE = 8, RAMPE_HOEHE = 1.7, TRICK_DAUER = 0.55;
+// Abstand zweier Streckenindizes entlang der Strecke in Metern
+const ringAbstand = (S, a, b) => { const d = Math.abs(a - b) % S.N; return Math.min(d, S.N - d) * S.ds; };
+// Frei, wenn kein anderer Teil der Strecke (weiter als 45 m von Index i entfernt) näher als abstand liegt
+function fremdFrei(S, x, z, i, abstand){
+  const a2 = abstand * abstand;
+  for (let j = 0; j < S.N; j += 2){
+    if (ringAbstand(S, i, j) < 45) continue;
+    const dx = x - S.px[j], dz = z - S.pz[j];
+    if (dx * dx + dz * dz < a2) return false;
+  }
+  return true;
+}
+// Ort auf der Strecke mit lokaler Richtung: daran hängen Schanzen und Eisflächen
+function streckenOrt(S, i, seite){
+  const [x, z] = punktBei(S, i, seite);
+  return { i, x, z, h:S.hy[i], fx:S.tx[i], fz:S.tz[i] };
+}
+// Flaches Teil (Eis, Pfütze) an einem Ort auf die Straße legen, bergauf/bergab mitgeneigt
+function aufStrasse(m, S, ort, y){
+  m.position.set(ort.x, ort.h + y, ort.z);
+  m.rotation.order = 'YXZ'; m.rotation.set(-Math.atan(S.steig[ort.i]), yawBei(S, ort.i), 0);
+}
+// Lage eines Punkts relativ zu einem Ort: [entlang, quer]
+function ortLage(o, x, z){
+  const dx = x - o.x, dz = z - o.z;
+  return [dx * o.fx + dz * o.fz, dx * o.fz - dz * o.fx];
+}
+
+function streckenExtras(S, gruppe, th){
+  const rnd = zufallsGen(S.def.saat * 7 + 3);
+  rampenBauen(S, gruppe, th);
+  boegenBauen(S, gruppe, th);
+  S.muenzen = [];
+  abkuerzungenBauen(S, gruppe, th);
+  muenzenBauen(S, gruppe);
+  S.eis = [];
+  if (th.gefahr === 'eis') eisBauen(S, gruppe, rnd);
+  S.gefahren = []; S.gefahrTimer = 4;
+  S.kulisse = { ballons:[], rotoren:[], delfine:[], boote:[], polarlicht:null, feuerwerk:0 };
+  const k = th.kulisse || [];
+  if (k.includes('ballons')) ballonsBauen(S, gruppe, rnd);
+  if (k.includes('windraeder')) windraederBauen(S, gruppe, rnd);
+  if (k.includes('delfine')) delfineBauen(S, gruppe, rnd);
+  if (k.includes('boote')) booteBauen(S, gruppe, rnd);
+  if (k.includes('polarlicht')) polarlichtBauen(S, gruppe);
+}
+
+/* ---------- Sprungschanzen ---------- */
+function chevronTex(neon){
+  return canvasTex(128, 256, (c, w, h) => {
+    c.fillStyle = '#23262c'; c.fillRect(0, 0, w, h);
+    for (let y = -40; y < h; y += 64){
+      c.fillStyle = y / 64 % 2 ? cssFarbe(neon) : '#ffd23f';
+      c.beginPath(); c.moveTo(10, y + 46); c.lineTo(w / 2, y + 6); c.lineTo(w - 10, y + 46); c.lineTo(w - 10, y + 66); c.lineTo(w / 2, y + 26); c.lineTo(10, y + 66); c.closePath(); c.fill();
+    }
+    c.fillStyle = '#f4f4f0'; c.fillRect(0, 0, 7, h); c.fillRect(w - 7, 0, 7, h);
+    koernung(c, w, h, 1500, 0.12);
+  }, true);
+}
+function rampenBauen(S, gruppe, th){
+  S.rampen = [];
+  // Nur auf langen Geraden, mit Platz zum Landen, weg von Start, Item-Boxen und Turbo-Feldern
+  const belegt = [0, 0.2, 0.36, 0.5, 0.64, 0.79, 0.92].map(a => Math.round(S.N * a) % S.N);
+  for (const c of S.abk) belegt.push(c.i, c.j);
+  const vor = Math.round(20 / S.ds), nach = Math.round(50 / S.ds), landung = Math.round(32 / S.ds);
+  const kandidaten = [];
+  for (let i = 0; i < S.N; i += 2){
+    if (i * S.ds < 70 || i * S.ds > S.L - 50) continue;
+    let gerade = true;
+    for (let d = -vor; d <= nach && gerade; d++){ const j = (i + d + S.N) % S.N; if (Math.abs(S.kurv[j]) > 0.012 || Math.abs(S.steig[j]) > 0.02) gerade = false; }
+    if (!gerade || belegt.some(b => ringAbstand(S, i, b) < 22 || ringAbstand(S, (i + landung) % S.N, b) < 14)) continue;
+    kandidaten.push(i);
+  }
+  if (!kandidaten.length) return;
+  const erste = kandidaten[Math.floor(kandidaten.length / 2)];
+  let zweite = -1, weit = 150;
+  for (const i of kandidaten){ const d = ringAbstand(S, i, erste); if (d > weit){ weit = d; zweite = i; } }
+  rampenSetzen(S, gruppe, th, (zweite >= 0 ? [erste, zweite] : [erste]).map(i => streckenOrt(S, i, 0)), S.hw * 0.42);
+}
+// Schanzen an Orten { x, z, h, fx, fz } bauen (Blickrichtung fx/fz), halbe Breite w
+function rampenSetzen(S, gruppe, th, orte, w){
+  const L = RAMPE_LAENGE, H = RAMPE_HOEHE;
+  const tex = chevronTex(th.neon);
+  tex.repeat.set(1, 1.5);
+  const bahnMat = new THREE.MeshStandardMaterial({ map:tex, roughness:0.7, metalness:0.05, envMapIntensity:0.3 });
+  const bahnGeo = new THREE.PlaneGeometry(w * 2, Math.hypot(L, H));
+  bahnGeo.rotateX(-Math.PI / 2); bahnGeo.rotateY(Math.PI); bahnGeo.rotateX(-Math.atan2(H, L)); bahnGeo.translate(0, H / 2 + 0.03, L / 2);
+  // Keil: Seitenwände und Rückwand
+  const keil = new THREE.BufferGeometry();
+  keil.setAttribute('position', new THREE.Float32BufferAttribute([
+    -w, 0, 0, -w, 0, L, -w, H, L,   w, 0, 0, w, H, L, w, 0, L,
+    -w, 0, L, w, 0, L, w, H, L,   -w, 0, L, w, H, L, -w, H, L
+  ], 3));
+  keil.computeVertexNormals();
+  const keilMat = new THREE.MeshStandardMaterial({ color:lin(0x2c3038), roughness:0.6, metalness:0.3, side:THREE.DoubleSide });
+  for (const ort of orte){
+    const g = new THREE.Group();
+    g.position.set(ort.x, ort.h, ort.z); g.rotation.y = Math.atan2(ort.fx, ort.fz);
+    const bahn = new THREE.Mesh(bahnGeo, bahnMat); bahn.receiveShadow = true; bahn.castShadow = true;
+    const k = new THREE.Mesh(keil, keilMat); k.castShadow = true;
+    // Leuchtkante an der Absprungkante, dazu Pfosten mit Lampen
+    const kanteMat = new THREE.MeshBasicMaterial({ color:lin(th.neon) });
+    teil(GEO.box, kanteMat, g, 0, H + 0.02, L - 0.12, w * 2 + 0.3, 0.14, 0.3).castShadow = false;
+    for (const sg of [-1, 1]){
+      teil(GEO.box, keilMat, g, sg * (w + 0.25), 1.6, L - 0.2, 0.25, 3.2, 0.25);
+      teil(GEO.kugelGrob, kanteMat, g, sg * (w + 0.25), 3.35, L - 0.2, 0.32, 0.32, 0.32).castShadow = false;
+    }
+    g.add(bahn, k);
+    gruppe.add(g);
+    S.rampen.push(Object.assign(ort, { halb:w, kante:kanteMat, basis:lin(th.neon) }));
+  }
+}
+// Höhe der Schanze unter dem Kart, -1 wenn keine da ist
+function rampeHoehe(S, k){
+  for (const r of S.rampen){
+    const [a, q] = ortLage(r, k.x, k.z);
+    if (a >= 0 && a <= RAMPE_LAENGE && Math.abs(q) < r.halb + 0.3) return RAMPE_HOEHE * a / RAMPE_LAENGE;
+  }
+  return -1;
+}
+function abheben(k){
+  k.vy = 4 + k.v * 0.32 + k.vb; k.sprung = true; k.trick = 0; k.trickOk = false;
+  if (k.spieler) Ton.effekt('sprung');
+  // Computerfahrer machen meistens auch einen Trick
+  if (!k.mensch && Math.random() < 0.6){ k.trick = TRICK_DAUER; k.trickOk = true; }
+}
+function landen(k){
+  if (nahAmSpieler(k.x, k.z, 70)){
+    const [r, g, b] = strecke.th.staub;
+    for (let n = 0; n < 12; n++){ const w = Math.random() * TAU; staub.neu(k.x + Math.cos(w) * 1.2, 0.3, k.z + Math.sin(w) * 1.2, Math.cos(w) * 3, zufall(0.5, 1.5), Math.sin(w) * 3, zufall(0.5, 0.9), r, g, b, 0.9, 1, 2.4, 0.7); }
+  }
+  if (k.spieler) zustand.wackeln = Math.max(zustand.wackeln, 0.15);
+  if (!k.trickOk || k.dreh > 0) return;
+  k.trickOk = false;
+  boost(k, 0.9);
+  buntStoss(k.x, 1.5, k.z);
+  if (k.spieler){ meldung('Trick!', 0.9, true); Ton.effekt('trick'); vibrieren(40); }
+}
+
+/* ---------- Münzen: jede macht ein bisschen schneller (höchstens 10) ---------- */
+const MAX_MUENZEN = 10;
+const muenzGeo = geteilt((() => { const g = new THREE.CylinderGeometry(0.55, 0.55, 0.13, 22); g.rotateX(Math.PI / 2); return g; })());
+const muenzMat = geteilt(new THREE.MeshStandardMaterial({ color:lin(0xffd22a), metalness:0.7, roughness:0.3, emissive:lin(0xb07000), envMapIntensity:1.2 }));
+function muenzenBauen(S, gruppe){
+  // Ein Bogen über jeder Schanze, genau auf der Flugbahn
+  for (const r of S.rampen){
+    [[14, 3.9], [20, 4.9], [26, 4.8], [32, 3.6]].forEach(([d, h]) => S.muenzen.push({ x:r.x + r.fx * d, z:r.z + r.fz * d, y:h + 0.8 + r.h }));
+  }
+  // Reihen auf der Straße, abwechselnd links und rechts
+  [0.12, 0.42, 0.71].forEach((anteil, n) => {
+    const seite = (n % 2 ? -0.45 : 0.45) * S.hw;
+    for (let m = 0; m < 5; m++){
+      const i = (Math.round(S.N * anteil) + Math.round(m * 3.5 / S.ds)) % S.N;
+      if (S.rampen.some(r => ringAbstand(S, i, r.i) < 12)) continue;
+      const [x, z] = punktBei(S, i, seite);
+      S.muenzen.push({ x, z, y:1.0 + S.hy[i] });
+    }
+  });
+  for (const m of S.muenzen) m.aus = 0;
+  S.muenzMesh = new THREE.InstancedMesh(muenzGeo, muenzMat, Math.max(1, S.muenzen.length));
+  S.muenzMesh.castShadow = true; S.muenzMesh.frustumCulled = false;
+  gruppe.add(S.muenzMesh);
+}
+const muenzObj = new THREE.Object3D();
+function muenzenUpdate(dt){
+  const S = strecke;
+  S.muenzen.forEach((m, i) => {
+    if (m.aus > 0) m.aus -= dt;
+    muenzObj.position.set(m.x, m.y + Math.sin(zeit * 3 + i) * 0.12, m.z);
+    muenzObj.rotation.set(0, zeit * 3 + i * 0.4, 0);
+    muenzObj.scale.setScalar(m.aus > 0 ? 0.0001 : 1);
+    muenzObj.updateMatrix();
+    S.muenzMesh.setMatrixAt(i, muenzObj.matrix);
+    if (m.aus > 0 || !['rennen', 'auslauf'].includes(zustand.phase)) return;
+    for (const k of karts){
+      if (k.fern) continue;
+      const dx = k.x - m.x, dz = k.z - m.z;
+      if (dx * dx + dz * dz > 3.4 || Math.abs(k.boden + k.y + 0.8 - m.y) > 1.6) continue;
+      muenzeWeg(m);
+      ereignis({ a:'m', i });
+      k.muenzen = Math.min(MAX_MUENZEN, k.muenzen + 1);
+      if (k.spieler){ zustand.muenzRennen++; Ton.effekt('muenze'); }
+      break;
+    }
+  });
+  S.muenzMesh.instanceMatrix.needsUpdate = true;
+}
+function muenzeWeg(m){
+  m.aus = 10;
+  if (nahAmSpieler(m.x, m.z, 80)) for (let n = 0; n < 8; n++){ const w = Math.random() * TAU; funken.neu(m.x, m.y, m.z, Math.cos(w) * 3, zufall(1, 4), Math.sin(w) * 3, zufall(0.3, 0.5), 1, 0.85, 0.2, 0.45, 8); }
+}
+function muenzenVerlieren(k, anzahl){
+  const weg = Math.min(k.muenzen, anzahl);
+  k.muenzen -= weg;
+  if (weg && nahAmSpieler(k.x, k.z, 80)) for (let n = 0; n < weg * 4; n++){ const w = Math.random() * TAU; funken.neu(k.x, k.y + 1.2, k.z, Math.cos(w) * 4, zufall(4, 8), Math.sin(w) * 4, zufall(0.5, 0.8), 1, 0.82, 0.15, 0.6, 16); }
+}
+
+/* ---------- Abkürzungen ----------
+   Schotterwege quer durchs Gelände (langsamer Untergrund, aber viel kürzer – mit Turbo lohnt es sich),
+   auf dem Wolkenreich eine Regenbogenbrücke ohne Geländer. Sie werden automatisch gesucht:
+   ein Weg zwischen zwei Streckenpunkten, der kürzer ist und keinen anderen Streckenteil berührt. */
+const ABK_BREITE = 4.2;
+function abkuerzungenFinden(S){
+  S.abk = [];
+  const vorgabe = S.def.abk;
+  const kand = [];
+  const st = Math.max(1, Math.round(5 / S.ds));
+  if (vorgabe){
+    // Vorgabe: Bereiche für Anfang und Ende, darin der Weg mit dem größten Gewinn
+    for (const [i0, i1, j0, j1, art] of vorgabe){
+      for (let i = Math.round(i0 * S.N); i <= i1 * S.N; i += st) for (let j = Math.round(j0 * S.N); j <= j1 * S.N; j += st)
+        for (const sg of [1, -1]){ const c = abkKandidat(S, i, j, sg, art); if (c.d / c.D <= 0.8 && c.d / c.D >= 0.42 && c.d > 50) kand.push(c); }
+    }
+    kand.sort((a, b) => (b.D - b.d) - (a.D - a.d));
+  } else {
+    const lo = Math.round(0.1 * S.N), hi = Math.round(0.88 * S.N);
+    for (let i = lo; i < hi; i += st){
+      for (let j = i + Math.round(80 / S.ds); j < Math.min(hi, i + Math.round(330 / S.ds)); j += st){
+        for (const sg of [1, -1]){
+          const c = abkKandidat(S, i, j, sg, 'erde');
+          if (c.d / c.D >= 0.38 && c.d / c.D <= 0.72 && c.d > 50) kand.push(c);
+        }
+      }
+    }
+    kand.sort((a, b) => (b.D - b.d) - (a.D - a.d));
+  }
+  for (const c of kand){
+    if (S.abk.length >= 2) break;
+    if (S.abk.some(o => !(c.j * S.ds + 60 < o.i * S.ds || c.i * S.ds > o.j * S.ds + 60))) continue;
+    if (!abkPruefen(S, c)) continue;
+    S.abk.push(abkFertig(S, c));
+  }
+}
+// Geschwungener Weg (Bézier), der tangential aus der Strecke heraus- und wieder hineinläuft
+function abkKandidat(S, i, j, sg, art){
+  const [ax, az] = punktBei(S, i, sg * S.hw * 0.6), [bx, bz] = punktBei(S, j, sg * S.hw * 0.6);
+  const sehne = Math.hypot(bx - ax, bz - az), l = sehne * 0.38;
+  const c = { i, j, sg, art, ax, az, bx, bz, D:(j - i) * S.ds,
+    k1x:ax + S.tx[i] * l, k1z:az + S.tz[i] * l, k2x:bx - S.tx[j] * l, k2z:bz - S.tz[j] * l };
+  let d = 0, [px, pz] = abkPunkt(c, 0);
+  for (let m = 1; m <= 12; m++){ const [x, z] = abkPunkt(c, m / 12); d += Math.hypot(x - px, z - pz); px = x; pz = z; }
+  c.d = d;
+  return c;
+}
+function abkPunkt(c, t){
+  const u = 1 - t, a = u * u * u, b = 3 * u * u * t, e = 3 * u * t * t, f = t * t * t;
+  return [a * c.ax + b * c.k1x + e * c.k2x + f * c.bx, a * c.az + b * c.k1z + e * c.k2z + f * c.bz];
+}
+const abkHoehe = (S, c, t) => S.hy[c.i] + (S.hy[c.j] - S.hy[c.i]) * t + (c.art === 'bruecke' ? Math.sin(t * Math.PI) * 6 : 0);
+// Der Weg muss die Strecke schnell verlassen und darf sonst nirgends in ihre Nähe kommen
+function abkPruefen(S, c){
+  const n = Math.ceil(c.d / 3), rand = S.hw + S.auslauf + 4;
+  for (let m = 1; m < n; m++){
+    const t = m / n, s = t * c.d, [x, z] = abkPunkt(c, t), h = abkHoehe(S, c, t);
+    if (Math.hypot(x - S.px[0], z - S.pz[0]) < 60) return false;
+    if (S.sperre && Math.hypot(x - S.sperre.x, z - S.sperre.z) < S.sperre.r + 6) return false;
+    const ende = Math.min(60, c.d * 0.3), amEnde = s < ende || c.d - s < ende;
+    for (let k = 0; k < S.N; k += 2){
+      const dx = x - S.px[k], dz = z - S.pz[k];
+      if (dx * dx + dz * dz > rand * rand || Math.abs(S.hy[k] - h) > 7) continue;
+      if (amEnde && (ringAbstand(S, k, c.i) < s + 20 || ringAbstand(S, k, c.j) < c.d - s + 20)) continue;
+      return false;
+    }
+  }
+  return true;
+}
+function abkFertig(S, c){
+  const n = Math.max(2, Math.ceil(c.d / 2));
+  c.px = new Float32Array(n + 1); c.pz = new Float32Array(n + 1); c.ph = new Float32Array(n + 1);
+  for (let m = 0; m <= n; m++){
+    const t = m / n;
+    [c.px[m], c.pz[m]] = abkPunkt(c, t); c.ph[m] = abkHoehe(S, c, t);
+    gitterEintragen(S, c.px[m], c.pz[m], c.ph[m]);
+  }
+  c.n = n; c.hb = ABK_BREITE;
+  // Richtung quer zum Weg an jedem Punkt
+  c.lx = new Float32Array(n + 1); c.lz = new Float32Array(n + 1);
+  for (let m = 0; m <= n; m++){
+    const a = Math.max(0, m - 1), b = Math.min(n, m + 1), dx = c.px[b] - c.px[a], dz = c.pz[b] - c.pz[a], l = Math.hypot(dx, dz) || 1;
+    c.lx[m] = dz / l; c.lz[m] = -dx / l;
+  }
+  let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+  for (let m = 0; m <= n; m++){ x0 = Math.min(x0, c.px[m]); x1 = Math.max(x1, c.px[m]); z0 = Math.min(z0, c.pz[m]); z1 = Math.max(z1, c.pz[m]); }
+  c.box = [x0 - 12, x1 + 12, z0 - 12, z1 + 12];
+  c.nr = S.abk.length;
+  return c;
+}
+// Abstand zum Weg, Anteil t (0 = Anfang, 1 = Ende) und nächster Punkt auf dem Weg
+function abkLage(c, x, z){
+  if (x < c.box[0] || x > c.box[1] || z < c.box[2] || z > c.box[3]) return [Infinity, 0, 0, 0];
+  let best = Infinity, bt = 0, bx = 0, bz = 0;
+  for (let m = 0; m < c.n; m++){
+    const ax = c.px[m], az = c.pz[m], sx = c.px[m + 1] - ax, sz = c.pz[m + 1] - az, l2 = sx * sx + sz * sz || 1;
+    const u = klemm(((x - ax) * sx + (z - az) * sz) / l2, 0, 1), nx = ax + sx * u, nz = az + sz * u, d2 = (x - nx) ** 2 + (z - nz) ** 2;
+    if (d2 < best){ best = d2; bt = (m + u) / c.n; bx = nx; bz = nz; }
+  }
+  return [Math.sqrt(best), bt, bx, bz];
+}
+const abkPunktH = (c, t) => { const f = t * c.n, m = Math.min(c.n - 1, Math.floor(f)); return c.ph[m] + (c.ph[m + 1] - c.ph[m]) * (f - m); };
+// Ist das Kart auf einer Abkürzung? Dann folgen Index, Fortschritt und Boden dem Weg.
+function abkFolgen(S, k){
+  const war = k.aufAbk;
+  k.aufAbk = null;
+  if (k.faellt) return;
+  for (const c of S.abk){
+    const [d, t] = abkLage(c, k.x, k.z);
+    if (d > c.hb + (t < 0.25 || t > 0.75 ? 2.5 : 0.6)) continue;
+    // An den Enden gilt die normale Strecke, solange man noch auf der Straße ist
+    if (Math.abs(k.seite) < S.hw + 1 && (t < 0.2 || t > 0.8) && war !== c) continue;
+    if ((t > 0.97 || (d > c.hb && (t < 0.2 || t > 0.8))) && Math.abs(k.seite) < S.hw + S.auslauf) continue;
+    k.aufAbk = c; k.abkT = t;
+    const idx = (c.i + Math.round(t * (c.j - c.i))) % S.N;
+    k.idx = idx;
+    k.fortschritt = k.runde * S.L + idx * S.ds;
+    break;
+  }
+}
+// Pfad als Band auf dem Boden (oder als Brücke in der Luft)
+function abkBand(c, breite, y, mat){
+  const n = c.n, pos = new Float32Array((n + 1) * 6), uv = new Float32Array((n + 1) * 4), nor = new Float32Array((n + 1) * 6);
+  for (let m = 0; m <= n; m++){
+    const x = c.px[m], z = c.pz[m], h = c.ph[m] + y, lx = c.lx[m], lz = c.lz[m];
+    pos.set([x + lx * breite, h, z + lz * breite, x - lx * breite, h, z - lz * breite], m * 6);
+    uv.set([0, m * 2 / 6, 1, m * 2 / 6], m * 4); nor.set([0, 1, 0, 0, 1, 0], m * 6);
+  }
+  const index = [];
+  for (let m = 0; m < n; m++){ const a = 2 * m; index.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); g.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+  g.setIndex(index);
+  const me = new THREE.Mesh(g, mat); me.receiveShadow = true;
+  return me;
+}
+function abkuerzungenBauen(S, gruppe, th){
+  if (!S.abk.length) return;
+  const erdeTex = canvasTex(128, 256, (c, w, h) => {
+    c.fillStyle = th.deko === 'vulkan' ? '#3a2c26' : th.schnee ? '#c9d6e2' : th.deko === 'kakteen' ? '#b07a45' : th.deko === 'palmen' ? '#d9bd84' : '#8a6238';
+    c.fillRect(0, 0, w, h);
+    koernung(c, w, h, 5000, 0.25);
+    // Fahrspuren
+    c.fillStyle = 'rgba(0,0,0,.16)'; c.fillRect(w * 0.22, 0, 14, h); c.fillRect(w * 0.7, 0, 14, h);
+    for (let n = 0; n < 40; n++){ c.fillStyle = 'rgba(255,255,255,.12)'; c.beginPath(); c.arc(Math.random() * w, Math.random() * h, 2 + Math.random() * 4, 0, TAU); c.fill(); }
+  }, true);
+  const brueckeTex = canvasTex(128, 64, (c, w, h) => {
+    const farben = ['#ff4d6d', '#ff9f1c', '#ffd23f', '#3fd17a', '#3aa0ff', '#8a5cff'];
+    farben.forEach((f, n) => { c.fillStyle = f; c.fillRect(n * w / 6, 0, w / 6, h); });
+    c.fillStyle = 'rgba(0,0,0,.25)'; c.fillRect(0, h - 4, w, 4);
+  }, true);
+  const pfostenMat = std(0x6b4a2a, 0.9), lampeMat = new THREE.MeshBasicMaterial({ color:lin(th.neon) });
+  const inst = new Instanzen();
+  for (const c of S.abk){
+    const bruecke = c.art === 'bruecke';
+    const mat = bruecke
+      ? new THREE.MeshStandardMaterial({ map:brueckeTex, roughness:0.4, emissive:lin(0x222222), side:THREE.DoubleSide })
+      : new THREE.MeshLambertMaterial({ map:erdeTex, polygonOffset:true, polygonOffsetFactor:-1, polygonOffsetUnits:-1 });
+    gruppe.add(abkBand(c, c.hb, bruecke ? 0 : 0.03, mat));
+    for (let m = 2; m < c.n - 1; m += bruecke ? 4 : 3){
+      const x = c.px[m], z = c.pz[m], h = c.ph[m], lx = c.lx[m], lz = c.lz[m];
+      if (bruecke){
+        // Stützen hinunter in die Wolken, Leuchtpunkte am Rand
+        if (m % 12 === 2) inst.add('stuetze', GEO.zylGrob, MAT.weiss, [x, h - 40, z], [0.5, 80, 0.5]);
+        for (const sg of [-1, 1]) inst.add('licht', GEO.kugelGrob, lampeMat, [x + lx * sg * (c.hb + 0.1), h + 0.15, z + lz * sg * (c.hb + 0.1)], [0.22, 0.22, 0.22]);
+      } else {
+        for (const sg of [-1, 1]) inst.add('pfosten', GEO.zylGrob, pfostenMat, [x + lx * sg * (c.hb + 0.5), h + 0.5, z + lz * sg * (c.hb + 0.5)], [0.14, 1, 0.14]);
+      }
+    }
+    if (bruecke){
+      const unter = abkBand(c, c.hb, -0.4, new THREE.MeshStandardMaterial({ color:lin(0xf4f4ff), roughness:0.6 }));
+      gruppe.add(unter);
+    }
+    // Schild an der Einfahrt
+    const schildTex = canvasTex(256, 96, (cx, w, h) => {
+      cx.fillStyle = '#20232a'; cx.fillRect(0, 0, w, h);
+      cx.strokeStyle = cssFarbe(th.neon); cx.lineWidth = 8; cx.strokeRect(4, 4, w - 8, h - 8);
+      cx.font = '900 40px "Barlow SC", system-ui, sans-serif'; cx.textAlign = 'center'; cx.textBaseline = 'middle';
+      cx.fillStyle = '#ffd23f'; cx.fillText(bruecke ? '🌈 BRÜCKE ➜' : 'ABKÜRZUNG ➜', w / 2, h / 2 + 2);
+    });
+    const schild = new THREE.Group();
+    const m0 = Math.min(c.n, 8), sx = c.px[m0] + c.lx[m0] * (c.hb + 1.6), sz = c.pz[m0] + c.lz[m0] * (c.hb + 1.6);
+    schild.position.set(sx, c.ph[m0], sz); schild.rotation.y = Math.atan2(c.px[m0 + 1] - c.px[m0], c.pz[m0 + 1] - c.pz[m0]) + Math.PI / 2;
+    teil(GEO.box, pfostenMat, schild, 0, 1.4, 0, 0.18, 2.8, 0.18);
+    const brett = teil(GEO.box, new THREE.MeshBasicMaterial({ map:schildTex }), schild, 0, 3.0, 0, 3.2, 1.2, 0.12);
+    brett.material.map.wrapS = THREE.ClampToEdgeWrapping;
+    gruppe.add(schild);
+    // Ein paar Münzen als Belohnung
+    for (const t of [0.35, 0.5, 0.65]){
+      const f = t * c.n, m = Math.floor(f);
+      S.muenzen.push({ x:c.px[m], z:c.pz[m], y:c.ph[m] + 1, aus:0 });
+    }
+  }
+  inst.bauen(gruppe);
+}
+// Computerfahrer: vor der Einfahrt entscheiden, ob sie die Abkürzung nehmen
+function abkZiel(S, k){
+  if (!S.abk.length) return null;
+  if (k.aufAbk){
+    const c = k.aufAbk, t = Math.min(1, k.abkT + 12 / c.d);
+    return abkPunkt(c, t);
+  }
+  for (const c of S.abk){
+    // Schon auf dem Anfang des Wegs (der läuft erst neben der Strecke her): dem Weg folgen
+    if (k.abkJa && k.abkPlan === `${c.nr}:${k.runde}`){
+      const [d, t] = abkLage(c, k.x, k.z);
+      if (d < c.hb + 3 && t < 0.6) return abkPunkt(c, Math.min(1, t + 12 / c.d));
+    }
+    let vor = c.i - k.idx; if (vor < -S.N / 2) vor += S.N;
+    vor *= S.ds;
+    if (vor < -6 || vor > 55) continue;
+    const plan = `${c.nr}:${k.runde}`;
+    if (k.abkPlan !== plan){
+      k.abkPlan = plan;
+      const turbo = k.item === 'turbo' || k.item === 'turbo3' || k.item === 'stern' || k.boost > 0;
+      k.abkJa = Math.random() < (c.art === 'bruecke' ? 0.55 : turbo ? 0.85 : 0.3);
+    }
+    if (!k.abkJa) return null;
+    if (c.art === 'bruecke' && vor < 45) k.abkLangsam = true;
+    return abkPunkt(c, vor > 8 ? 0.02 : 0.15);
+  }
+  return null;
+}
+
+/* ---------- Leuchtbögen über der Strecke ---------- */
+function boegenBauen(S, gruppe, th){
+  S.boegen = [];
+  const R = S.hw + 2.2, anzahl = 7;
+  const bogenGeo = new THREE.TorusGeometry(R, 0.32, 8, 40, Math.PI);
+  const hofGeo = new THREE.TorusGeometry(R, 0.95, 8, 40, Math.PI);
+  const fussMat = std(0x2a2d33, 0.5, 0.4);
+  for (let n = 0; n < anzahl; n++){
+    const i = Math.round(S.N * (0.07 + n / anzahl * 0.86));
+    if (S.rampen.some(r => ringAbstand(S, i, r.i) < 18)) continue;
+    const ort = streckenOrt(S, i, 0);
+    const fuesse = [punktBei(S, i, R), punktBei(S, i, -R)];
+    if (!fuesse.every(([x, z]) => fremdFrei(S, x, z, i, S.hw + S.auslauf + 2))) continue;
+    if (S.sperre && fuesse.some(([x, z]) => Math.hypot(x - S.sperre.x, z - S.sperre.z) < S.sperre.r)) continue;
+    const g = new THREE.Group();
+    g.position.set(ort.x, ort.h, ort.z); g.rotation.order = 'YXZ'; g.rotation.set(-Math.atan(S.steig[i]), yawBei(S, i), 0);
+    const mat = new THREE.MeshBasicMaterial({ color:lin(th.neon) });
+    const hofMat = new THREE.MeshBasicMaterial({ color:lin(th.neon), transparent:true, opacity:0.2, blending:THREE.AdditiveBlending, depthWrite:false });
+    const bogen = new THREE.Mesh(bogenGeo, mat); bogen.scale.y = 0.72;
+    const hof = new THREE.Mesh(hofGeo, hofMat); hof.scale.y = 0.72;
+    g.add(bogen, hof);
+    for (const sg of [-1, 1]) teil(GEO.box, fussMat, g, sg * R, 0.4, 0, 1.4, 0.8, 1.4);
+    gruppe.add(g);
+    S.boegen.push({ mat, hofMat, basis:lin(th.neon) });
+  }
+}
+
+/* ---------- Glatteis (Frostgipfel) ---------- */
+function eisBauen(S, gruppe, rnd){
+  const tex = canvasTex(256, 256, (c, w, h) => {
+    const g = c.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2);
+    g.addColorStop(0, 'rgba(225,245,255,.92)'); g.addColorStop(0.75, 'rgba(200,232,250,.85)'); g.addColorStop(1, 'rgba(200,232,250,0)');
+    c.fillStyle = g; c.fillRect(0, 0, w, h);
+    c.strokeStyle = 'rgba(255,255,255,.75)'; c.lineWidth = 1.5;
+    for (let n = 0; n < 16; n++){
+      let x = w / 2 + (Math.random() - 0.5) * w * 0.6, y = h / 2 + (Math.random() - 0.5) * h * 0.6;
+      c.beginPath(); c.moveTo(x, y);
+      for (let s = 0; s < 5; s++){ x += (Math.random() - 0.5) * 40; y += (Math.random() - 0.5) * 40; c.lineTo(x, y); }
+      c.stroke();
+    }
+  });
+  const mat = new THREE.MeshStandardMaterial({ map:tex, transparent:true, roughness:0.05, metalness:0.2, envMapIntensity:1.4, depthWrite:false, polygonOffset:true, polygonOffsetFactor:-5, polygonOffsetUnits:-5 });
+  for (let versuch = 0; versuch < 60 && S.eis.length < 5; versuch++){
+    const i = Math.floor(rnd() * S.N);
+    if (ringAbstand(S, i, 0) < 70 || S.rampen.some(r => ringAbstand(S, i, r.i) < 30) || S.eis.some(e => ringAbstand(S, i, e.i) < 90)) continue;
+    const lq = S.hw * (0.35 + rnd() * 0.25), la = 9 + rnd() * 6, seite = (rnd() * 2 - 1) * (S.hw - lq);
+    const ort = streckenOrt(S, i, seite);
+    const m = new THREE.Mesh(GEO.scheibe, mat);
+    aufStrasse(m, S, ort, 0.075); m.scale.set(lq * 2, 1, la * 2);
+    m.receiveShadow = true;
+    gruppe.add(m);
+    S.eis.push(Object.assign(ort, { la, lq }));
+  }
+}
+function aufEis(S, k){
+  if (k.y > 0.05) return false;
+  for (const e of S.eis){
+    const [a, q] = ortLage(e, k.x, k.z), fa = a / e.la, fq = q / e.lq;
+    if (fa * fa + fq * fq < 0.85) return true;
+  }
+  return false;
+}
+
+/* ---------- Meteore (Vulkankrater) und Steppenläufer (Kaktus-Canyon) ----------
+   Jeder Rechner lässt sie vor seinem eigenen Kart erscheinen und prüft nur Karts, die er selbst steuert. */
+const GEFAHR = {
+  ring:geteilt((() => { const g = new THREE.RingGeometry(2.4, 3.3, 40); g.rotateX(-Math.PI / 2); return g; })()),
+  fels:geteilt(new THREE.IcosahedronGeometry(1.15, 0)),
+  ball:geteilt(new THREE.IcosahedronGeometry(1.1, 1)),
+  warnMat:geteilt(new THREE.MeshBasicMaterial({ color:0xff3a1a, transparent:true, opacity:0.8, blending:THREE.AdditiveBlending, depthWrite:false, polygonOffset:true, polygonOffsetFactor:-6 })),
+  warnFleck:geteilt(new THREE.MeshBasicMaterial({ map:partikelTex, color:0xff2a0a, transparent:true, opacity:0.45, blending:THREE.AdditiveBlending, depthWrite:false, polygonOffset:true, polygonOffsetFactor:-6 })),
+  felsMat:geteilt(new THREE.MeshBasicMaterial({ color:lin(0xffb050) })),
+  felsHof:geteilt(new THREE.SpriteMaterial({ map:partikelTex, color:0xff6a1a, transparent:true, opacity:0.9, blending:THREE.AdditiveBlending, depthWrite:false })),
+  kraterMat:geteilt(new THREE.MeshBasicMaterial({ map:partikelTex, color:0x140806, transparent:true, opacity:0.8, depthWrite:false, polygonOffset:true, polygonOffsetFactor:-5 })),
+  zweigMat:geteilt(new THREE.MeshLambertMaterial({ color:lin(0x9a6a36), wireframe:true })),
+  zweigInnen:geteilt(new THREE.MeshLambertMaterial({ color:lin(0x6e4a22), wireframe:true }))
+};
+function gefahrenLeeren(){
+  if (!strecke || !strecke.gefahren) return;
+  for (const g of strecke.gefahren) strecke.gruppe.remove(g.mesh);
+  strecke.gefahren.length = 0;
+  strecke.gefahrTimer = 4;
+}
+function gefahrZiel(){
+  // Meistens vor dem eigenen Kart, manchmal vor einem eigenen Computerfahrer
+  const eigene = karts.filter(k => !k.fern && !k.fertig);
+  if (!eigene.length) return null;
+  return spieler && !spieler.fertig && Math.random() < 0.6 ? spieler : eigene[Math.floor(Math.random() * eigene.length)];
+}
+function gefahrenUpdate(dt){
+  const S = strecke;
+  if (!S.th.gefahr || S.th.gefahr === 'eis' || zustand.zeitfahren) return;
+  if (zustand.phase === 'rennen'){
+    S.gefahrTimer -= dt;
+    if (S.gefahrTimer <= 0){
+      const k = gefahrZiel();
+      if (S.th.gefahr === 'meteor'){ S.gefahrTimer = zufall(1.4, 2.8); if (k) meteorStarten(k); }
+      else { S.gefahrTimer = zufall(1.8, 3.4); if (k) steppenlaeuferStarten(k); }
+    }
+  }
+  for (let n = S.gefahren.length - 1; n >= 0; n--){
+    const g = S.gefahren[n];
+    g.t += dt;
+    if (g.art === 'meteor' ? meteorSchritt(g, dt) : laeuferSchritt(g, dt)){ S.gruppe.remove(g.mesh); S.gefahren.splice(n, 1); }
+  }
+}
+function meteorStarten(k){
+  const S = strecke, i = (k.idx + Math.round((Math.max(10, k.v) * 1.7 + zufall(4, 18)) / S.ds)) % S.N;
+  const [x, z] = punktBei(S, i, klemm(k.seite + zufall(-5, 5), -S.hw * 0.8, S.hw * 0.8));
+  const mesh = new THREE.Group();
+  mesh.position.set(x, 0, z);
+  const ring = new THREE.Mesh(GEFAHR.ring, GEFAHR.warnMat); ring.position.y = 0.09;
+  const fleck = new THREE.Mesh(GEO.scheibe, GEFAHR.warnFleck); fleck.position.y = 0.08; fleck.scale.set(6, 1, 6);
+  const fels = new THREE.Mesh(GEFAHR.fels, GEFAHR.felsMat);
+  const hof = new THREE.Sprite(GEFAHR.felsHof); hof.scale.set(5, 5, 1);
+  const stein = new THREE.Group(); stein.add(fels, hof);
+  mesh.add(ring, fleck, stein);
+  S.gruppe.add(mesh);
+  S.gefahren.push({ art:'meteor', mesh, ring, fleck, stein, fels, x, z, t:0, fall:1.7, dx:zufall(-1, 1), knall:false });
+}
+function meteorSchritt(g, dt){
+  const f = g.t / g.fall;
+  if (!g.knall){
+    const puls = 0.5 + 0.5 * Math.sin(g.t * 18);
+    g.ring.scale.setScalar(1.25 - 0.25 * f); g.fleck.material.opacity = 0.3 + 0.3 * puls;
+    // Fällt schräg aus dem Himmel, immer schneller
+    const e = f * f, h = 75 * (1 - e);
+    g.stein.position.set(g.dx * 30 * (1 - e), h + 0.8, 18 * (1 - e));
+    g.fels.rotation.set(g.t * 5, g.t * 3, 0);
+    if (nahAmSpieler(g.x, g.z, 120)) for (let n = 0; n < 2; n++){
+      funken.neu(g.x + g.stein.position.x + zufall(-0.6, 0.6), h + 1, g.z + g.stein.position.z + zufall(-0.6, 0.6), zufall(-1, 1), zufall(1, 3), zufall(-1, 1), zufall(0.3, 0.6), 1, zufall(0.35, 0.65), 0.1, zufall(0.6, 1.1), -2);
+      staub.neu(g.x + g.stein.position.x, h + 1.5, g.z + g.stein.position.z, 0, 1, 0, zufall(0.8, 1.3), 0.22, 0.2, 0.2, 1.4, -0.5, 3, 0.55);
+    }
+    if (f < 1) return false;
+    // Einschlag
+    g.knall = true; g.t = 0;
+    g.stein.visible = false; g.ring.visible = false;
+    g.fleck.material = GEFAHR.kraterMat; g.fleck.scale.set(7, 1, 7);
+    explosion(g.x, 0.8, g.z, 46);
+    for (let n = 0; n < 30; n++){ const w = Math.random() * TAU, s = zufall(6, 16); funken.neu(g.x, 0.6, g.z, Math.cos(w) * s, zufall(4, 12), Math.sin(w) * s, zufall(0.5, 1), 1, zufall(0.3, 0.55), 0.05, zufall(0.5, 1), 18); }
+    if (nahAmSpieler(g.x, g.z, 70)) Ton.effekt('explosion');
+    if (spieler && Math.hypot(spieler.x - g.x, spieler.z - g.z) < 30) zustand.wackeln = Math.max(zustand.wackeln, 0.45);
+    for (const k of karts) if (!k.fern && Math.hypot(k.x - g.x, k.z - g.z) < 3.6) treffer(k, 'rakete');
+    return false;
+  }
+  return g.t > 3.5;
+}
+function steppenlaeuferStarten(k){
+  const S = strecke, i = (k.idx + Math.round((Math.max(10, k.v) * 1.6 + zufall(10, 25)) / S.ds)) % S.N;
+  const sg = Math.random() < 0.5 ? 1 : -1, weg = S.hw + 9;
+  const [x, z] = punktBei(S, i, sg * weg);
+  const mesh = new THREE.Group();
+  const aussen = new THREE.Mesh(GEFAHR.ball, GEFAHR.zweigMat), innen = new THREE.Mesh(GEFAHR.ball, GEFAHR.zweigInnen);
+  innen.scale.setScalar(0.65); innen.rotation.set(1, 2, 0.5);
+  const ball = new THREE.Group(); ball.add(aussen, innen);
+  const schatten = new THREE.Mesh(GEO.scheibe, MAT.kontakt); schatten.scale.set(2.2, 1, 2.2); schatten.position.y = 0.08;
+  mesh.add(ball, schatten);
+  mesh.position.set(x, 0, z);
+  S.gruppe.add(mesh);
+  // Rollt quer über die Strecke auf die andere Seite
+  const tempo = zufall(7, 10);
+  S.gefahren.push({ art:'steppe', mesh, ball, x, z, vx:-S.tz[i] * sg * tempo, vz:S.tx[i] * sg * tempo, t:0, dauer:weg * 2 / tempo, phase:Math.random() * TAU });
+}
+function laeuferSchritt(g, dt){
+  g.x += g.vx * dt; g.z += g.vz * dt;
+  g.mesh.position.set(g.x, 0, g.z);
+  g.ball.position.y = 1.1 + Math.abs(Math.sin(g.t * 4.5 + g.phase)) * 1.3;
+  g.ball.rotation.x += dt * 6; g.ball.rotation.z += dt * 2;
+  for (const k of karts){
+    if (k.fern || k.y > 1.6 || Math.hypot(k.x - g.x, k.z - g.z) > 2.2) continue;
+    treffer(k, 'stoss');
+    const [r, gg, b] = strecke.th.staub;
+    for (let n = 0; n < 24; n++){ const w = Math.random() * TAU; staub.neu(g.x, g.ball.position.y, g.z, Math.cos(w) * zufall(2, 6), zufall(1, 5), Math.sin(w) * zufall(2, 6), zufall(0.5, 1), 0.55, 0.38, 0.2, 0.45, 9, 0.2, 1); }
+    for (let n = 0; n < 6; n++) staub.neu(g.x, 0.5, g.z, zufall(-2, 2), zufall(0.5, 1.5), zufall(-2, 2), zufall(0.6, 1), r, gg, b, 1.2, -0.3, 2.5, 0.6);
+    if (k.spieler || nahAmSpieler(g.x, g.z, 30)) Ton.effekt('stoss');
+    return true;
+  }
+  return g.t > g.dauer;
+}
+
+/* ---------- Kulisse ---------- */
+// Platz außerhalb der Strecke, zwischen innen und außen Metern vom Streckenrand weg
+function kulissenPlatz(S, rnd, innen, aussen){
+  for (let versuch = 0; versuch < 40; versuch++){
+    const i = Math.floor(rnd() * S.N), sg = rnd() < 0.5 ? 1 : -1;
+    const [x, z] = punktBei(S, i, sg * (S.hw + innen + rnd() * (aussen - innen)));
+    let ok = true;
+    for (let j = 0; j < S.N && ok; j += 3){ const dx = x - S.px[j], dz = z - S.pz[j]; if (dx * dx + dz * dz < (S.hw + innen) ** 2) ok = false; }
+    if (ok && !imMeer(S, x, z) && !abkuerzungDa(S, x, z, 12) && !(S.sperre && Math.hypot(x - S.sperre.x, z - S.sperre.z) < S.sperre.r + 10)) return [x, z];
+  }
+  return null;
+}
+function ballonsBauen(S, gruppe, rnd){
+  const farben = [['#e8322a', '#ffd23f'], ['#2c6fd8', '#f5f5f5'], ['#3fae49', '#ffd23f'], ['#9357d4', '#ff8ac0'], ['#ff7a1a', '#20232a']];
+  const cx = (S.minX + S.maxX) / 2, cz = (S.minZ + S.maxZ) / 2, R = Math.max(S.maxX - S.minX, S.maxZ - S.minZ) / 2;
+  const korbMat = std(0x8a5a2a, 0.9), seilMat = std(0x3a3030, 0.9);
+  for (let n = 0; n < 5; n++){
+    const [a, b] = farben[n];
+    const tex = canvasTex(256, 64, (c, w, h) => { for (let x = 0; x < 8; x++){ c.fillStyle = x % 2 ? b : a; c.fillRect(x * w / 8, 0, w / 8, h); } c.fillStyle = 'rgba(0,0,0,.15)'; c.fillRect(0, h * 0.62, w, 6); });
+    const g = new THREE.Group();
+    const huelle = new THREE.Mesh(new THREE.SphereGeometry(7, 20, 14), new THREE.MeshLambertMaterial({ map:tex }));
+    huelle.scale.set(1, 1.18, 1); huelle.position.y = 12;
+    const spitze = new THREE.Mesh(new THREE.ConeGeometry(4.6, 6, 20, 1, true), huelle.material);
+    spitze.rotation.x = Math.PI; spitze.position.y = 4.6;
+    g.add(huelle, spitze);
+    teil(GEO.box, korbMat, g, 0, 0, 0, 2, 1.6, 2);
+    for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]){ const s = teil(GEO.zylGrob, seilMat, g, sx * 1.6, 1.8, sz * 1.6, 0.06, 2.8, 0.06); s.rotation.set(sz * -0.4, 0, sx * 0.4); }
+    gruppe.add(g);
+    S.kulisse.ballons.push({ g, w:rnd() * TAU, r:R * (0.4 + rnd() * 0.9), cx, cz, y:45 + rnd() * 50, tempo:(rnd() < 0.5 ? -1 : 1) * (0.006 + rnd() * 0.008), phase:rnd() * TAU });
+  }
+}
+function windraederBauen(S, gruppe, rnd){
+  const weiss = std(0xf2f4f6, 0.5), dunkel = std(0xd0d4da, 0.5);
+  for (let n = 0; n < 5; n++){
+    const p = kulissenPlatz(S, rnd, 45, 130);
+    if (!p) continue;
+    const g = new THREE.Group(), s = 0.8 + rnd() * 0.4;
+    g.position.set(p[0], 0, p[1]); g.scale.setScalar(s); g.rotation.y = rnd() * TAU;
+    const turm = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 1.1, 34, 12), weiss); turm.position.y = 17; turm.castShadow = true;
+    g.add(turm);
+    teil(rundBox(1.4, 1.4, 3.6, 0.5), dunkel, g, 0, 34.4, 0.6);
+    const rotor = new THREE.Group(); rotor.position.set(0, 34.4, 2.6);
+    teil(GEO.kugelGrob, weiss, rotor, 0, 0, 0, 0.7, 0.7, 0.9);
+    for (let f = 0; f < 3; f++){
+      const fluegel = new THREE.Group(); fluegel.rotation.z = f * TAU / 3;
+      teil(GEO.box, weiss, fluegel, 0, 7, 0, 0.9, 14, 0.2);
+      rotor.add(fluegel);
+    }
+    g.add(rotor);
+    gruppe.add(g);
+    S.kulisse.rotoren.push({ rotor, tempo:0.8 + rnd() * 0.6 });
+  }
+}
+function delfineBauen(S, gruppe, rnd){
+  const haut = std(0x6f8fa8, 0.35, 0.1), bauch = std(0xdfe8ee, 0.5);
+  for (let n = 0; n < 4; n++){
+    const g = new THREE.Group();
+    const koerper = new THREE.Group(); g.add(koerper);
+    teil(GEO.kugelMittel, haut, koerper, 0, 0, 0, 0.7, 0.75, 2.4);
+    teil(GEO.kugelMittel, bauch, koerper, 0, -0.25, 0.2, 0.55, 0.45, 1.9);
+    teil(GEO.kegelGrob, haut, koerper, 0, 0.75, -0.2, 0.25, 0.8, 0.5).rotation.x = -0.4;
+    teil(GEO.kegelGrob, haut, koerper, 0, 0, 2.6, 0.18, 0.7, 0.18).rotation.x = Math.PI / 2;
+    teil(GEO.box, haut, koerper, 0, 0, -2.4, 1.6, 0.12, 0.5);
+    g.visible = false;
+    gruppe.add(g);
+    S.kulisse.delfine.push({ g, koerper, x:S.minX + rnd() * (S.maxX - S.minX), z:S.minZ - 70 - rnd() * 120, dreh:rnd() * TAU, phase:rnd() * 6, takt:5 + rnd() * 3 });
+  }
+}
+function booteBauen(S, gruppe, rnd){
+  const rumpfMat = std(0xf4f4f0, 0.5), deckMat = std(0x8a5a2a, 0.8);
+  const segelGeo = new THREE.BufferGeometry();
+  segelGeo.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, 0, 0, 9, 0, 0, 0, 5], 3)); segelGeo.computeVertexNormals();
+  for (let n = 0; n < 5; n++){
+    const g = new THREE.Group();
+    teil(rundBox(3, 1.4, 9, 0.6), rumpfMat, g, 0, 0.3, 0);
+    teil(GEO.box, deckMat, g, 0, 1.05, 0, 2.6, 0.1, 7.5);
+    teil(GEO.zylGrob, deckMat, g, 0, 6, 0.5, 0.12, 10, 0.12);
+    const segel = new THREE.Mesh(segelGeo, new THREE.MeshLambertMaterial({ color:lin([0xffffff, 0xe8322a, 0xffd23f, 0x2c6fd8, 0x18e0c8][n]), side:THREE.DoubleSide }));
+    segel.position.set(0, 1.4, 0.7); g.add(segel);
+    g.position.set(S.minX - 100 + rnd() * (S.maxX - S.minX + 200), 0.2, S.minZ - 110 - rnd() * 260);
+    g.rotation.y = Math.PI / 2 + (rnd() - 0.5) * 0.6;
+    g.scale.setScalar(1.3);
+    gruppe.add(g);
+    S.kulisse.boote.push({ g, tempo:(rnd() < 0.5 ? -1 : 1) * (1.5 + rnd() * 2), phase:rnd() * TAU, x0:g.position.x });
+  }
+}
+function polarlichtBauen(S, gruppe){
+  // Leuchtende Vorhänge hoch am Himmel, die sich langsam wellen
+  const uni = { zeit:{ value:0 } };
+  const mat = new THREE.ShaderMaterial({
+    uniforms:uni, transparent:true, depthWrite:false, side:THREE.DoubleSide, blending:THREE.AdditiveBlending, fog:false,
+    vertexShader:'uniform float zeit; varying vec2 vUv; void main(){ vUv = uv; vec3 p = position; p.z += sin(p.x * 0.006 + zeit * 0.4) * 60.0 + sin(p.x * 0.017 - zeit * 0.7) * 18.0; gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0); }',
+    fragmentShader:'uniform float zeit; varying vec2 vUv; void main(){ float band = sin(vUv.x * 40.0 + zeit * 0.9) * 0.5 + 0.5; band = 0.45 + 0.55 * band * band; float a = smoothstep(0.0, 0.25, vUv.y) * (1.0 - smoothstep(0.45, 1.0, vUv.y)) * smoothstep(0.0, 0.1, vUv.x) * (1.0 - smoothstep(0.9, 1.0, vUv.x)); vec3 c = mix(vec3(0.1, 1.0, 0.55), vec3(0.55, 0.3, 1.0), vUv.y); gl_FragColor = vec4(c * band * a * 0.55, 1.0); }'
+  });
+  const cx = (S.minX + S.maxX) / 2, cz = (S.minZ + S.maxZ) / 2;
+  const g = new THREE.Group();
+  for (const [w, r, y] of [[0.4, 900, 260], [2.2, 1000, 300], [4.1, 950, 240]]){
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(1600, 260, 64, 1), mat);
+    m.position.set(cx + Math.cos(w) * r, y, cz + Math.sin(w) * r);
+    m.lookAt(cx, y, cz);
+    m.frustumCulled = false;
+    g.add(m);
+  }
+  gruppe.add(g);
+  S.kulisse.polarlicht = uni;
+}
+function feuerwerk(S){
+  const cx = (S.minX + S.maxX) / 2, cz = (S.minZ + S.maxZ) / 2, w = Math.random() * TAU, r = zufall(200, 420);
+  const x = cx + Math.cos(w) * r, z = cz + Math.sin(w) * r, y = zufall(70, 130);
+  const c = new THREE.Color().setHSL(Math.random(), 1, 0.6), c2 = new THREE.Color().setHSL(Math.random(), 1, 0.7);
+  for (let n = 0; n < 60; n++){
+    const a = Math.random() * TAU, b = Math.acos(zufall(-1, 1)), s = zufall(16, 22), f = n % 3 ? c : c2;
+    funken.neu(x, y, z, Math.sin(b) * Math.cos(a) * s, Math.cos(b) * s, Math.sin(b) * Math.sin(a) * s, zufall(1.2, 1.8), f.r, f.g, f.b, zufall(3, 4.5), 6, -0.8);
+  }
+}
+function kulisseUpdate(dt){
+  const S = strecke, K = S.kulisse;
+  for (const b of S.boegen){
+    // Lauflicht: die Bögen leuchten nacheinander auf
+    const p = 0.5 + 0.5 * Math.sin(zeit * 4 - S.boegen.indexOf(b) * 0.9);
+    b.mat.color.copy(b.basis).multiplyScalar(0.55 + 0.8 * p);
+    b.hofMat.opacity = 0.08 + 0.22 * p;
+  }
+  for (const r of S.rampen) r.kante.color.copy(r.basis).multiplyScalar(0.7 + 0.5 * Math.sin(zeit * 6));
+  if (!K) return;
+  for (const b of K.ballons){
+    b.w += b.tempo * dt;
+    b.g.position.set(b.cx + Math.cos(b.w) * b.r, b.y + Math.sin(zeit * 0.4 + b.phase) * 3, b.cz + Math.sin(b.w) * b.r);
+    b.g.rotation.y += dt * 0.05;
+  }
+  for (const r of K.rotoren) r.rotor.rotation.z += dt * r.tempo;
+  for (const d of K.delfine){
+    // Alle paar Sekunden ein Sprung im Bogen aus dem Wasser
+    const t = (zeit + d.phase) % d.takt, f = t / 1.4;
+    d.g.visible = f < 1;
+    if (!d.g.visible) continue;
+    const fx = Math.sin(d.dreh), fz = Math.cos(d.dreh);
+    d.g.position.set(d.x + fx * (f - 0.5) * 14, 0.35 - 1.6 + Math.sin(f * Math.PI) * 6.5, d.z + fz * (f - 0.5) * 14);
+    d.g.rotation.set(0, d.dreh, 0);
+    d.koerper.rotation.x = -Math.cos(f * Math.PI) * 0.9;
+    if (Math.abs(f - 0.06) < dt / 1.4 || Math.abs(f - 0.94) < dt / 1.4)
+      for (let n = 0; n < 14; n++) funken.neu(d.g.position.x, 0.5, d.g.position.z, zufall(-3, 3), zufall(3, 7), zufall(-3, 3), zufall(0.4, 0.8), 0.85, 0.95, 1, zufall(0.5, 0.9), 14);
+  }
+  for (const b of K.boote){
+    b.g.position.x = b.x0 + Math.sin(zeit * 0.02 * b.tempo + b.phase) * 120;
+    b.g.position.y = 0.2 + Math.sin(zeit * 1.3 + b.phase) * 0.25;
+    b.g.rotation.z = Math.sin(zeit * 1.1 + b.phase) * 0.06;
+  }
+  if (K.polarlicht) K.polarlicht.zeit.value = zeit;
+  if ((S.th.kulisse || []).includes('feuerwerk') && grafik.modus !== 'leicht'){
+    K.feuerwerk -= dt;
+    if (K.feuerwerk <= 0){ K.feuerwerk = zufall(0.5, 1.6); feuerwerk(S); }
+  }
+}
+
+/* =========================================================
+   Wetter: Sonne, Regen mit Pfützen, Gewitter mit Blitzen,
+   Sturm mit Seitenwind (je nach Strecke Sand, Schnee oder Asche)
+   ========================================================= */
+const WETTER = {
+  klar:    { name:'Sonne',    icon:'☀️' },
+  regen:   { name:'Regen',    icon:'🌧️' },
+  gewitter:{ name:'Gewitter', icon:'⛈️' },
+  sturm:   { name:'Sturm',    icon:'🌪️' }
+};
+const WETTER_ARTEN = Object.keys(WETTER);
+const sturmName = th => th.deko === 'kakteen' ? 'Sandsturm' : th.schnee ? 'Schneesturm' : th.glut ? 'Aschesturm' : 'Sturm';
+// Grundwerte der Strecke merken, damit jedes Wetter vom selben Stand aus rechnet
+function wetterGrundMerken(S){
+  S.basis = {
+    nebel:scene.fog.color.clone(), nah:scene.fog.near, weit:scene.fog.far,
+    hemi:hemi.intensity, sonne:sonne.intensity, oben:himmelUni.oben.value.clone(), horizont:himmelUni.horizont.value.clone(),
+    wolkenFarbe:himmelUni.wolkenFarbe.value.clone(), wolken:himmelUni.wolkenMenge.value,
+    rau:S.strasseMat.roughness, glanz:S.strasseMat.envMapIntensity
+  };
+  S.wetter = 'klar'; S.pfuetzen = []; S.wetterFx = null; S.wind = 0;
+}
+function wetterSetzen(S, art){
+  if (!WETTER[art]) art = 'klar';
+  const B = S.basis, th = S.th;
+  scene.fog.color.copy(B.nebel); scene.fog.near = B.nah; scene.fog.far = B.weit;
+  hemi.intensity = B.hemi; sonne.intensity = B.sonne;
+  himmelUni.oben.value.copy(B.oben); himmelUni.horizont.value.copy(B.horizont);
+  himmelUni.wolkenFarbe.value.copy(B.wolkenFarbe); himmelUni.wolkenMenge.value = B.wolken;
+  S.strasseMat.roughness = B.rau; S.strasseMat.envMapIntensity = B.glanz;
+  if (S.wetterFx){ scene.remove(S.wetterFx); S.wetterFx.geometry.dispose(); S.wetterFx.material.dispose(); S.wetterFx = null; }
+  for (const p of S.pfuetzen) S.gruppe.remove(p.mesh);
+  S.pfuetzen = []; S.wind = 0; S.blitzIn = 5;
+  S.wetter = art;
+  if (art === 'klar'){ Ton.regen(0); return; }
+  const grau = lin(0x5d6672);
+  if (art === 'regen' || art === 'gewitter'){
+    const d = art === 'gewitter' ? 0.75 : 0.55;
+    himmelUni.oben.value.lerp(grau.clone().multiplyScalar(art === 'gewitter' ? 0.45 : 0.8), d);
+    himmelUni.horizont.value.lerp(grau, d);
+    himmelUni.wolkenFarbe.value.copy(lin(art === 'gewitter' ? 0x4a5058 : 0x8a929c)); himmelUni.wolkenMenge.value = 1;
+    scene.fog.color.lerp(grau, d); scene.fog.near *= 0.45; scene.fog.far *= art === 'gewitter' ? 0.4 : 0.55;
+    sonne.intensity *= art === 'gewitter' ? 0.3 : 0.45; hemi.intensity *= 0.8;
+    // Nasse Straße glänzt
+    S.strasseMat.roughness = 0.28; S.strasseMat.envMapIntensity = 0.9;
+    pfuetzenBauen(S);
+    S.wetterFx = regenBauen(grafik.modus === 'leicht' ? 700 : 2200);
+    Ton.regen(art === 'gewitter' ? 1 : 0.7);
+  } else {
+    // Sturm: Böen drücken die Karts zur Seite, dazu fliegender Sand, Schnee, Asche oder Regen
+    S.wind = 1;
+    const farbe = th.deko === 'kakteen' ? lin(0xd8a868) : th.schnee ? lin(0xf2f6fb) : th.glut ? lin(0x4a3a36) : grau;
+    scene.fog.color.lerp(farbe, 0.8); const dicht = th.deko === 'kakteen' || th.schnee;
+    scene.fog.near = 4; scene.fog.far = dicht ? 130 : B.weit * 0.45;
+    if (dicht){ hemi.intensity *= 0.85; himmelUni.horizont.value.copy(scene.fog.color); himmelUni.oben.value.lerp(scene.fog.color, 0.75); himmelUni.wolkenMenge.value = 0; }
+    himmelUni.horizont.value.lerp(farbe, 0.85); himmelUni.oben.value.lerp(farbe, 0.5); himmelUni.wolkenMenge.value = 1;
+    sonne.intensity *= 0.55;
+    S.wetterFx = th.deko === 'kakteen' || th.schnee || th.glut
+      ? flockenBauen(grafik.modus === 'leicht' ? 700 : 2600, th.deko === 'kakteen' ? 0xe0b070 : th.schnee ? 0xffffff : 0x8a7a70)
+      : regenBauen(grafik.modus === 'leicht' ? 700 : 2000);
+    Ton.regen(0.5);
+  }
+  if (S.wetterFx){ S.wetterFx.frustumCulled = false; scene.add(S.wetterFx); }
+}
+function regenBauen(n){
+  const pos = new Float32Array(n * 6);
+  for (let i = 0; i < n; i++){ const x = zufall(-45, 45), y = zufall(0, 35), z = zufall(-45, 45); pos.set([x, y, z, x, y + 0.9, z], i * 6); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  const fx = new THREE.LineSegments(g, new THREE.LineBasicMaterial({ color:0xc4d4e6, transparent:true, opacity:0.45, depthWrite:false }));
+  fx.userData.art = 'regen';
+  return fx;
+}
+function flockenBauen(n, farbe){
+  const pos = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) pos.set([zufall(-40, 40), zufall(0, 14), zufall(-40, 40)], i * 3);
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  const fx = new THREE.Points(g, new THREE.PointsMaterial({ color:farbe, size:0.45, map:partikelTex, transparent:true, opacity:0.85, depthWrite:false }));
+  fx.userData.art = 'flocken';
+  return fx;
+}
+function pfuetzenBauen(S){
+  const mat = new THREE.MeshStandardMaterial({ color:lin(0x2a3644), roughness:0.04, metalness:0.5, envMapIntensity:1.6, transparent:true, opacity:0.82, depthWrite:false, polygonOffset:true, polygonOffsetFactor:-5, polygonOffsetUnits:-5 });
+  const rnd = zufallsGen(S.def.saat * 13 + 5);
+  for (let versuch = 0; versuch < 80 && S.pfuetzen.length < 9; versuch++){
+    const i = Math.floor(rnd() * S.N);
+    if (ringAbstand(S, i, 0) < 40 || S.rampen.some(r => ringAbstand(S, i, r.i) < 25) || S.pfuetzen.some(p => ringAbstand(S, i, p.i) < 50)) continue;
+    const lq = 2.2 + rnd() * 2, la = 3 + rnd() * 3, seite = (rnd() * 2 - 1) * (S.hw - lq);
+    const ort = streckenOrt(S, i, seite);
+    const m = new THREE.Mesh(GEO.scheibe, mat);
+    aufStrasse(m, S, ort, 0.08); m.scale.set(lq * 2, 1, la * 2);
+    S.gruppe.add(m);
+    S.pfuetzen.push(Object.assign(ort, { la, lq, mesh:m }));
+  }
+}
+function inPfuetze(S, k){
+  if (k.y > 0.05) return false;
+  for (const p of S.pfuetzen){
+    const [a, q] = ortLage(p, k.x, k.z), fa = a / p.la, fq = q / p.lq;
+    if (fa * fa + fq * fq < 1) return true;
+  }
+  return false;
+}
+// Wind: langsame Böen quer zur Fahrtrichtung der Strecke, für alle gleich
+const windRichtung = () => [Math.cos(0.7), Math.sin(0.7)];
+function windStaerke(){ return strecke.wind ? 2.6 + 2.4 * Math.sin(zeit * 0.5) * Math.sin(zeit * 0.23 + 1) : 0; }
+function wetterUpdate(dt){
+  const S = strecke, fx = S.wetterFx;
+  if (fx){
+    const a = fx.geometry.attributes.position.array, cx = camera.position.x, cz = camera.position.z, cy = camera.position.y;
+    const [wx, wz] = windRichtung(), w = windStaerke() * (S.wind ? 3 : 0.4);
+    if (fx.userData.art === 'regen'){
+      for (let i = 0; i < a.length; i += 6){
+        const dy = 36 * dt;
+        for (const o of [0, 3]){ a[i + o] += wx * w * dt; a[i + o + 1] -= dy; a[i + o + 2] += wz * w * dt; }
+        if (a[i + 1] < cy - 6 || Math.abs(a[i] - cx) > 45 || Math.abs(a[i + 2] - cz) > 45){
+          const x = cx + zufall(-45, 45), y = cy + zufall(5, 30), z = cz + zufall(-45, 45);
+          a[i] = x; a[i + 1] = y; a[i + 2] = z; a[i + 3] = x - wx * w * 0.03; a[i + 4] = y + 0.9; a[i + 5] = z - wz * w * 0.03;
+        }
+      }
+    } else {
+      for (let i = 0; i < a.length; i += 3){
+        a[i] += wx * w * 4 * dt + Math.sin(zeit * 3 + i) * dt; a[i + 1] -= dt * 1.2; a[i + 2] += wz * w * 4 * dt;
+        if (a[i + 1] < 0 || Math.abs(a[i] - cx) > 40 || Math.abs(a[i + 2] - cz) > 40){ a[i] = cx + zufall(-40, 40); a[i + 1] = zufall(0, 14); a[i + 2] = cz + zufall(-40, 40); }
+      }
+    }
+    fx.geometry.attributes.position.needsUpdate = true;
+  }
+  if (S.wetter === 'gewitter' && zustand.phase !== 'menue'){
+    S.blitzIn -= dt;
+    if (S.blitzIn <= 0){
+      S.blitzIn = zufall(4, 9);
+      $('blitzFlash').classList.remove('an'); void $('blitzFlash').offsetWidth; $('blitzFlash').classList.add('an');
+      S.blitzHell = 1;
+      setTimeout(() => Ton.effekt('donner'), 300 + Math.random() * 900);
+    }
+    S.blitzHell = Math.max(0, (S.blitzHell || 0) - dt * 3);
+    hemi.intensity = S.basis.hemi * 0.8 + S.blitzHell * 2.5;
+  }
+}
+// Pfützen bremsen und spritzen, der Wind drückt das Kart zur Seite
+function wetterAufKart(k, dt){
+  const S = strecke;
+  if (S.pfuetzen.length && inPfuetze(S, k)){
+    k.pfuetze = true;
+    if (k.boost <= 0 && k.stern <= 0) k.v *= Math.exp(-0.9 * dt);
+    if (Math.abs(k.v) > 6 && nahAmSpieler(k.x, k.z, 70) && Math.random() < 0.9){
+      const fx = Math.sin(k.yaw), fz = Math.cos(k.yaw);
+      for (const sg of [-1, 1]) funken.neu(k.x + fz * sg, 0.3, k.z - fx * sg, fz * sg * zufall(2, 5) - fx * 2, zufall(2, 5), -fx * sg * zufall(2, 5) - fz * 2, zufall(0.3, 0.6), 0.75, 0.85, 1, zufall(0.35, 0.6), 14);
+    }
+  } else k.pfuetze = false;
+  if (S.wind && k.y < 0.5){
+    const [wx, wz] = windRichtung(), w = windStaerke();
+    k.kx += wx * w * dt * 2.2; k.kz += wz * w * dt * 2.2;
+  }
+}
+// Online: der Server würfelt eine Zahl, daraus wird für alle dasselbe Wetter
+const wetterAusZahl = n => n < 5 ? 'klar' : n < 7 ? 'regen' : n < 8 ? 'gewitter' : 'sturm';
+function wetterWuerfeln(){
+  const r = Math.random();
+  return r < 0.45 ? 'klar' : r < 0.7 ? 'regen' : r < 0.85 ? 'gewitter' : 'sturm';
+}
+
+/* =========================================================
+   Ballon-Battle: runde Arena, jedes Kart hat 3 Ballons.
+   Jeder Treffer kostet einen Ballon, ohne Ballons ist man raus.
+   Gewonnen hat, wer zuletzt übrig ist oder nach Ablauf der Zeit die meisten Ballons hat.
+   ========================================================= */
+const ARENA_NR = 100;
+const ARENA = { id:'arena', name:'Löwen-Arena', info:'Ballon-Battle', thema:'wiese', breite:92, saat:88, arena:true,
+  ecken:Array.from({ length:12 }, (x, n) => [Math.cos(n / 12 * TAU) * 16, Math.sin(n / 12 * TAU) * 16, 0]) };
+const ARENA_RADIUS = 69, BATTLE_ZEIT = 150, BALLONS = 3;
+const streckeDef = nr => nr === ARENA_NR ? ARENA : STRECKEN[nr];
+
+function arenaBauen(S, gruppe, th, rnd){
+  const R = ARENA_RADIUS;
+  // Boden: Asphalt mit Ringen und Schriftzug
+  const tex = canvasTex(1024, 1024, (c, w, h) => {
+    c.fillStyle = th.strasse; c.fillRect(0, 0, w, h);
+    koernung(c, w, h, 40000, 0.07);
+    c.strokeStyle = 'rgba(255,255,255,.85)'; c.lineWidth = 10;
+    for (const r of [0.97, 0.62, 0.3]){ c.beginPath(); c.arc(w / 2, h / 2, r * w / 2, 0, TAU); c.stroke(); }
+    c.fillStyle = cssFarbe(th.neon); c.globalAlpha = 0.35; c.beginPath(); c.arc(w / 2, h / 2, 0.3 * w / 2, 0, TAU); c.fill(); c.globalAlpha = 1;
+    c.font = '900 64px "Barlow SC", system-ui, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillStyle = '#fff'; c.fillText('LÖWEN-ARENA', w / 2, h / 2);
+    for (let n = 0; n < 16; n++){
+      const a = n / 16 * TAU;
+      c.fillStyle = n % 2 ? '#e1251b' : '#f7f7f2';
+      c.beginPath(); c.arc(w / 2, h / 2, w / 2 - 4, a, a + TAU / 16); c.arc(w / 2, h / 2, w / 2 - 30, a + TAU / 16, a, true); c.fill();
+    }
+  });
+  const bodenMat = new THREE.MeshStandardMaterial({ map:tex, roughness:0.85, envMapIntensity:0.25, polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-2 });
+  const scheibe = new THREE.Mesh(new THREE.CircleGeometry(R + 1.5, 72), bodenMat);
+  scheibe.rotation.x = -Math.PI / 2; scheibe.position.y = 0.04; scheibe.receiveShadow = true;
+  gruppe.add(scheibe);
+  S.strasseMat = bodenMat;
+  // Bande rundherum
+  const [wandA, wandB] = th.wand, wand = new Instanzen();
+  const n = Math.round(TAU * (R + 1.2) / 2.2);
+  for (let m = 0; m < n; m++){
+    const a = m / n * TAU, x = Math.cos(a) * (R + 1.2), z = Math.sin(a) * (R + 1.2), yaw = -a;
+    wand.add('mauer', GEO.box, MAT.bunt, [x, 0.6, z], [0.6, 1.2, 2.3], [0, yaw, 0], lin(0xd9dce1));
+    wand.add('bande', GEO.box, MAT.bunt, [x - Math.cos(a) * 0.32, 0.65, z - Math.sin(a) * 0.32], [0.05, 0.8, 2.2], [0, yaw, 0], lin(m % 2 ? wandA : wandB));
+  }
+  wand.bauen(gruppe);
+  // Vier Schanzen auf dem mittleren Ring, im Kreis ausgerichtet
+  S.rampen = [];
+  rampenSetzen(S, gruppe, th, [0, 1, 2, 3].map(q => {
+    const a = q / 4 * TAU + 0.4;
+    return { i:0, x:Math.cos(a) * 34, z:Math.sin(a) * 34, h:0, fx:-Math.sin(a), fz:Math.cos(a) };
+  }), 3.4);
+  // Item-Boxen auf zwei Ringen
+  S.boxen = [];
+  for (const [r, anzahl, versatz] of [[18, 4, 0.4], [48, 8, 0]]){
+    for (let q = 0; q < anzahl; q++){
+      const a = q / anzahl * TAU + versatz, x = Math.cos(a) * r, z = Math.sin(a) * r;
+      const m = new THREE.Group();
+      m.position.set(x, 1.3, z);
+      const wuerfel = new THREE.Mesh(GEO.box16, MAT.itemBox); wuerfel.castShadow = true;
+      const kern = new THREE.Mesh(GEO.okta, MAT.itemKern); kern.scale.set(0.42, 0.62, 0.42);
+      const halo = new THREE.Sprite(MAT.itemHalo); halo.scale.set(3.6, 3.6, 1);
+      const fleck = new THREE.Mesh(GEO.scheibe, MAT.itemFleck); fleck.scale.set(3.4, 1, 3.4);
+      m.add(wuerfel, kern, halo, fleck);
+      gruppe.add(m);
+      S.boxen.push({ x, z, h:0, mesh:m, wuerfel, kern, fleck, aus:0, wachs:1, phase:rnd() * TAU });
+    }
+  }
+  // Tribünen-Wimpel und Fahnenmasten rundherum
+  const fahnen = new Instanzen();
+  for (let q = 0; q < 16; q++){
+    const a = q / 16 * TAU, x = Math.cos(a) * (R + 4), z = Math.sin(a) * (R + 4);
+    fahnen.add('mast', GEO.zylGrob, MAT.bunt, [x, 4, z], [0.12, 8, 0.12], [0, 0, 0], lin(0xdadde2));
+    fahnen.add('fahne', GEO.box, MAT.bunt, [x, 7.2, z + 0.7], [0.05, 1.1, 1.4], [0, 0, 0], lin([wandA, 0xffd23f, 0x2c6fd8, 0x3fae49][q % 4]));
+  }
+  fahnen.bauen(gruppe);
+  Object.assign(S, { pads:[], boegen:[], eis:[], gefahren:[], gefahrTimer:Infinity, abk:[], ampel:[], muenzen:[],
+    kulisse:{ ballons:[], rotoren:[], delfine:[], boote:[], polarlicht:null, feuerwerk:0 } });
+  S.muenzMesh = new THREE.InstancedMesh(muenzGeo, muenzMat, 1);
+  S.muenzMesh.count = 0;
+  gruppe.add(S.muenzMesh);
+}
+
+// Start: alle im Kreis mit Blick zur Mitte
+function battleStartplatz(k, slot){
+  const a = slot / 8 * TAU, r = 52;
+  k.x = Math.cos(a) * r; k.z = Math.sin(a) * r;
+  k.yaw = k.camYaw = k.bewegYaw = Math.atan2(-k.x, -k.z);
+  k.idx = k.idxAlt = naechsterGlobal(strecke, k.x, k.z);
+  k.boden = 0;
+}
+const ballonGeo = geteilt(new THREE.SphereGeometry(0.42, 14, 10));
+function ballonsGeben(k){
+  k.ballons = BALLONS; k.rausZeit = Infinity; k.schutz = 0;
+  const mat = new THREE.MeshStandardMaterial({ color:new THREE.Color(k.f.farbe).lerp(new THREE.Color(0xffffff), 0.2).convertSRGBToLinear(), roughness:0.25, metalness:0.05, emissive:lin(k.f.farbe).multiplyScalar(0.25) });
+  k.ballonMeshes = [-0.55, 0, 0.55].map((x, n) => {
+    const g = new THREE.Group();
+    g.position.set(x, 2.5 + (n === 1 ? 0.35 : 0), -1.2);
+    const b = new THREE.Mesh(ballonGeo, mat); b.scale.set(1, 1.18, 1); b.position.y = 0.55; b.castShadow = true;
+    const faden = new THREE.Mesh(GEO.zylGrob, MAT.dunkel); faden.scale.set(0.012, 0.9, 0.012); faden.position.y = -0.1;
+    g.add(b, faden);
+    k.m.koerper.add(g);
+    return g;
+  });
+}
+function ballonVerlieren(k){
+  if (!zustand.battle || k.ballons <= 0 || k.schutz > 0) return;
+  k.ballons--;
+  k.schutz = 2.6;
+  const g = k.ballonMeshes[k.ballons];
+  if (g){
+    g.visible = false;
+    const p = new THREE.Vector3(); g.getWorldPosition(p);
+    const c = new THREE.Color(k.f.farbe);
+    for (let n = 0; n < 24; n++){ const w = Math.random() * TAU; funken.neu(p.x, p.y - k.boden, p.z, Math.cos(w) * zufall(2, 6), zufall(1, 6), Math.sin(w) * zufall(2, 6), zufall(0.3, 0.6), c.r, c.g, c.b, zufall(0.4, 0.8), 10); }
+  }
+  if (nahAmSpieler(k.x, k.z, 60)) Ton.effekt('platzen');
+  if (k.ballons <= 0){
+    k.rausZeit = zustand.rt;
+    if (k.spieler) meldung('Keine Ballons mehr!', 2, true);
+    else if (spieler && nahAmSpieler(k.x, k.z, 200)) meldung(`${k.f.gesicht} ${k.name} ist raus!`, 1.4, true);
+  }
+}
+const imSpiel = k => !zustand.battle || k.ballons > 0;
+function battleUpdate(dt){
+  for (const k of karts){
+    k.schutz = Math.max(0, (k.schutz || 0) - dt);
+    // Ballons wippen; im Schutz nach einem Treffer blinkt das Kart
+    k.ballonMeshes.forEach((g, n) => { g.rotation.x = 0.25 + Math.sin(zeit * 3 + n + k.phase) * 0.12; g.rotation.z = Math.sin(zeit * 2.3 + n * 2) * 0.15; });
+    k.m.gruppe.visible = k.schutz <= 0 || Math.floor(zeit * 12) % 2 === 0;
+    if (k.ballons <= 0){ k.m.gruppe.visible = true; k.v *= Math.exp(-2 * dt); }
+  }
+  if (zustand.phase !== 'rennen') return;
+  const lebend = karts.filter(k => k.ballons > 0);
+  if (zustand.rt >= BATTLE_ZEIT || lebend.length <= 1 || spieler.ballons <= 0){
+    zustand.phase = 'auslauf';
+    zustand.ergebnisIn = 2.5;
+    spieler.autopilot = true;
+    const sieger = rangliste()[0];
+    meldung(sieger === spieler ? 'SIEG!' : zustand.rt >= BATTLE_ZEIT ? 'Zeit um!' : 'Vorbei!', 2.2);
+    Ton.effekt(sieger === spieler ? 'ziel' : 'letzte');
+  }
+}
+// Rakete im Battle: das nächste Kart grob vor (oder hinter) dem Werfer
+function battleZiel(k, rueck){
+  const fx = Math.sin(k.yaw) * (rueck ? -1 : 1), fz = Math.cos(k.yaw) * (rueck ? -1 : 1);
+  let best = null, bd = Infinity;
+  for (const o of karts){
+    if (o === k || o.ballons <= 0) continue;
+    const dx = o.x - k.x, dz = o.z - k.z, d = Math.hypot(dx, dz), vorn = (dx * fx + dz * fz) / (d || 1);
+    const wert = d * (vorn > 0.3 ? 1 : 3);
+    if (wert < bd){ bd = wert; best = o; }
+  }
+  return best;
+}
+// Computerfahrer im Battle: jagen das nächste Kart, holen sich vorher ein Item
+function kiBattle(k, dt){
+  const e = k.eingabe;
+  e.gas = true; e.bremse = false; e.drift = false; e.item = false; e.rueck = false;
+  if (k.ballons <= 0){ e.gas = false; e.lenk = 0; return; }
+  let ziel = null, zd = Infinity;
+  if (!k.item && k.roulette <= 0){
+    for (const b of strecke.boxen){ if (b.aus > 0) continue; const d = Math.hypot(b.x - k.x, b.z - k.z); if (d < zd){ zd = d; ziel = [b.x, b.z]; } }
+  }
+  const gegner = battleZiel(k, false);
+  if (gegner && (!ziel || Math.hypot(gegner.x - k.x, gegner.z - k.z) < 14)){
+    // etwas vorhalten, wohin der Gegner fährt
+    ziel = [gegner.x + Math.sin(gegner.yaw) * gegner.v * 0.4, gegner.z + Math.cos(gegner.yaw) * gegner.v * 0.4];
+  }
+  if (!ziel) ziel = [0, 0];
+  let [zx, zz] = ziel;
+  // Nicht in die Bande: weiter draußen Richtung Mitte lenken
+  const r = Math.hypot(k.x, k.z);
+  if (r > ARENA_RADIUS - 12){ const f = (r - ARENA_RADIUS + 12) / 12; zx = zx * (1 - f); zz = zz * (1 - f); }
+  const diff = winkelDiff(Math.atan2(zx - k.x, zz - k.z), k.yaw);
+  e.lenk = klemm(diff * 2.4, -1, 1);
+  if (Math.abs(diff) > 1.6 && k.v > 14) e.gas = false;
+  // Festgefahren an der Bande: kurz zurück
+  if (zustand.rt > 3 && Math.abs(k.v) < 2.5 && k.dreh <= 0) k.steckt += dt; else k.steckt = Math.max(0, k.steckt - dt);
+  if (k.steckt > 1){ e.gas = false; e.bremse = true; e.lenk = -e.lenk; if (k.steckt > 2.2) k.steckt = 0; }
+  if (k.item && k.roulette <= 0){
+    k.itemTimer += dt;
+    const d = gegner ? Math.hypot(gegner.x - k.x, gegner.z - k.z) : Infinity;
+    const vorn = gegner ? Math.abs(winkelDiff(Math.atan2(gegner.x - k.x, gegner.z - k.z), k.yaw)) < 0.5 : false;
+    switch (k.item){
+      case 'rakete': if ((vorn && d < 30 && k.itemTimer > 1.2) || k.itemTimer > 10) e.item = true; break;
+      case 'banane': {
+        const hinten = karts.some(o => o !== k && o.ballons > 0 && Math.hypot(o.x - k.x, o.z - k.z) < 14 && Math.abs(winkelDiff(Math.atan2(o.x - k.x, o.z - k.z), k.yaw)) > 2.2);
+        if ((hinten && k.itemTimer > 0.5) || k.itemTimer > 6) e.item = true;
+        break;
+      }
+      case 'stern': if (k.itemTimer > 0.3) e.item = true; break;
+      default: if (k.itemTimer > 0.6 && (d > 25 || (vorn && d < 12))) e.item = true;
+    }
+  }
+}
+function battleErgebnis(){
+  const rang = rangliste(), platz = rang.indexOf(spieler) + 1;
+  $('ergebnisTitel').textContent = platz === 1 ? '🏆 Battle gewonnen!' : `${platz}. Platz im Battle`;
+  let html = '<table>' + rang.map((k, i) =>
+    `<tr class="${k.spieler ? 'ich' : ''}"><td>${i + 1}.</td><td>${k.f.gesicht} ${esc(k.name)}</td><td class="r">${k.ballons > 0 ? '🎈'.repeat(k.ballons) : 'raus ' + zeitText(k.rausZeit)}</td></tr>`).join('') + '</table>';
+  $('ergebnisText').innerHTML = html + muenzenGutschreiben(platz);
+  const knoepfe = $('ergebnisKnoepfe');
+  knoepfe.innerHTML = '';
+  const knopf = (text, haupt, fn) => { const b = document.createElement('button'); b.className = 'knopf' + (haupt ? ' haupt' : ''); b.textContent = text; b.onclick = () => { Ton.effekt('klick'); fn(); }; knoepfe.appendChild(b); };
+  knopf('Nochmal', true, rennenStarten);
+  knopf('Menü', false, menueZeigen);
+  $('ergebnis').hidden = false;
+  $('touch').hidden = true;
+  knoepfe.querySelector('button').focus();
 }
 
 /* =========================================================
@@ -1833,12 +3262,14 @@ class Kart {
     this.fern = !!extra.fern;
     this.slot = extra.slot == null ? -1 : extra.slot;
     this.netz = null;
-    this.m = kartModell(fahrer);
+    this.teile = teileOk(extra.teile);
+    this.m = kartModell(fahrer, this.teile);
     if (extra.schild){ this.schild = namensSchild(this.name); this.m.gruppe.add(this.schild); }
     scene.add(this.m.gruppe);
     this.werte = werteVon(fahrer, !istSpieler);
     this.eingabe = { gas:false, bremse:false, lenk:0, drift:false, item:false };
     this.phase = Math.random() * TAU;
+    this.ballons = 0; this.ballonMeshes = []; this.rausZeit = Infinity; this.schutz = 0;
     this.zuruecksetzen();
   }
   zuruecksetzen(){
@@ -1848,7 +3279,7 @@ class Kart {
       item:null, itemNeu:null, itemAnzahl:0, roulette:0, itemTimer:0, fertig:false, zielzeit:Infinity, rundeStart:0, rundenzeiten:[],
       platz:1, lenkAnzeige:0, lenkSanft:0, stand:0, offroad:false, falsch:0, steckt:0, wandZeit:0, padZeit:0, hatteStern:false,
       spur:zufall(-0.5, 0.5), spurZiel:zufall(-0.5, 0.5), spurTimer:zufall(1, 3), gummi:1, camYaw:0, autopilot:false,
-      klein:0, kleinSkala:1, windschatten:0
+      klein:0, kleinSkala:1, windschatten:0, aufAbk:null, abkT:0, faellt:0, abkPlan:'', abkJa:false, rampe:0, sprung:false, trick:0, trickOk:false, netzTrick:0, eis:false, bewegYaw:0, muenzen:0, boden:0, vb:0, neig:0
     });
   }
   entfernen(){
@@ -1861,8 +3292,19 @@ function aufStartplatz(k, slot){
   const [x, z] = punktBei(S, i, seite);
   k.x = x; k.z = z; k.yaw = k.camYaw = yawBei(S, i); k.idx = k.idxAlt = i;
   k.fortschritt = i * S.ds;
+  k.boden = bodenHoehe(S, x, z, i);
 }
 
+// Nach einem Absturz: zurück auf die Strecke vor der Abkürzung
+function zurueckSetzen(k){
+  const S = strecke, c = k.abkFall || S.abk[0];
+  const i = c ? c.i : k.idx;
+  const [x, z] = punktBei(S, i, 0);
+  Object.assign(k, { x, z, yaw:yawBei(S, i), bewegYaw:yawBei(S, i), idx:i, v:0, y:0, vy:0, faellt:0, aufAbk:null, drift:0, boost:0, kx:0, kz:0 });
+  k.boden = bodenHoehe(S, x, z, i);
+  muenzenVerlieren(k, 3);
+  if (k.spieler) Ton.effekt('treffer');
+}
 function boost(k, dauer){
   k.boost = Math.max(k.boost, dauer);
   k.v = Math.max(k.v, k.werte.maxV * 1.15);
@@ -1870,10 +3312,12 @@ function boost(k, dauer){
 }
 
 function treffer(k, art){
-  if (k.stern > 0 || k.dreh > 0) return;
+  if (k.stern > 0 || k.dreh > 0 || k.schutz > 0) return;
+  ballonVerlieren(k);
   k.dreh = k.drehDauer = art === 'rakete' ? 1.4 : art === 'stoss' ? 0.8 : art === 'blitz' ? 0.7 : 1.1;
-  if (art === 'rakete') k.vy = 7;
+  if (art === 'rakete') k.vy = 7 + (k.y > 0.001 ? 0 : k.vb);
   k.drift = 0; k.boost = 0; k.driftStufe = 0;
+  muenzenVerlieren(k, 3);
   for (let n = 0; n < 14; n++){
     const w = Math.random() * TAU;
     funken.neu(k.x, 1.5, k.z, Math.cos(w) * 5, zufall(3, 7), Math.sin(w) * 5, 0.6, 1, 0.95, 0.5, 0.7, 10);
@@ -1894,11 +3338,15 @@ function streckeFolgen(k){
 }
 
 function rundeUeber(k, r){
+  if (zustand.battle) return;
   k.runde += r;
   if (r < 0 || k.runde <= k.maxRunde) return;
   k.maxRunde = k.runde;
   if (zustand.phase === 'menue') return;
-  if (k.runde >= 2 && !k.fertig){ k.rundenzeiten.push(zustand.rt - k.rundeStart); k.rundeStart = zustand.rt; }
+  if (k.runde >= 2 && !k.fertig){
+    k.rundenzeiten.push(zustand.rt - k.rundeStart); k.rundeStart = zustand.rt;
+    if (k.spieler && zustand.zeitfahren) geist.marken.push(rund(zustand.rt, 1000));
+  }
   if (k.runde > RUNDEN && !k.fertig){
     k.fertig = true; k.zielzeit = zustand.rt;
     if (online.aktiv) Netz.senden({ t:'ziel', slot:k.slot, zeit:rund(k.zielzeit) });
@@ -1906,7 +3354,8 @@ function rundeUeber(k, r){
     return;
   }
   if (k.spieler && k.runde >= 2){
-    meldung(k.runde === RUNDEN ? 'Letzte Runde!' : `Runde ${k.runde}`, 1.6, true);
+    const vergleich = zustand.zeitfahren ? geistVergleich(k.runde - 2, zustand.rt) : '';
+    meldung((k.runde === RUNDEN ? 'Letzte Runde!' : `Runde ${k.runde}`) + (vergleich ? ` · ${vergleich}` : ''), 1.6, true);
     Ton.effekt(k.runde === RUNDEN ? 'letzte' : 'runde');
   }
 }
@@ -1930,12 +3379,16 @@ function kartBewegen(k, dt){
     lenk = 0; gas = bremse = false;
     k.v *= Math.exp(-2.5 * dt);
   }
-  const amBoden = k.y <= 0.001;
+  const amBoden = k.y <= 0.001 || k.rampe > 0;
+  k.trick = Math.max(0, k.trick - dt);
+  k.eis = aufEis(S, k);
   const neben = Math.abs(k.seite) - S.hw;
   k.offroad = neben > ASPHALT_AUSLAUF;
-  let maxV = w.maxV * k.gummi;
+  let maxV = w.maxV * k.gummi * (1 + 0.012 * k.muenzen);
+  if (k.aufAbk) k.offroad = k.aufAbk.art !== 'bruecke';
   if (k.boost <= 0 && k.stern <= 0){
-    if (k.offroad) maxV *= S.kies[k.idx] ? 0.42 : 0.52;
+    if (k.aufAbk) maxV *= k.aufAbk.art === 'bruecke' ? 1 : 0.62;
+    else if (k.offroad) maxV *= S.kies[k.idx] ? 0.42 : 0.52;
     else if (neben > 1.3) maxV *= 0.86;
   }
   if (k.klein > 0) maxV *= 0.72;
@@ -1954,8 +3407,10 @@ function kartBewegen(k, dt){
     k.v = Math.abs(k.v) <= r ? 0 : k.v - Math.sign(k.v) * r;
   }
   if (k.v > maxV) k.v = Math.max(maxV, k.v - (k.offroad ? 40 : 18) * dt);
+  // Trick in der Luft nach einer Schanze: bei der Landung gibt es einen Turbo
+  if (k.sprung && e.drift && !k.driftTaste && !k.trickOk && k.dreh <= 0){ k.trick = TRICK_DAUER; k.trickOk = true; if (k.spieler) Ton.effekt('sprung'); }
   // Driften: Hüpfer beim Drücken, Drift sobald gelenkt wird
-  if (aktiv && e.drift && !k.driftTaste && amBoden && k.v > 6 && k.dreh <= 0) k.vy = 4.2;
+  if (aktiv && e.drift && !k.driftTaste && amBoden && k.v > 6 && k.dreh <= 0){ k.vy = 4.2 + (k.rampe > 0 ? 0 : k.vb); k.rampe = 0; }
   k.driftTaste = e.drift;
   if (aktiv && !k.drift && e.drift && Math.abs(lenk) > 0.35 && k.v > 11 && k.dreh <= 0){ k.drift = Math.sign(lenk); k.driftZeit = 0; k.driftStufe = 0; }
   if (k.drift && (!e.drift || k.v < 8 || k.dreh > 0)){
@@ -1974,21 +3429,66 @@ function kartBewegen(k, dt){
     if (k.v < 0) rate = -rate;
   }
   if (!amBoden) rate *= 0.6;
+  if (k.eis) rate *= 0.6;
   k.yaw += rate * dt;
+  // Auf Glatteis rutscht das Kart weiter in die alte Richtung
+  if (k.eis) k.bewegYaw += winkelDiff(k.yaw, k.bewegYaw) * (1 - Math.exp(-1.6 * dt));
+  else k.bewegYaw = k.yaw;
   k.lenkAnzeige += (lenk - k.lenkAnzeige) * Math.min(1, dt * 10);
+  wetterAufKart(k, dt);
   // Bewegung (beim Driften rutscht das Kart leicht nach außen)
-  const fx = Math.sin(k.yaw), fz = Math.cos(k.yaw);
+  const fx = Math.sin(k.bewegYaw), fz = Math.cos(k.bewegYaw);
   let vx = fx * k.v, vz = fz * k.v;
   if (k.drift){ const r = -k.drift * k.v * 0.1; vx += fz * r; vz -= fx * r; }
   k.x += (vx + k.kx) * dt; k.z += (vz + k.kz) * dt;
   const daempf = Math.exp(-5 * dt);
   k.kx *= daempf; k.kz *= daempf;
-  k.vy -= 28 * dt; k.y += k.vy * dt;
-  if (k.y < 0){ k.y = 0; k.vy = 0; }
+  const bewegt = Math.hypot(vx + k.kx, vz + k.kz) * dt;
+  // Von der Brücke gefallen: in die Tiefe, dann zurück auf die Strecke (ohne Streckenrechnung, damit keine Runde falsch zählt)
+  if (k.faellt){
+    k.faellt += dt; k.vy -= 28 * dt; k.y += k.vy * dt;
+    if (k.faellt > 1.6) zurueckSetzen(k);
+    return;
+  }
   streckeFolgen(k);
-  // Absperrung
+  abkFolgen(S, k);
+  // Höhe: k.y ist die Höhe über der Straße, k.boden die Straßenhöhe darunter, k.vy die echte Steiggeschwindigkeit
+  const bAlt = k.boden, b = k.aufAbk ? abkPunktH(k.aufAbk, k.abkT) : bodenHoehe(S, k.x, k.z, k.idx), vb = klemm((b - bAlt) / Math.max(dt, 1e-4), -40, 40);
+  k.boden = b;
+  if (k.y > 0.001 || k.vy > 0){ k.vy -= 28 * dt; k.y += k.vy * dt - (b - bAlt); }
+  else if (S.hoch && vb < k.vb - 28 * dt * 1.4 && k.v > 12){
+    // Kuppe: die Straße fällt schneller weg, als die Schwerkraft zieht – das Kart hebt ab
+    k.vy = k.vb; k.y = (k.vb - vb) * dt; k.sprung = true; k.trick = 0; k.trickOk = false;
+    if (!k.mensch && Math.random() < 0.4){ k.trick = TRICK_DAUER; k.trickOk = true; }
+  } else {
+    k.vy = 0;
+    // Bergauf bremst, bergab schiebt
+    if (S.hoch && bewegt > 0.01) k.v -= 11 * klemm((b - bAlt) / bewegt, -0.5, 0.5) * dt * Math.sign(k.v);
+  }
+  k.vb = vb;
+  // Sprungschanze: auf der Rampe hochfahren, an der Kante abheben
+  const rh = rampeHoehe(S, k);
+  if (rh >= 0 && k.y <= rh + 0.25 && k.vy <= 1){ k.y = rh; k.vy = 0; k.rampe = Math.max(rh, 0.001); }
+  else if (k.rampe > 0){
+    if (k.rampe > RAMPE_HOEHE * 0.8 && k.v > 8) abheben(k);
+    k.rampe = 0;
+  }
+  if (k.y < 0){
+    k.y = 0; k.vy = 0;
+    if (k.sprung){ k.sprung = false; landen(k); }
+  }
+  // Absperrung; auf einer Abkürzung zählt deren Rand
   const wand = S.hw + S.auslauf;
-  if (Math.abs(k.seite) > wand){
+  if (k.aufAbk){
+    const c = k.aufAbk, [d, , nx, nz] = abkLage(c, k.x, k.z);
+    if (c.art === 'bruecke'){
+      if (d > c.hb + 0.3 && k.y < 0.6 && Math.abs(k.seite) > wand + 1){ k.faellt = 0.001; k.abkFall = c; k.vy = Math.min(k.vy, 0); if (k.spieler) meldung('Abgestürzt!', 1.4, true); }
+    } else if (d > c.hb){
+      const f = (d - c.hb) / d;
+      k.x -= (k.x - nx) * f; k.z -= (k.z - nz) * f;
+      k.v *= 1 - 0.6 * dt * 10 * Math.min(1, d - c.hb);
+    }
+  } else if (Math.abs(k.seite) > wand){
     const sg = Math.sign(k.seite), i = k.idx, lx = S.tz[i], lz = -S.tx[i], ueber = Math.abs(k.seite) - wand;
     k.x -= lx * sg * ueber; k.z -= lz * sg * ueber; k.seite = sg * wand;
     const hinein = (fx * lx + fz * lz) * sg * (k.v < 0 ? -1 : 1);
@@ -2012,7 +3512,7 @@ function kartStoesse(){
       const A = karts[a], B = karts[b];
       const dx = B.x - A.x, dz = B.z - A.z, d2 = dx * dx + dz * dz;
       if (A.fern && B.fern) continue;
-      if (d2 > 6.25 || d2 < 1e-6 || Math.abs(A.y - B.y) > 1.5) continue;
+      if (d2 > 6.25 || d2 < 1e-6 || Math.abs(A.boden + A.y - B.boden - B.y) > 1.5) continue;
       const d = Math.sqrt(d2), nx = dx / d, nz = dz / d, ueber = 2.5 - d;
       if (A.stern > 0 && B.stern <= 0 && !B.fern) treffer(B, 'stoss');
       else if (B.stern > 0 && A.stern <= 0 && !A.fern) treffer(A, 'stoss');
@@ -2034,6 +3534,12 @@ function kartStoesse(){
 
 /* ---------- Items ---------- */
 function itemZiehen(k){
+  if (zustand.battle){
+    const t = [['banane', 0.38], ['rakete', 0.22], ['turbo', 0.27], ['stern', 0.13]];
+    let r = Math.random();
+    for (const [n, w] of t){ r -= w; if (r <= 0) return n; }
+    return 'rakete';
+  }
   const f = karts.length > 1 ? (k.platz - 1) / (karts.length - 1) : 0;
   const tabelle = [
     ['banane', 0.55 - 0.45 * f], ['rakete', 0.3], ['turbo', 0.15 + 0.15 * f],
@@ -2090,9 +3596,10 @@ function bananeLegen(x, z, idx, id = null){
   for (const [mat, geo] of bananeTeile()){ const m = new THREE.Mesh(geo, mat); m.castShadow = true; g.add(m); }
   const fleck = new THREE.Mesh(GEO.scheibe, MAT.kontakt); fleck.scale.set(1.6, 1, 1.6); fleck.position.y = -0.16;
   g.add(fleck);
-  g.position.set(x, 0.25, z); g.rotation.y = Math.random() * TAU;
+  const h = bodenAn(x, z);
+  g.position.set(x, 0.25 + h, z); g.rotation.y = Math.random() * TAU;
   scene.add(g);
-  const b = { id:id || neueId(), x, z, idx:naechster(strecke, x, z, idx), mesh:g };
+  const b = { id:id || neueId(), x, z, h, idx:naechster(strecke, x, z, idx), mesh:g };
   bananen.push(b);
   if (!id) ereignis({ a:'b', id:b.id, x:rund(x), z:rund(z), idx:b.idx });
 }
@@ -2104,7 +3611,7 @@ function bananeWeg(n, senden = false){
 // rueck: nach hinten auf den Verfolger schießen
 function raketeStarten(k, rueck = false){
   const rang = rangliste(), pos = rang.indexOf(k);
-  const ziel = rueck ? rang[pos + 1] || null : pos > 0 ? rang[pos - 1] : null;
+  const ziel = zustand.battle ? battleZiel(k, rueck) : rueck ? rang[pos + 1] || null : pos > 0 ? rang[pos - 1] : null;
   const yaw = k.yaw + (rueck ? Math.PI : 0), fx = Math.sin(yaw), fz = Math.cos(yaw);
   const r = { id:neueId(), x:k.x + fx * 2.8, z:k.z + fz * 2.8, yaw, idx:k.idx, seite:k.seite, besitzer:k, ziel, t:0, rueck };
   raketeBauen(r);
@@ -2145,7 +3652,7 @@ function blitzStrahl(k){
   for (const [mat, geo] of mh){ const m = new THREE.Mesh(geo, MAT.blitzGlow); m.frustumCulled = false; g.add(m); }
   const blitz = new THREE.Sprite(MAT.blitzSprite); blitz.scale.set(9, 9, 1); blitz.position.y = 2;
   g.add(blitz);
-  g.position.set(k.x, 0, k.z);
+  g.position.set(k.x, k.boden, k.z);
   scene.add(g);
   blitzStrahlen.push({ g, k, t:0 });
   for (let i = 0; i < 18; i++){
@@ -2163,7 +3670,7 @@ function blitzUpdate(dt){
       blitzStrahlen.splice(i, 1);
       continue;
     }
-    b.g.position.set(b.k.x, 0, b.k.z);
+    b.g.position.set(b.k.x, b.k.boden, b.k.z);
     b.g.visible = (Math.floor(b.t * 36) % 3) !== 2;
   }
   MAT.blitz.opacity = 1; MAT.blitzSprite.opacity = 0.9;
@@ -2233,14 +3740,15 @@ function raketeBauen(r){
   g.add(fl);
   g.userData.flamme = { aussen, kern, glut };
   r.mesh = g;
-  g.position.set(r.x, 0.8, r.z);
+  r.h = bodenHoehe(strecke, r.x, r.z, r.idx);
+  g.position.set(r.x, 0.8 + r.h, r.z);
   scene.add(g);
   raketen.push(r);
   if (nahAmSpieler(r.x, r.z, 50)) Ton.effekt('rakete');
 }
 function raketeWeg(n){
   const r = raketen[n];
-  explosion(r.x, 0.8, r.z);
+  explosion(r.x, 0.8 + r.h - bodenAn(r.x, r.z), r.z);
   if (nahAmSpieler(r.x, r.z, 60)) Ton.effekt('explosion');
   scene.remove(r.mesh); raketen.splice(n, 1);
 }
@@ -2254,6 +3762,7 @@ function raketenUpdate(dt){
     const z = r.ziel;
     if (z){ zielAbstand = Math.hypot(z.x - r.x, z.z - r.z); }
     if (z && zielAbstand < 45){ zx = z.x; zz = z.z; }
+    else if (S.def.arena){ zx = r.x + Math.sin(r.yaw); zz = r.z + Math.cos(r.yaw); }
     else {
       const j = (r.idx + (r.rueck ? -1 : 1) * Math.round(14 / S.ds) + S.N) % S.N;
       r.seite *= Math.exp(-dt * 1.2);
@@ -2263,13 +3772,14 @@ function raketenUpdate(dt){
     r.yaw += klemm(winkelDiff(Math.atan2(zx - r.x, zz - r.z), r.yaw), -drehMax, drehMax);
     r.x += Math.sin(r.yaw) * 58 * dt; r.z += Math.cos(r.yaw) * 58 * dt;
     r.idx = naechster(S, r.x, r.z, r.idx);
+    r.h += (bodenHoehe(S, r.x, r.z, r.idx) - r.h) * Math.min(1, dt * 12);
     const i = r.idx, seite = (r.x - S.px[i]) * S.tz[i] - (r.z - S.pz[i]) * S.tx[i];
     let weg = r.t > 6 || Math.abs(seite) > S.hw + S.auslauf, melden = false;
     // Treffer prüft jeder nur für die Karts, die er selbst steuert
     for (const k of karts){
       if (k.fern || (k === r.besitzer && r.t < 0.5)) continue;
       const dx = k.x - r.x, dz = k.z - r.z;
-      if (dx * dx + dz * dz < 4.4 && k.y < 2){ treffer(k, 'rakete'); weg = melden = true; break; }
+      if (dx * dx + dz * dz < 4.4 && Math.abs(k.boden + k.y - r.h) < 2){ treffer(k, 'rakete'); weg = melden = true; break; }
     }
     const eigene = !r.besitzer || !r.besitzer.fern;
     for (let b = bananen.length - 1; b >= 0 && !weg; b--){
@@ -2281,14 +3791,15 @@ function raketenUpdate(dt){
       raketeWeg(n);
       continue;
     }
-    r.mesh.position.set(r.x, 0.8 + Math.sin(r.t * 20) * 0.05, r.z);
+    r.mesh.position.set(r.x, 0.8 + r.h + Math.sin(r.t * 20) * 0.05, r.z);
     r.mesh.rotation.y = r.yaw;
     r.mesh.rotation.z = Math.sin(r.t * 17) * 0.06;
     const u = r.mesh.userData.flamme, fk = 0.8 + Math.random() * 0.5;
     u.aussen.scale.y = 0.95 * fk; u.aussen.position.z = -0.47 * fk; u.kern.scale.y = 0.55 * fk; u.kern.position.z = -0.27 * fk; u.glut.scale.setScalar(1.4 + Math.random() * 0.4);
     const bx = r.x - Math.sin(r.yaw) * 1.5, bz = r.z - Math.cos(r.yaw) * 1.5;
-    funken.neu(bx, 0.8, bz, zufall(-1, 1), zufall(0, 1), zufall(-1, 1), 0.3, 1, 0.6, 0.15, 0.5, 0, -1.5);
-    if (grafik.modus !== 'leicht' || Math.random() < 0.5) staub.neu(bx, 0.85, bz, zufall(-0.5, 0.5), zufall(0.5, 1.5), zufall(-0.5, 0.5), 1.0, 0.86, 0.86, 0.88, 0.55, -0.5, 2.0, 0.55);
+    const rh = 0.8 + r.h - bodenAn(bx, bz);
+    funken.neu(bx, rh, bz, zufall(-1, 1), zufall(0, 1), zufall(-1, 1), 0.3, 1, 0.6, 0.15, 0.5, 0, -1.5);
+    if (grafik.modus !== 'leicht' || Math.random() < 0.5) staub.neu(bx, rh + 0.05, bz, zufall(-0.5, 0.5), zufall(0.5, 1.5), zufall(-0.5, 0.5), 1.0, 0.86, 0.86, 0.88, 0.55, -0.5, 2.0, 0.55);
   }
 }
 
@@ -2296,6 +3807,7 @@ function itemsLeeren(){
   while (blitzStrahlen.length){ const b = blitzStrahlen.pop(); scene.remove(b.g); b.g.traverse(o => { if (o.geometry && !o.isSprite) o.geometry.dispose(); }); }
   while (bananen.length) bananeWeg(0);
   while (raketen.length){ scene.remove(raketen[0].mesh); raketen.shift(); }
+  gefahrenLeeren();
 }
 
 function boxenUpdate(dt){
@@ -2317,18 +3829,18 @@ function boxenUpdate(dt){
     b.mesh.scale.setScalar(b.wachs);
     b.wuerfel.rotation.set(0.5, zeit * 1.3 + b.phase, 0.3);
     b.kern.rotation.set(zeit * 1.9, -zeit * 2.6 + b.phase, 0);
-    b.mesh.position.y = 1.4 + Math.sin(zeit * 2.2 + b.phase) * 0.18;
-    b.fleck.position.y = 0.1 - b.mesh.position.y;
+    b.mesh.position.y = 1.4 + b.h + Math.sin(zeit * 2.2 + b.phase) * 0.18;
+    b.fleck.position.y = 0.1 + b.h - b.mesh.position.y;
     b.fleck.scale.set(3.2 + Math.sin(zeit * 3 + b.phase) * 0.35, 1, 3.2 + Math.sin(zeit * 3 + b.phase) * 0.35);
     if (funkeln && Math.random() < dt * 3 && nahAmSpieler(b.x, b.z, 70)){
       const w = Math.random() * TAU, c = new THREE.Color().setHSL((hue + Math.random() * 0.3) % 1, 1, 0.7);
-      funken.neu(b.x + Math.cos(w) * 1.1, b.mesh.position.y - 0.6, b.z + Math.sin(w) * 1.1, 0, zufall(0.8, 1.8), 0, zufall(0.7, 1.2), c.r, c.g, c.b, zufall(0.18, 0.32), -0.4);
+      funken.neu(b.x + Math.cos(w) * 1.1, b.mesh.position.y - b.h - 0.6, b.z + Math.sin(w) * 1.1, 0, zufall(0.8, 1.8), 0, zufall(0.7, 1.2), c.r, c.g, c.b, zufall(0.18, 0.32), -0.4);
     }
     if (!['rennen', 'auslauf'].includes(zustand.phase)) return;
     for (const k of karts){
       if (k.fern) continue;
       const dx = k.x - b.x, dz = k.z - b.z;
-      if (dx * dx + dz * dz > 5.5) continue;
+      if (dx * dx + dz * dz > 5.5 || Math.abs(k.boden + k.y - b.h) > 3) continue;
       boxWeg(b);
       ereignis({ a:'x', i:bi });
       if (!k.item && k.roulette <= 0){ k.roulette = 1.1; k.itemNeu = itemZiehen(k); }
@@ -2357,7 +3869,7 @@ function padsPruefen(k){
 function bananenPruefen(k){
   for (let n = bananen.length - 1; n >= 0; n--){
     const b = bananen[n], dx = k.x - b.x, dz = k.z - b.z;
-    if (dx * dx + dz * dz < 3.4 && k.y < 1){
+    if (dx * dx + dz * dz < 3.4 && Math.abs(k.boden + k.y - b.h) < 1){
       bananeWeg(n, true);
       treffer(k, 'banane');
       if (k.spieler || nahAmSpieler(k.x, k.z, 30)) Ton.effekt('banane');
@@ -2383,14 +3895,19 @@ function kiSteuern(k, dt){
     if (Math.abs(bs - seite) < 3) seite = bs + (bs > 0 ? -4.5 : 4.5);
   }
   seite = klemm(seite, -S.hw * 0.85, S.hw * 0.85);
-  const [zx, zz] = punktBei(S, j, seite);
+  let [zx, zz] = punktBei(S, j, seite);
+  k.abkLangsam = false;
+  const abkZ = abkZiel(S, k);
+  // Vor und auf der Brücke vorsichtig
+  if ((k.abkLangsam || (k.aufAbk && k.aufAbk.art === 'bruecke')) && k.v > 24) e.gas = false;
+  if (abkZ) [zx, zz] = abkZ;
   const diff = winkelDiff(Math.atan2(zx - k.x, zz - k.z), k.yaw);
   e.lenk = klemm(diff * 2.6, -1, 1);
   // Tempo vor Kurven anpassen
   let maxKr = 0;
   for (let m = 6; m <= 42; m += 6) maxKr = Math.max(maxKr, Math.abs(S.kurv[(k.idx + Math.round(m / S.ds)) % S.N]));
   const zielV = st.kurve * k.werte.lenk * 0.9 / Math.max(maxKr, 0.001);
-  if (k.v > zielV + 1.5){ e.gas = false; if (k.v > zielV + 6) e.bremse = true; }
+  if (k.v > zielV + 1.5 && !k.aufAbk){ e.gas = false; if (k.v > zielV + 6) e.bremse = true; }
   // Gummiband: nicht zu weit weg vom Spieler
   const [mn, mx] = zustand.menschen || [Infinity, -Infinity];
   if (!k.mensch && isFinite(mn)){
@@ -2402,14 +3919,14 @@ function kiSteuern(k, dt){
   if (k.steckt > 1){ e.gas = false; e.bremse = true; e.lenk = -e.lenk; }
   if (k.steckt > 3){
     const [x, z] = punktBei(S, k.idx, 0);
-    k.x = x; k.z = z; k.yaw = yawBei(S, k.idx); k.v = 0; k.steckt = 0;
+    k.x = x; k.z = z; k.yaw = yawBei(S, k.idx); k.v = 0; k.steckt = 0; k.y = 0; k.vy = 0; k.boden = bodenHoehe(S, x, z, k.idx);
   }
   // Items
   if (k.item && k.roulette <= 0){
     k.itemTimer += dt;
     const rang = rangliste(), p = rang.indexOf(k), vor = rang[p - 1], hinter = rang[p + 1];
     switch (k.item){
-      case 'turbo': case 'turbo3': if (k.itemTimer > 0.7 && maxKr < 0.02) e.item = true; break;
+      case 'turbo': case 'turbo3': if ((k.itemTimer > 0.7 && maxKr < 0.02) || (k.aufAbk && k.aufAbk.art !== 'bruecke')) e.item = true; break;
       case 'stern': if (k.itemTimer > 0.5) e.item = true; break;
       case 'blitz': if (k.itemTimer > 1.2) e.item = true; break;
       case 'rakete': {
@@ -2424,6 +3941,7 @@ function kiSteuern(k, dt){
 }
 
 function rangliste(){
+  if (zustand.battle) return karts.slice().sort((a, b) => b.ballons - a.ballons || b.rausZeit - a.rausZeit);
   return karts.slice().sort((a, b) => {
     if (a.fertig && b.fertig) return a.zielzeit - b.zielzeit;
     if (a.fertig !== b.fertig) return a.fertig ? -1 : 1;
@@ -2435,18 +3953,26 @@ const nahAmSpieler = (x, z, r) => { const f = spieler || vorschau; if (!f) retur
 /* ---------- Darstellung eines Karts ---------- */
 function kartDarstellen(k, dt){
   const m = k.m, g = m.gruppe;
-  g.position.set(k.x, k.y, k.z);
+  g.position.set(k.x, k.boden + k.y, k.z);
+  // Neigung bergauf/bergab, in der Luft nach der Flugbahn
+  const S = strecke;
+  const neigZiel = k.y > 0.05 ? -Math.atan(klemm(k.vy / Math.max(8, Math.abs(k.v)), -0.6, 0.6)) * 0.7
+    : S.hoch ? -Math.atan(S.steig[k.idx] * Math.cos(k.yaw - yawBei(S, k.idx))) : 0;
+  k.neig += (neigZiel - k.neig) * Math.min(1, dt * 10);
+  g.rotation.x = k.neig;
   k.kleinSkala += ((k.klein > 0 ? 0.55 : 1) - k.kleinSkala) * Math.min(1, dt * 6);
   g.scale.setScalar(k.kleinSkala);
   k.driftVisuell += (k.drift * 0.4 - k.driftVisuell) * Math.min(1, dt * 8);
-  g.rotation.y = k.yaw + k.driftVisuell + k.drehWinkel;
+  const trick = k.trick > 0 ? 1 - k.trick / TRICK_DAUER : 0;
+  g.rotation.y = k.yaw + k.driftVisuell + k.drehWinkel + trick * TAU;
+  g.rotation.z = Math.sin(trick * Math.PI) * 0.45;
   const tempo = klemm(Math.abs(k.v) / 20, 0, 1);
   m.koerper.rotation.z = -k.lenkAnzeige * 0.09 * tempo;
   m.koerper.rotation.x += (((k.boost > 0 ? -0.035 : k.eingabe.bremse && k.v > 1 ? 0.045 : 0)) - m.koerper.rotation.x) * (1 - Math.exp(-8 * dt));
   m.kontakt.position.y = 0.09 - k.y;
   m.kontakt.scale.setScalar(1 + Math.max(0, k.y) * 0.12);
   m.kontakt.visible = k.y < 3;
-  m.koerper.position.y = Math.sin(zeit * 30 + k.phase) * 0.015 * tempo + (k.offroad ? Math.sin(zeit * 47 + k.phase) * 0.05 * tempo : 0);
+  m.koerper.position.y = m.hoch + Math.sin(zeit * 30 + k.phase) * 0.015 * tempo + (k.offroad ? Math.sin(zeit * 47 + k.phase) * 0.05 * tempo : 0);
   const radDreh = k.v * dt / 0.48;
   for (const r of m.raeder) r.rotation.x += radDreh;
   for (const h of m.vorne) h.rotation.y = k.lenkAnzeige * 0.45;
@@ -2470,7 +3996,8 @@ function kartDarstellen(k, dt){
     const c = new THREE.Color().setHSL((zeit * 2 + k.phase) % 1, 1, 0.45);
     m.lack.emissive.copy(c); m.anzug.emissive.copy(c).multiplyScalar(0.6);
     k.hatteStern = true;
-  } else if (k.hatteStern){ m.lack.emissive.setRGB(0, 0, 0); m.anzug.emissive.setRGB(0, 0, 0); k.hatteStern = false; }
+  } else if (k.hatteStern){ m.lack.emissive.copy(m.grundGlanz); m.anzug.emissive.setRGB(0, 0, 0); k.hatteStern = false; }
+  else if (m.regenbogen) m.lack.color.setHSL((zeit * 0.15 + k.phase) % 1, 0.85, 0.42).convertSRGBToLinear();
 }
 
 const SPUR_ANZAHL = 900;
@@ -2493,7 +4020,7 @@ function spurenUpdate(dt){
     if (k.y > 0.1 || k.offroad || Math.abs(k.v) < 7 || !(k.drift || k.eingabe.bremse) || !nahAmSpieler(k.x,k.z,85)) continue;
     const w = k.yaw + k.driftVisuell, fx = Math.sin(w), fz = Math.cos(w);
     for (const seite of [-1,1]){
-      spurObj.position.set(k.x - fx + fz * seite, 0.065, k.z - fz - fx * seite);
+      spurObj.position.set(k.x - fx + fz * seite, 0.065 + k.boden, k.z - fz - fx * seite);
       spurObj.rotation.set(0,w,0); spurObj.scale.set(1,1,Math.min(2.8,Math.abs(k.v)*intervall+0.1)); spurObj.updateMatrix();
       spuren.setMatrixAt(spurNr,spurObj.matrix); spurNr = (spurNr+1) % SPUR_ANZAHL;
       spuren.count = Math.min(SPUR_ANZAHL,spuren.count+1);
@@ -2535,6 +4062,10 @@ function kartEffekte(k){
     const c = new THREE.Color().setHSL(Math.random(), 1, 0.65);
     funken.neu(k.x + zufall(-1.5, 1.5), zufall(0.5, 2.5), k.z + zufall(-1.5, 1.5), 0, 1.5, 0, 0.5, c.r, c.g, c.b, 0.6);
   }
+  if (k.eis && Math.abs(k.v) > 8 && Math.random() < 0.6){
+    const [x, z] = hinten(zufall(-1, 1));
+    funken.neu(x, 0.15, z, -fx * 2 + zufall(-1.5, 1.5), zufall(0.5, 2), -fz * 2 + zufall(-1.5, 1.5), zufall(0.3, 0.6), 0.8, 0.93, 1, zufall(0.25, 0.45), 6);
+  }
   if (k.offroad && Math.abs(k.v) > 5 && Math.random() < 0.8){
     const [r, g, b] = strecke.th.staub, [x, z] = hinten(zufall(-1, 1));
     staub.neu(x, 0.3, z, -fx * 2 + zufall(-1, 1), zufall(0.8, 2.2), -fz * 2 + zufall(-1, 1), zufall(0.5, 0.9), r, g, b, 0.9, 1, 2.2, 0.75);
@@ -2568,11 +4099,13 @@ let zeit = 0;
 
 function vorschauZeigen(){
   karts.forEach(k => k.entfernen()); karts = []; spieler = null;
-  itemsLeeren();
+  itemsLeeren(); geistEntfernen(); zustand.zeitfahren = false;
+  wetterSetzen(strecke, 'klar');
+  for (const b of strecke.boxen){ b.aus = 0; b.mesh.visible = true; }
   if (vorschau) vorschau.entfernen();
-  vorschau = new Kart(FAHRER[wahl.fahrer], true);
+  vorschau = new Kart(FAHRER[wahl.fahrer], true, { teile:garage.wahl });
   const S = strecke, i = idxBei(S, 24);
-  vorschau.x = S.px[i]; vorschau.z = S.pz[i]; vorschau.yaw = yawBei(S, i); vorschau.idx = i;
+  vorschau.x = S.px[i]; vorschau.z = S.pz[i]; vorschau.yaw = yawBei(S, i); vorschau.idx = i; vorschau.boden = S.hy[i];
 }
 
 // opts (nur online): { strecke, stufe, slots:[{ fahrer, name, mensch, ich, fern }] }
@@ -2580,26 +4113,39 @@ function rennenStarten(opts = null){
   eingabenLeeren();
   spurenLeeren();
   rennStufe = opts ? opts.stufe : wahl.stufe;
-  const S = streckeLaden(opts ? opts.strecke : wahl.strecke);
+  zustand.battle = !opts && !cup.aktiv && wahl.modus === 'battle';
+  const S = streckeLaden(opts ? opts.strecke : zustand.battle ? ARENA_NR : wahl.strecke);
+  $('runde').firstChild.textContent = zustand.battle ? 'ZEIT ' : 'RUNDE ';
   ampelSetzen(0);
   if (vorschau){ vorschau.entfernen(); vorschau = null; }
   karts.forEach(k => k.entfernen());
   karts = []; spieler = null;
   itemsLeeren(); funken.leeren(); staub.leeren();
-  for (const b of S.boxen){ b.aus = 0; b.mesh.visible = true; }
+  zustand.zeitfahren = !opts && !cup.aktiv && !zustand.battle && wahl.modus === 'zeit';
+  // Im Zeitfahren gibt es keine Item-Boxen, dafür drei Turbos zum Start
+  for (const b of S.boxen){ b.aus = zustand.zeitfahren ? Infinity : 0; b.mesh.visible = !zustand.zeitfahren; }
+  for (const m of S.muenzen) m.aus = 0;
+  zustand.muenzRennen = 0;
+  const wetter = opts ? (olympia ? 'klar' : wetterAusZahl(opts.wetter | 0)) : WETTER[wahl.wetter] ? wahl.wetter : wetterWuerfeln();
+  wetterSetzen(S, wetter);
   let slots = opts && opts.slots;
+  if (!slots && zustand.zeitfahren) slots = [{ fahrer:wahl.fahrer, ich:true, teile:garage.wahl }];
   if (!slots){
     // Im Cup fahren in allen Rennen dieselben Gegner
     if (!cup.aktiv || !cup.gegner) cup.gegner = mischen(FAHRER.map((f, i) => i).filter(i => i !== wahl.fahrer)).slice(0, 7);
     const andere = cup.gegner.slice();
-    slots = Array.from({ length:8 }, (x, slot) => slot === SPIELER_STARTPLATZ ? { fahrer:wahl.fahrer, ich:true } : { fahrer:andere.pop() });
+    // Computerfahrer bekommen ab und zu auch schicke Teile
+    const botTeile = () => TEIL_ARTEN.map(a => Math.random() < 0.3 ? Math.floor(Math.random() * TEILE[a].length) : 0);
+    slots = Array.from({ length:8 }, (x, slot) => slot === SPIELER_STARTPLATZ ? { fahrer:wahl.fahrer, ich:true, teile:garage.wahl } : { fahrer:andere.pop(), teile:botTeile() });
   }
   slots.forEach((sl, slot) => {
-    const k = new Kart(FAHRER[sl.fahrer] || FAHRER[0], !!sl.ich, { name:sl.name, mensch:sl.mensch, fern:sl.fern, slot, schild:sl.mensch && !sl.ich });
-    aufStartplatz(k, slot);
+    const k = new Kart(FAHRER[sl.fahrer] || FAHRER[0], !!sl.ich, { name:sl.name, mensch:sl.mensch, fern:sl.fern, slot, schild:sl.mensch && !sl.ich, teile:sl.teile });
+    if (zustand.battle){ battleStartplatz(k, slot); ballonsGeben(k); } else aufStartplatz(k, slot);
     karts.push(k);
     if (sl.ich) spieler = k;
   });
+  if (zustand.zeitfahren){ spieler.item = 'turbo3'; spieler.itemAnzahl = 3; geistStarten(); }
+  else geistEntfernen();
   Object.assign(zustand, { phase:'countdown', t:0, rt:0, pause:false, wackeln:0, meldungBis:0, ergebnisIn:0, orbit:0, gasSeit:null, fov:68, cdSchritt:0 });
   $('menue').hidden = true; $('ergebnis').hidden = true; $('pause').hidden = true;
   $('hud').hidden = false; $('oben').hidden = false; $('touch').hidden = !touchModus;
@@ -2611,6 +4157,7 @@ function rennenStarten(opts = null){
   $('weiterKnopf').textContent = online.aktiv ? 'Weiterfahren' : 'Weiter';
   hudCache = {};
   Ton.musik(S.def.thema);
+  if (wetter !== 'klar') meldung(`${WETTER[wetter].icon} ${wetter === 'sturm' ? sturmName(S.th) : WETTER[wetter].name}`, 0.48, true);
 }
 
 function zielErreicht(k){
@@ -2667,6 +4214,7 @@ function rennenUpdate(dt){
   for (const k of karts){
     if (k.fern){ fernBewegen(k, dt); continue; }
     if (k.spieler && !k.autopilot && !zustand.autopilot) k.eingabe = spielerEingabe();
+    else if (zustand.battle) kiBattle(k, dt);
     else kiSteuern(k, dt);
     if (k.roulette > 0){
       const vorher = k.roulette;
@@ -2687,7 +4235,7 @@ function rennenUpdate(dt){
   raketenUpdate(dt);
   // Falsche Richtung
   const S = strecke, k = spieler;
-  if (!k.fertig && k.v > 3 && Math.sin(k.yaw) * S.tx[k.idx] + Math.cos(k.yaw) * S.tz[k.idx] < -0.3) k.falsch += dt; else k.falsch = 0;
+  if (!zustand.battle && !k.fertig && k.v > 3 && Math.sin(k.yaw) * S.tx[k.idx] + Math.cos(k.yaw) * S.tz[k.idx] < -0.3) k.falsch += dt; else k.falsch = 0;
   if (zustand.phase === 'auslauf'){
     zustand.ergebnisIn -= dt;
     if (zustand.ergebnisIn <= 0) ergebnisZeigen();
@@ -2696,6 +4244,8 @@ function rennenUpdate(dt){
 
 function ergebnisZeigen(){
   zustand.phase = 'ergebnis';
+  if (zustand.zeitfahren){ zeitfahrErgebnis(); return; }
+  if (zustand.battle){ battleErgebnis(); return; }
   // Wer noch fährt, bekommt eine geschätzte Zeit
   for (const k of karts){
     if (k.fertig) continue;
@@ -2733,7 +4283,7 @@ function ergebnisZeigen(){
       }
     }
   }
-  $('ergebnisText').innerHTML = html;
+  $('ergebnisText').innerHTML = html + muenzenGutschreiben(platz);
   const knoepfe = $('ergebnisKnoepfe');
   knoepfe.innerHTML = '';
   const knopf = (text, haupt, fn) => { const b = document.createElement('button'); b.className = 'knopf' + (haupt ? ' haupt' : ''); b.textContent = text; b.onclick = () => { Ton.effekt('klick'); fn(); }; knoepfe.appendChild(b); };
@@ -2750,6 +4300,17 @@ function ergebnisZeigen(){
 }
 
 const POKAL = { 1:'🏆', 2:'🥈', 3:'🥉' };
+// Münzkonto für die Garage: gesammelte Münzen plus Bonus für den Platz
+const konto = { muenzen:lesen('konto', 0) };
+if (!zahlOk(konto.muenzen) || konto.muenzen < 0) konto.muenzen = 0;
+const PLATZ_BONUS = [10, 7, 5, 3, 2, 2, 1, 1];
+function muenzenGutschreiben(platz){
+  const bonus = platz ? PLATZ_BONUS[platz - 1] || 0 : 0, summe = (zustand.muenzRennen || 0) + bonus;
+  zustand.muenzRennen = 0;
+  if (!summe) return '';
+  konto.muenzen += summe; schreiben('konto', konto.muenzen);
+  return `<p class="muenzGewinn">+${summe} 🪙 <small>(${summe - bonus} gesammelt${bonus ? ` + ${bonus} Platzbonus` : ''}) · Konto: ${konto.muenzen} 🪙</small></p>`;
+}
 function cupStarten(){
   cup.aktiv = true; cup.nr = 0; cup.punkte = {}; cup.gegner = null; cup.def = CUPS[wahl.cup];
   wahl.strecke = cup.def.strecken[0];
@@ -2790,10 +4351,12 @@ function hudUpdate(){
   setzen('platz', `${platz}<small>.</small>`, true);
   const kl = 'schild ' + (platz === 1 ? 'p1' : platz === 2 ? 'p2' : platz === 3 ? 'p3' : platz >= 6 ? 'hinten' : '');
   if ($('platz').className !== kl) $('platz').className = kl;
-  setzen('rundeZahl', `${klemm(k.runde, 1, RUNDEN)}/${RUNDEN}`);
+  setzen('rundeZahl', zustand.battle ? zeitText(Math.max(0, BATTLE_ZEIT - zustand.rt)).slice(0, -3) : `${klemm(k.runde, 1, RUNDEN)}/${RUNDEN}`);
   setzen('zeitGesamt', zeitText(k.fertig ? k.zielzeit : zustand.rt));
   setzen('rundenzeiten', k.rundenzeiten.map((t, i) => `R${i + 1} ${zeitText(t)}`).join('<br>'), true);
   setzen('tempo', `${Math.round(Math.abs(k.v) * 4)} km/h`);
+  setzen('muenzen', `🪙 ${k.muenzen}`);
+  $('muenzen').classList.toggle('voll', k.muenzen >= MAX_MUENZEN);
   // Item
   let icon = '', anzahl = '';
   if (k.roulette > 0){ const alle = Object.values(ITEM_ICON); icon = alle[Math.floor(zeit * 14) % alle.length]; }
@@ -2806,7 +4369,7 @@ function hudUpdate(){
   $('itemSlot').classList.toggle('dreh', k.roulette > 0);
   // Rangliste
   const rang = rangliste();
-  setzen('liste', rang.map((r, i) => `<div class="${r.spieler ? 'ich' : ''}"><b>${i + 1}</b>${r.f.gesicht} ${esc(r.name)}</div>`).join(''), true);
+  setzen('liste', rang.map((r, i) => `<div class="${r.spieler ? 'ich' : ''}${zustand.battle && r.ballons <= 0 ? ' raus' : ''}"><b>${i + 1}</b>${r.f.gesicht} ${esc(r.name)}${zustand.battle ? ` <span class="ballons">${'🎈'.repeat(Math.max(0, r.ballons))}</span>` : ''}</div>`).join(''), true);
   // Drift-Anzeige
   const da = $('driftAnzeige');
   const dFarben = ['#fff3c4', '#5aa8ff', '#ff9a1a', '#d85aff'];
@@ -2852,8 +4415,8 @@ function kameraUpdate(dt){
   if (zustand.phase === 'menue'){
     zustand.orbit += dt * 0.25;
     const w = k.yaw + 0.9 + Math.sin(zustand.orbit) * 0.9;
-    camera.position.set(k.x + Math.sin(w) * 7.8, 2.8, k.z + Math.cos(w) * 7.8);
-    blick.set(k.x, 1.1, k.z);
+    camera.position.set(k.x + Math.sin(w) * 7.8, 2.8 + k.boden, k.z + Math.cos(w) * 7.8);
+    blick.set(k.x, 1.1 + k.boden, k.z);
     camera.lookAt(blick);
     if (innerWidth > 700){
       rechtsV.set(1, 0, 0).applyQuaternion(camera.quaternion);
@@ -2865,24 +4428,24 @@ function kameraUpdate(dt){
     const t = klemm(zustand.t / 3.2, 0, 1), e = t * t * (3 - 2 * t);
     const w = k.yaw + Math.PI * (1 - e) * 0.85;
     const r = 9.5 - 2.1 * e;
-    camera.position.set(k.x - Math.sin(w) * r, 2.4 + 0.6 * e, k.z - Math.cos(w) * r);
-    camera.lookAt(k.x + Math.sin(k.yaw) * 6 * e, 1.2, k.z + Math.cos(k.yaw) * 6 * e);
+    camera.position.set(k.x - Math.sin(w) * r, 2.4 + 0.6 * e + k.boden, k.z - Math.cos(w) * r);
+    camera.lookAt(k.x + Math.sin(k.yaw) * 6 * e, 1.2 + k.boden, k.z + Math.cos(k.yaw) * 6 * e);
     k.camYaw = k.yaw;
     zustand.fov = 68;
   } else if (zustand.phase === 'auslauf' || zustand.phase === 'ergebnis'){
     zustand.orbit += dt * 0.3;
     const w = k.yaw + Math.PI * 0.75 + Math.sin(zustand.orbit) * 0.5;
-    ziel.set(k.x + Math.sin(w) * 8.5, 3.2, k.z + Math.cos(w) * 8.5);
+    ziel.set(k.x + Math.sin(w) * 8.5, 3.2 + k.boden + k.y, k.z + Math.cos(w) * 8.5);
     camera.position.lerp(ziel, 1 - Math.exp(-3 * dt));
-    camera.lookAt(k.x, 1.2, k.z);
+    camera.lookAt(k.x, 1.2 + k.boden + k.y, k.z);
     zustand.fov = 60;
   } else {
     k.camYaw += winkelDiff(k.yaw, k.camYaw) * (1 - Math.exp(-7 * dt));
     const s = Math.sin(k.camYaw), c = Math.cos(k.camYaw);
     const abstand = 7.4 + klemm(k.v / k.werte.maxV, 0, 1.4) * 0.65;
-    ziel.set(k.x - s * abstand, 3.25 + k.y * 0.5, k.z - c * abstand);
+    ziel.set(k.x - s * abstand, 3.25 + k.boden + k.y * 0.5, k.z - c * abstand);
     camera.position.lerp(ziel, 1 - Math.exp(-12 * dt));
-    blick.set(k.x + s * 6, 1.3 + k.y * 0.3, k.z + c * 6);
+    blick.set(k.x + s * 6, 1.3 + k.boden + k.y * 0.3, k.z + c * 6);
     if (zustand.wackeln > 0){
       const a = zustand.wackeln * 0.6;
       camera.position.x += zufall(-a, a); camera.position.y += zufall(-a, a) * 0.5;
@@ -2897,11 +4460,156 @@ function kameraUpdate(dt){
   camera.updateProjectionMatrix();
   // Sonne und Himmel folgen
   sonne.position.set(k.x + SONNE_VERSATZ.x, SONNE_VERSATZ.y, k.z + SONNE_VERSATZ.z);
-  sonne.target.position.set(k.x, 0, k.z);
+  sonne.target.position.set(k.x, k.boden, k.z);
+  sonne.position.y += k.boden;
   himmel.position.copy(camera.position);
   const skala = renderer.domElement.height / (2 * Math.tan(camera.fov * Math.PI / 360));
   funken.mat.uniforms.skala.value = staub.mat.uniforms.skala.value = skala;
 }
+
+
+/* =========================================================
+   Zeitfahren: allein gegen den eigenen Geist (bestes Rennen,
+   20 Bilder pro Sekunde im Browser gespeichert)
+   ========================================================= */
+const GEIST_TAKT = 0.05;
+const geistZeiten = lesen('geistzeiten', {});
+const geist = { aufnahme:[], naechste:0, marken:[], daten:null, kart:null, fremd:false };
+let geistFremd = lesen('geistfremd', null);
+const geistSchluessel = () => `${strecke.def.id}|${wahl.stufe}`;
+function geistEntfernen(){
+  if (geist.kart){ geist.kart.entfernen(); geist.kart = null; }
+  geist.daten = null;
+}
+function geistStarten(){
+  geistEntfernen();
+  geist.aufnahme = []; geist.naechste = 0; geist.marken = [];
+  // Ein geladener Geist von Freunden hat Vorrang vor dem eigenen
+  const fremd = geistFremd && geistFremd.strecke === strecke.def.id && geistFremd.stufe === wahl.stufe ? geistFremd : null;
+  const d = fremd || lesen('geist:' + geistSchluessel(), null);
+  if (!d || !Array.isArray(d.d) || d.d.length < 10 || !d.d.every(zahlOk)) return;
+  geist.daten = d; geist.fremd = !!fremd;
+  const k = new Kart(FAHRER[d.fahrer] || FAHRER[0], false, { name:fremd ? `Geist ${d.name}` : 'Geist', schild:true, teile:d.teile });
+  // Durchsichtig und ohne Schatten: jedes Teil bekommt eine eigene Materialkopie
+  k.m.gruppe.traverse(o => {
+    if (!o.isMesh && !o.isSprite) return;
+    o.castShadow = false;
+    if (o === k.m.kontakt){ o.visible = false; return; }
+    if (o === k.schild) return;
+    o.material = o.material.clone();
+    Object.assign(o.material, { transparent:true, opacity:0.4, depthWrite:false });
+    if (o.material.emissive) o.material.emissive.setRGB(0.1, 0.2, 0.45);
+  });
+  geist.kart = k;
+  geistZeigen(0, 0);
+}
+function geistAufnehmen(){
+  const k = spieler;
+  while (zustand.rt >= geist.naechste && !k.fertig){
+    geist.aufnahme.push(rund(k.x), rund(k.z), rund(k.y), rund(k.yaw, 1000), (k.boost > 0 ? 1 : 0) + (k.trick > 0 ? 2 : 0));
+    geist.naechste += GEIST_TAKT;
+  }
+}
+function geistZeigen(t, dt){
+  const k = geist.kart, d = geist.daten.d, n = d.length / 5;
+  const f = klemm(t / GEIST_TAKT, 0, n - 1.001), i = Math.floor(f), a = f - i, p = i * 5, q = p + 5;
+  const x = d[p] + (d[q] - d[p]) * a, z = d[p + 1] + (d[q + 1] - d[p + 1]) * a;
+  if (dt > 0){
+    const yawAlt = k.yaw;
+    k.v = Math.hypot(x - k.x, z - k.z) / dt;
+    k.yaw = d[p + 3] + winkelDiff(d[q + 3], d[p + 3]) * a;
+    k.lenkAnzeige += (klemm(winkelDiff(k.yaw, yawAlt) / dt * 0.6, -1, 1) - k.lenkAnzeige) * Math.min(1, dt * 8);
+  } else k.yaw = d[p + 3];
+  k.x = x; k.z = z; k.y = d[p + 2] + (d[q + 2] - d[p + 2]) * a;
+  k.idx = dt > 0 ? naechster(strecke, x, z, k.idx) : naechsterGlobal(strecke, x, z);
+  k.seite = (x - strecke.px[k.idx]) * strecke.tz[k.idx] - (z - strecke.pz[k.idx]) * strecke.tx[k.idx];
+  k.boden = bodenUnter(strecke, k);
+  k.boost = d[p + 4] & 1 ? 0.1 : 0;
+  // Ein Trick des Geists dreht sich wie beim echten Kart
+  const trick = (d[p + 4] & 2) > 0;
+  if (trick && !k.netzTrick) k.trick = TRICK_DAUER;
+  k.netzTrick = trick;
+}
+function geistUpdate(dt){
+  if (!zustand.zeitfahren) return;
+  if (zustand.phase === 'rennen' || zustand.phase === 'auslauf') geistAufnehmen();
+  if (!geist.kart) return;
+  geistZeigen(['rennen', 'auslauf', 'ergebnis'].includes(zustand.phase) ? zustand.rt : 0, dt);
+  kartDarstellen(geist.kart, dt);
+  geist.kart.trick = Math.max(0, geist.kart.trick - dt);
+}
+// Abstand zum Geist an einer Rundenmarke, z. B. '−0,42 s'
+function geistVergleich(nr, t){
+  const m = geist.daten && geist.daten.runden;
+  if (!Array.isArray(m) || !zahlOk(m[nr])) return '';
+  const d = t - m[nr];
+  return `${d < 0 ? '−' : '+'}${Math.abs(d).toFixed(2).replace('.', ',')} s`;
+}
+function zeitfahrErgebnis(){
+  const k = spieler, schluessel = geistSchluessel(), alt = geistZeiten[schluessel];
+  let html = '<table>' + k.rundenzeiten.map((t, i) => `<tr><td>Runde ${i + 1}</td><td class="r">${zeitText(t)}</td><td class="r">${geistVergleich(i, geist.marken[i])}</td></tr>`).join('')
+    + `<tr class="ich"><td>Gesamt</td><td class="r">${zeitText(k.zielzeit)}</td><td class="r">${geistVergleich(RUNDEN - 1, k.zielzeit)}</td></tr></table>`;
+  if (!(alt <= k.zielzeit)){
+    geistZeiten[schluessel] = k.zielzeit; schreiben('geistzeiten', geistZeiten);
+    schreiben('geist:' + schluessel, { zeit:k.zielzeit, fahrer:wahl.fahrer, teile:garage.wahl, runden:geist.marken, d:geist.aufnahme });
+    html += `<p class="neu">${alt ? `Neue Bestzeit, ${(alt - k.zielzeit).toFixed(2).replace('.', ',')} s schneller!` : 'Erste Zeit gesetzt!'} Ab jetzt fährt dieser Geist mit.</p>`;
+  } else html += `<p class="rekord" style="margin-top:10px">Dein Geist war ${(k.zielzeit - alt).toFixed(2).replace('.', ',')} s schneller · Bestzeit ${zeitText(alt)}</p>`;
+  if (geist.fremd){
+    const d = k.zielzeit - geist.daten.zeit;
+    html += `<p class="${d < 0 ? 'neu' : 'rekord'}">${d < 0 ? `Du hast den Geist von ${esc(geist.daten.name)} um ${(-d).toFixed(2).replace('.', ',')} s geschlagen!` : `Der Geist von ${esc(geist.daten.name)} war ${d.toFixed(2).replace('.', ',')} s schneller.`}</p>`;
+  }
+  html += '<p id="geistTeilenInfo" class="leise"></p>';
+  $('ergebnisTitel').textContent = `⏱️ Zeitfahren · ${zeitText(k.zielzeit)}`;
+  $('ergebnisText').innerHTML = html + muenzenGutschreiben(0);
+  const knoepfe = $('ergebnisKnoepfe');
+  knoepfe.innerHTML = '';
+  const knopf = (text, haupt, fn) => { const b = document.createElement('button'); b.className = 'knopf' + (haupt ? ' haupt' : ''); b.textContent = text; b.onclick = () => { Ton.effekt('klick'); fn(); }; knoepfe.appendChild(b); };
+  knopf('Nochmal', true, rennenStarten);
+  knopf('👻 Geist teilen', false, geistTeilen);
+  knopf('Nächste Strecke', false, () => { wahl.strecke = (wahl.strecke + 1) % STRECKEN.length; schreiben('wahl', wahl); rennenStarten(); });
+  knopf('Menü', false, menueZeigen);
+  $('ergebnis').hidden = false;
+  $('touch').hidden = true;
+  knoepfe.querySelector('button').focus();
+}
+// Eigenen besten Geist hochladen und den Code zeigen
+async function geistTeilen(){
+  const info = $('geistTeilenInfo'), d = lesen('geist:' + geistSchluessel(), null);
+  if (!d){ info.textContent = 'Auf dieser Strecke hast du noch keinen Geist.'; return; }
+  info.textContent = 'Lade hoch …';
+  try {
+    const antwort = await fetch('/geist', { method:'POST', headers:{ 'Content-Type':'application/json' },
+      body:JSON.stringify({ ...d, strecke:strecke.def.id, stufe:wahl.stufe, name:lesen('name', '') || FAHRER[d.fahrer].name }) });
+    const j = await antwort.json();
+    if (!antwort.ok || !j.code) throw new Error(j.fehler || 'Fehler');
+    info.innerHTML = `Geist-Code: <b class="geistCode">${j.code}</b> – gib ihn deinen Freunden. Sie tippen ihn bei Zeitfahren ein. <button class="knopf klein" id="codeKopieren">Kopieren</button>`;
+    $('codeKopieren').onclick = () => { try { navigator.clipboard.writeText(j.code); $('codeKopieren').textContent = 'Kopiert ✓'; } catch (e) { /* egal */ } };
+  } catch (e) { info.textContent = 'Hochladen hat nicht geklappt. Bist du online?'; }
+}
+// Geist von Freunden per Code laden
+async function geistCodeLaden(){
+  const code = $('geistCodeFeld').value.trim().toUpperCase(), info = $('geistInfo');
+  if (!/^[A-Z0-9]{5}$/.test(code)){ info.textContent = 'Der Geist-Code hat 5 Zeichen.'; return; }
+  info.textContent = 'Lade …';
+  try {
+    const antwort = await fetch('/geist/' + code), d = await antwort.json();
+    if (!antwort.ok) throw new Error(d.fehler || 'Fehler');
+    const nr = STRECKEN.findIndex(s => s.id === d.strecke);
+    if (nr < 0 || !Array.isArray(d.d) || !d.d.every(zahlOk)) throw new Error('Diesen Geist kann das Spiel nicht lesen.');
+    geistFremd = d; schreiben('geistfremd', d);
+    wahl.strecke = nr; wahl.stufe = klemm(d.stufe | 0, 0, STUFEN.length - 1); schreiben('wahl', wahl);
+    streckeLaden(nr); vorschauZeigen(); menueBauen();
+  } catch (e) { info.textContent = e.message === 'Failed to fetch' ? 'Keine Verbindung zum Server.' : e.message; }
+}
+function geistInfoZeigen(){
+  const zeile = $('geistCodeZeile');
+  zeile.hidden = wahl.modus !== 'zeit';
+  const f = geistFremd, s = f && STRECKEN.find(x => x.id === f.strecke);
+  $('geistInfo').innerHTML = f && s ? `👻 Geist von <b>${esc(f.name)}</b> (${zeitText(f.zeit)}) auf ${esc(s.name)}, ${STUFEN[f.stufe] ? STUFEN[f.stufe].name : ''} geladen. <button class="knopf klein" id="geistWeg">Entfernen</button>` : '';
+  if ($('geistWeg')) $('geistWeg').onclick = () => { geistFremd = null; schreiben('geistfremd', null); geistInfoZeigen(); };
+}
+$('geistLaden').onclick = () => { Ton.start(); Ton.effekt('klick'); geistCodeLaden(); };
+$('geistCodeFeld').addEventListener('keydown', e => { if (e.key === 'Enter') geistCodeLaden(); });
 
 /* =========================================================
    Menü
@@ -2915,6 +4623,35 @@ function wahlKnopf(inhalt, aktiv, fn, danach = menueBauen){
   b.onclick = () => { Ton.start(); Ton.effekt('klick'); fn(); danach(); };
   return b;
 }
+const ART_NAME = { reifen:'Reifen', fluegel:'Heck', lack:'Lack' };
+const hatPokal = () => Object.values(pokale).some(p => p === 1);
+function garageBauen(){
+  $('kontoAnzeige').textContent = `${konto.muenzen} 🪙`;
+  const gw = $('garagewahl'); gw.innerHTML = '';
+  TEIL_ARTEN.forEach((art, ai) => {
+    const zeile = document.createElement('div'); zeile.className = 'garageZeile';
+    zeile.innerHTML = `<span>${ART_NAME[art]}</span>`;
+    const reihe = document.createElement('div'); reihe.className = 'reihe klein';
+    TEILE[art].forEach((t, i) => {
+      const besitzt = !t.preis || garage.besitz.includes(`${art}:${i}`), gesperrt = t.pokal && !hatPokal();
+      const info = besitzt ? (garage.wahl[ai] === i ? 'Ausgewählt' : 'Gekauft') : gesperrt ? '🔒 Cup gewinnen' : `${t.preis} 🪙`;
+      const b = wahlKnopf(`<b>${t.name}</b><small class="${!besitzt && !gesperrt && konto.muenzen < t.preis ? 'zuTeuer' : ''}">${info}</small>`, garage.wahl[ai] === i, () => {
+        if (!besitzt){
+          if (gesperrt || konto.muenzen < t.preis) return;
+          konto.muenzen -= t.preis; schreiben('konto', konto.muenzen);
+          garage.besitz.push(`${art}:${i}`);
+          Ton.effekt('muenze');
+        }
+        garage.wahl[ai] = i; schreiben('garage', garage);
+        vorschauZeigen();
+        if (online.aktiv) Netz.senden({ t:'fahrer', fahrer:wahl.fahrer, teile:garage.wahl });
+      });
+      reihe.appendChild(b);
+    });
+    zeile.appendChild(reihe);
+    gw.appendChild(zeile);
+  });
+}
 function menueBauen(){
   const fw = $('fahrerwahl'); fw.innerHTML = '';
   FAHRER.forEach((f, i) => fw.appendChild(wahlKnopf(`<span class="gesicht">${f.gesicht}</span>${f.name}`, i === wahl.fahrer, () => {
@@ -2924,10 +4661,16 @@ function menueBauen(){
   const f = FAHRER[wahl.fahrer];
   const balken = w => `<div class="balken"><i style="width:${w * 20}%"></i></div>`;
   $('fahrerinfo').innerHTML = `<span>Tempo</span>${balken(f.tempo)}<span>Beschleunigung</span>${balken(f.beschl)}<span>Kurven</span>${balken(f.lenk)}`;
+  garageBauen();
   const mw = $('moduswahl'); mw.innerHTML = '';
-  [['einzel', 'Einzelrennen', 'Gegen den Computer'], ['cup', 'Cups', 'Mehrere Rennen, Punkte'], ['online', 'Online', 'Mit Freunden fahren']].forEach(([id, name, info]) =>
-    mw.appendChild(wahlKnopf(`<b>${name}</b><small>${info}</small>`, wahl.modus === id, () => { wahl.modus = id; schreiben('wahl', wahl); })));
-  $('streckenBlock').hidden = wahl.modus !== 'einzel';
+  [['einzel', 'Einzelrennen', 'Gegen den Computer'], ['cup', 'Cups', 'Mehrere Rennen, Punkte'], ['zeit', 'Zeitfahren', 'Gegen deinen Geist'], ['battle', 'Ballon-Battle', 'Wer behält seine Ballons?'], ['online', 'Online', 'Mit Freunden fahren']].forEach(([id, name, info]) =>
+    mw.appendChild(wahlKnopf(`<b>${name}</b><small>${info}</small>`, wahl.modus === id, () => {
+      const war = wahl.modus;
+      wahl.modus = id; schreiben('wahl', wahl);
+      if ((war === 'battle') !== (id === 'battle')){ streckeLaden(id === 'battle' ? ARENA_NR : wahl.strecke); vorschauZeigen(); }
+    })));
+  $('streckenBlock').hidden = wahl.modus !== 'einzel' && wahl.modus !== 'zeit';
+  if (typeof geistInfoZeigen === 'function') geistInfoZeigen();
   $('cupBlock').hidden = wahl.modus !== 'cup';
   const cw = $('cupwahl'); cw.innerHTML = '';
   CUPS.forEach((c, i) => {
@@ -2941,12 +4684,16 @@ function menueBauen(){
   $('onlineBlock').hidden = wahl.modus !== 'online';
   const sw = $('streckenwahl'); sw.innerHTML = '';
   STRECKEN.forEach((s, i) => {
-    const rek = rekorde[`${s.id}|${wahl.stufe}`];
-    sw.appendChild(wahlKnopf(`<b>${s.name}</b><small>${s.info}</small><small class="rekord">${rek && rek.zeit ? 'Rekord ' + zeitText(rek.zeit) : 'Noch kein Rekord'}</small>`, i === wahl.strecke, () => {
+    const rek = rekorde[`${s.id}|${wahl.stufe}`], gz = geistZeiten[`${s.id}|${wahl.stufe}`];
+    const rekText = wahl.modus === 'zeit' ? (gz ? '👻 Geist ' + zeitText(gz) : 'Noch kein Geist') : rek && rek.zeit ? 'Rekord ' + zeitText(rek.zeit) : 'Noch kein Rekord';
+    sw.appendChild(wahlKnopf(`<b>${s.name}</b><small>${s.info}</small><small class="rekord">${rekText}</small>`, i === wahl.strecke, () => {
       if (wahl.strecke === i) return;
       wahl.strecke = i; schreiben('wahl', wahl); streckeLaden(i); vorschauZeigen(); Ton.musik('menue');
     }));
   });
+  const ww = $('wetterwahl'); ww.innerHTML = '';
+  [['zufall', '🎲', 'Zufall'], ...WETTER_ARTEN.map(a => [a, WETTER[a].icon, WETTER[a].name])].forEach(([id, icon, name]) =>
+    ww.appendChild(wahlKnopf(`<b>${icon}</b><small>${name}</small>`, (wahl.wetter || 'zufall') === id, () => { wahl.wetter = id; schreiben('wahl', wahl); })));
   const stw = $('stufenwahl'); stw.innerHTML = '';
   STUFEN.forEach((s, i) => stw.appendChild(wahlKnopf(`<b>${s.name}</b><small>${s.info}</small>`, i === wahl.stufe, () => { wahl.stufe = i; schreiben('wahl', wahl); })));
 }
@@ -2959,7 +4706,8 @@ function menueZeigen(ansicht = 'menue'){
   $('hud').hidden = true; $('oben').hidden = true; $('touch').hidden = true;
   $('ergebnis').hidden = true; $('pause').hidden = true;
   wahl.strecke = klemm(wahl.strecke, 0, STRECKEN.length - 1);
-  streckeLaden(ansicht === 'lobby' && online.raum ? online.raum.strecke : wahl.strecke);
+  zustand.battle = false;
+  streckeLaden(ansicht === 'lobby' && online.raum ? online.raum.strecke : wahl.modus === 'battle' ? ARENA_NR : wahl.strecke);
   vorschauZeigen();
   menueBauen();
   if (ansicht === 'lobby') lobbyBauen();
@@ -3023,7 +4771,7 @@ function netzSenden(dt){
   const k = karts.filter(k => !k.fern).map(k => [
     k.slot, rund(k.x), rund(k.z), rund(k.y), rund(k.yaw, 1000), rund(k.v, 10), k.drift, k.driftStufe,
     k.dreh > 0 ? rund(k.dreh) : 0, k.boost > 0 ? 1 : 0, k.stern > 0 ? 1 : 0, rund(k.lenkAnzeige), k.runde,
-    rund(k.fortschritt, 10), k.offroad ? 1 : 0, rund(k.drehDauer)
+    rund(k.fortschritt, 10), k.offroad ? 1 : 0, rund(k.drehDauer), k.trick > 0 ? 1 : 0
   ]);
   if (k.length) Netz.senden({ t:'z', k });
 }
@@ -3055,11 +4803,15 @@ function fernBewegen(k, dt){
     k.drehWinkel = (1 - Math.max(0, k.dreh) / k.drehDauer) * 2 * TAU;
     if (k.dreh <= 0) k.drehWinkel = 0;
   }
+  k.trick = Math.max(0, k.trick - dt);
+  if (n.trick && !k.netzTrick) k.trick = TRICK_DAUER;
+  k.netzTrick = n.trick;
   k.runde = n.runde; k.fortschritt = n.fortschritt;
   const S = strecke;
   k.idx = naechster(S, k.x, k.z, k.idx);
   const i = k.idx;
   k.seite = (k.x - S.px[i]) * S.tz[i] - (k.z - S.pz[i]) * S.tx[i];
+  k.boden = bodenUnter(S, k);
 }
 
 // Wird man während des Rennens Host, übernimmt man die Computerfahrer
@@ -3136,7 +4888,7 @@ Netz.on('start', m => {
     const ich = sl.id === online.ich;
     return {
       fahrer:klemm(sl.fahrer | 0, 0, FAHRER.length - 1), name:sl.bot ? null : String(sl.name || 'Fahrer').slice(0, 16),
-      mensch:!sl.bot, ich, fern:!ich && !(sl.bot && online.host)
+      mensch:!sl.bot, ich, fern:!ich && !(sl.bot && online.host), teile:teileOk(sl.teile)
     };
   });
   if (!slots.some(sl => sl.ich)) return;
@@ -3144,7 +4896,7 @@ Netz.on('start', m => {
   online.wegNamen = {};
   online.rennenNr = (online.rennenNr || 0) + 1;
   $('menue').hidden = true;
-  rennenStarten({ strecke:klemm(m.strecke | 0, 0, STRECKEN.length - 1), stufe:klemm(m.stufe | 0, 0, STUFEN.length - 1), slots });
+  rennenStarten({ strecke:klemm(m.strecke | 0, 0, STRECKEN.length - 1), stufe:klemm(m.stufe | 0, 0, STUFEN.length - 1), slots, wetter:klemm(m.wetter | 0, 0, 9) });
 });
 
 Netz.on('z', m => {
@@ -3154,8 +4906,8 @@ Netz.on('z', m => {
     const k = karts.find(x => x.slot === e[0]);
     if (!k || !k.fern) continue;
     const n = {
-      x:e[1], z:e[2], y:klemm(e[3], 0, 20), yaw:e[4], v:klemm(e[5], -20, 80), drift:e[6], driftStufe:e[7], dreh:e[8],
-      boost:e[9], stern:e[10], lenk:e[11], runde:e[12], fortschritt:e[13], off:e[14], drehDauer:klemm(e[15], 0.2, 3)
+      x:e[1], z:e[2], y:klemm(e[3], -60, 60), yaw:e[4], v:klemm(e[5], -20, 80), drift:e[6], driftStufe:e[7], dreh:e[8],
+      boost:e[9], stern:e[10], lenk:e[11], runde:e[12], fortschritt:e[13], off:e[14], drehDauer:klemm(e[15], 0.2, 3), trick:e[16] ? 1 : 0
     };
     if (!k.netz || Math.hypot(n.x - k.x, n.z - k.z) > 20){ k.x = n.x; k.z = n.z; k.yaw = n.yaw; k.idx = naechsterGlobal(strecke, k.x, k.z); }
     k.netz = n;
@@ -3180,6 +4932,7 @@ Netz.on('e', m => {
     case 'l': { const von = karts.find(k => k.slot === m.von); if (von) blitzTreffen(von); break; }
     case 'rw': { const i = raketen.findIndex(r => r.id === m.id); if (i >= 0) raketeWeg(i); break; }
     case 'x': { const b = S.boxen[m.i]; if (b && b.aus <= 0) boxWeg(b); break; }
+    case 'm': { const mu = S.muenzen[m.i]; if (mu && mu.aus <= 0) muenzeWeg(mu); break; }
   }
 });
 
@@ -3240,7 +4993,7 @@ function ergebnisOnline(rang){
       $('ergebnisTitel').textContent = cupPlatz === 1 ? `🏆 ${cupDef.name} gewonnen!` : cupPlatz >= 2 && cupPlatz <= 3 ? `${POKAL[cupPlatz]} ${cupDef.name}: ${cupPlatz}. Platz` : cupPlatz ? `${cupDef.name}: ${cupPlatz}. Platz` : `${cupDef.name} vorbei`;
     }
   }
-  $('ergebnisText').innerHTML = html + '<p class="leise" id="ergebnisHinweis" style="margin-top:10px"></p>';
+  $('ergebnisText').innerHTML = html + muenzenGutschreiben(platz) + '<p class="leise" id="ergebnisHinweis" style="margin-top:10px"></p>';
   ergebnisKnoepfeOnline();
   $('ergebnis').hidden = false;
   $('touch').hidden = true;
@@ -3277,7 +5030,7 @@ function lobbyBauen(){
   const lf = $('lobbyFahrer');
   lf.innerHTML = '';
   FAHRER.forEach((f, i) => lf.appendChild(wahlKnopf(`<span class="gesicht">${f.gesicht}</span>${f.name}`, i === meinFahrer, () => {
-    wahl.fahrer = i; schreiben('wahl', wahl); vorschauZeigen(); Netz.senden({ t:'fahrer', fahrer:i });
+    wahl.fahrer = i; schreiben('wahl', wahl); vorschauZeigen(); Netz.senden({ t:'fahrer', fahrer:i, teile:garage.wahl });
   }, () => {})));
   const ei = $('lobbyEinst');
   ei.innerHTML = '';
@@ -3341,7 +5094,7 @@ setInterval(olympInfoText, 250);
 async function olympLos(){
   $('onlineFehler').textContent = 'Verbinde mit dem Olympia-Rennen …';
   try { await Netz.verbinden(); } catch (e) { $('onlineFehler').textContent = 'Keine Verbindung zum Server – neuer Versuch …'; setTimeout(olympLos, 3000); return; }
-  Netz.senden({ t:'olymp', ticket:olympia.ticket, fahrer:wahl.fahrer });
+  Netz.senden({ t:'olymp', ticket:olympia.ticket, fahrer:wahl.fahrer, teile:garage.wahl });
 }
 
 $('nameFeld').value = lesen('name', '');
@@ -3351,7 +5104,7 @@ async function onlineLos(nachricht){
   schreiben('name', name);
   $('onlineFehler').textContent = 'Verbinde …';
   try { await Netz.verbinden(); } catch (e) { $('onlineFehler').textContent = 'Keine Verbindung zum Server. Bist du online?'; return; }
-  Netz.senden({ ...nachricht, name, fahrer:wahl.fahrer });
+  Netz.senden({ ...nachricht, name, fahrer:wahl.fahrer, teile:garage.wahl });
 }
 $('raumNeu').onclick = () => { Ton.start(); Ton.effekt('klick'); onlineLos({ t:'erstellen' }); };
 $('raumRein').onclick = () => {
@@ -3383,12 +5136,19 @@ function schritt(dt){
     rennenUpdate(dt);
   }
   for (const k of karts){ kartDarstellen(k, dt); kartEffekte(k); }
+  if (zustand.battle && karts.length) battleUpdate(dt);
+  geistUpdate(dt);
   boxenUpdate(dt);
+  muenzenUpdate(dt);
   spurenUpdate(dt);
-  for (const b of bananen){ b.mesh.rotation.y += dt * 0.5; b.mesh.position.y = 0.25 + Math.sin(zeit * 3 + b.x) * 0.05; }
+  for (const b of bananen){ b.mesh.rotation.y += dt * 0.5; b.mesh.position.y = 0.25 + b.h + Math.sin(zeit * 3 + b.x) * 0.05; }
   funken.update(dt); staub.update(dt);
   blitzUpdate(dt);
+  gefahrenUpdate(dt);
+  kulisseUpdate(dt);
+  wetterUpdate(dt);
   if (S.wolken) S.wolken.rotation.y += dt * 0.004;
+  if (S.wolkenMeer) S.wolkenMeer.offset.x = (zeit * 0.002) % 1;
   himmelUni.zeit.value = zeit;
   if (S.schnee){
     const p = S.schnee.geometry.attributes.position, a = p.array, cx = camera.position.x, cz = camera.position.z;
@@ -3427,7 +5187,7 @@ function schleife(jetzt){
 // Zum Testen in der Konsole
 window.loewenkart = {
   zustand, wahl, online, get karts(){ return karts; }, get strecke(){ return strecke; },
-  get bananen(){ return bananen; }, get raketen(){ return raketen; },
+  get bananen(){ return bananen; }, get raketen(){ return raketen; }, get geist(){ return geist; }, get szene(){ return scene; },
   test:{ bananeLegen, raketeStarten, blitzAusloesen, boost, treffer },
   // Nur zum Testen: freie Kamera (bei zustand.pause = true bleibt sie stehen)
   kamera(px, py, pz, zx, zy, zz, fov = 50){ camera.position.set(px, py, pz); camera.fov = fov; camera.updateProjectionMatrix(); camera.lookAt(zx, zy, zz); himmel.position.copy(camera.position); renderer.render(scene, camera); },

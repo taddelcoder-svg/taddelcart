@@ -13,9 +13,9 @@ const olymp = require('./olymp')({ spiel:'loewenkart' });
 const PORT = Number(process.env.PORT) || 10100;
 const MAX_RAEUME = 200;
 const MAX_SPIELER = 8;
-const ANZAHL_FAHRER = 9, ANZAHL_STRECKEN = 6, ANZAHL_STUFEN = 3;
+const ANZAHL_FAHRER = 9, ANZAHL_STRECKEN = 7, ANZAHL_STUFEN = 3;
 // Cups: Streckenfolge wie CUPS in spiel.js, Punkte wie PUNKTE in spiel.js
-const CUP_STRECKEN = [[0, 1, 2], [3, 4, 5], [0, 3, 1, 4, 2, 5]];
+const CUP_STRECKEN = [[0, 1, 2], [3, 4, 5], [0, 3, 1, 4, 2, 5, 6], [5, 2, 6]];
 const PUNKTE = [15, 12, 10, 8, 6, 4, 2, 1];
 const NACH_ERSTEM_ZIEL = 40_000;   // ms, dann ist das Rennen für alle vorbei
 const MAX_RENNDAUER = 10 * 60_000;
@@ -47,9 +47,51 @@ const server = http.createServer((req, res) => {
   const vendor = /^\/vendor\/([\w-]+(?:\.[\w-]+)*\.(js|woff2|txt))$/.exec(url.pathname);
   if (req.method === 'GET' && vendor) return senden(res, path.join('vendor', vendor[1]), 'public, max-age=604800');
   if (req.method === 'GET' && DATEIEN.has(url.pathname)) return senden(res, DATEIEN.get(url.pathname), 'no-cache');
+  if (url.pathname === '/geist' && req.method === 'POST') return geistSpeichern(req, res);
+  const geistCode = /^\/geist\/([A-Z0-9]{5})$/.exec(url.pathname);
+  if (geistCode && req.method === 'GET') return geistLaden(geistCode[1], res);
   res.writeHead(404, { 'Content-Type':'text/plain; charset=utf-8' });
   res.end('Nicht gefunden');
 });
+
+/* ---------- Geister teilen ----------
+   Ein Zeitfahren (Positionen des Karts, Zeit, Name) wird unter einem kurzen Code abgelegt,
+   damit Freunde gegen diesen Geist fahren können. Nur im Arbeitsspeicher, höchstens 30 Tage. */
+const geister = new Map();
+const MAX_GEISTER = 500, GEIST_TAGE = 30;
+function json(res, status, daten){ res.writeHead(status, { 'Content-Type':'application/json; charset=utf-8', 'Cache-Control':'no-store' }); res.end(JSON.stringify(daten)); }
+function geistOk(g){
+  if (!g || typeof g !== 'object') return null;
+  const zahl = v => typeof v === 'number' && isFinite(v);
+  if (typeof g.strecke !== 'string' || !/^[a-z]{2,12}$/.test(g.strecke)) return null;
+  if (!zahl(g.zeit) || g.zeit < 10 || g.zeit > 1200) return null;
+  if (!Array.isArray(g.d) || g.d.length < 50 || g.d.length > 60000 || g.d.length % 5 || !g.d.every(zahl)) return null;
+  const runden = Array.isArray(g.runden) ? g.runden.filter(zahl).slice(0, 10) : [];
+  return { strecke:g.strecke, stufe:ganz(g.stufe, 0, ANZAHL_STUFEN - 1, 1), zeit:g.zeit, fahrer:ganz(g.fahrer, 0, ANZAHL_FAHRER - 1, 0),
+    teile:teileOk(g.teile), runden, d:g.d, name:nameOk(g.name) };
+}
+function geistSpeichern(req, res){
+  let roh = '', zuGross = false;
+  req.on('data', teil => { roh += teil; if (roh.length > 400_000){ zuGross = true; req.destroy(); } });
+  req.on('end', () => {
+    if (zuGross) return;
+    let g;
+    try { g = geistOk(JSON.parse(roh)); } catch (e) { g = null; }
+    if (!g) return json(res, 400, { fehler:'Der Geist ist ungültig.' });
+    let code;
+    do { code = ''; for (let i = 0; i < 5; i++) code += RAUM_ZEICHEN[crypto.randomInt(RAUM_ZEICHEN.length)]; } while (geister.has(code));
+    geister.set(code, { ...g, bis:Date.now() + GEIST_TAGE * 86_400_000 });
+    // Älteste zuerst weg, wenn es zu viele werden
+    while (geister.size > MAX_GEISTER) geister.delete(geister.keys().next().value);
+    json(res, 200, { code });
+  });
+}
+function geistLaden(code, res){
+  const g = geister.get(code);
+  if (!g || g.bis < Date.now()){ geister.delete(code); return json(res, 404, { fehler:'Diesen Geist-Code gibt es nicht (mehr).' }); }
+  const { bis, ...daten } = g;
+  json(res, 200, daten);
+}
 
 /* ---------- Online-Räume ---------- */
 const RAUM_ZEICHEN = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -93,6 +135,9 @@ function cupWerten(raum, rang){
 }
 const nameOk = n => String(n || '').replace(/[\u0000-\u001f\u007f<>&"]/g, '').trim().slice(0, 16) || 'Fahrer';
 const ganz = (v, min, max, std) => (Number.isInteger(v) && v >= min && v <= max ? v : std);
+// Garagen-Teile [Reifen, Flügel, Lack], nur Optik
+const TEIL_ANZAHL = [4, 4, 5];
+const teileOk = t => TEIL_ANZAHL.map((n, i) => ganz(Array.isArray(t) ? t[i] : 0, 0, n - 1, 0));
 function mischen(a){ for (let i = a.length - 1; i > 0; i--){ const j = crypto.randomInt(i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; }
 function neuerCode(){
   for (;;){
@@ -108,7 +153,7 @@ function darf(ws, raum, slot){
 }
 
 function beitreten(ws, raum, m){
-  raum.spieler.set(ws.id, { id:ws.id, ws, name:nameOk(m.name), fahrer:ganz(m.fahrer, 0, ANZAHL_FAHRER - 1, 0), olympId:ws.olympId || null });
+  raum.spieler.set(ws.id, { id:ws.id, ws, name:nameOk(m.name), fahrer:ganz(m.fahrer, 0, ANZAHL_FAHRER - 1, 0), teile:teileOk(m.teile), olympId:ws.olympId || null });
   ws.raum = raum.code;
   olympPruefen(raum);
   raumSenden(raum);
@@ -166,7 +211,7 @@ function olympBeitreten(ws, raum, m){
   if (ziel.spieler.size >= MAX_SPIELER) return sende(ws, { t:'fehler', text:'Der Raum ist voll (8 Fahrer).' });
   if (raum) raumVerlassen(ws);
   ws.olympId = t.s;
-  beitreten(ws, ziel, { name:t.n, fahrer:m.fahrer });
+  beitreten(ws, ziel, { name:t.n, fahrer:m.fahrer, teile:m.teile });
 }
 function zeitText(s){ const m = Math.floor(s / 60), r = s - m * 60; return `${m}:${r < 10 ? '0' : ''}${r.toFixed(2).replace('.', ',')}`; }
 function olympMelden(raum, rang){
@@ -237,7 +282,7 @@ function rennenStarten(raum){
     botFahrer = raum.cupLauf.bots.filter(f => !genommen.has(f)).concat(botFahrer.filter(f => !raum.cupLauf.bots.includes(f)));
   }
   raum.slots = new Array(anzahl);
-  menschen.forEach((s, i) => { raum.slots[plaetze[i]] = { id:s.id, name:s.name, fahrer:s.fahrer, olympId:s.olympId }; });
+  menschen.forEach((s, i) => { raum.slots[plaetze[i]] = { id:s.id, name:s.name, fahrer:s.fahrer, teile:s.teile, olympId:s.olympId }; });
   for (const slot of plaetze.slice(menschen.length)){
     raum.slots[slot] = { id:null, name:null, fahrer:botFahrer.length ? botFahrer.shift() : crypto.randomInt(ANZAHL_FAHRER) };
   }
@@ -248,7 +293,8 @@ function rennenStarten(raum){
   timerAus(raum);
   raum.endeTimer = setTimeout(() => rennenEnde(raum), MAX_RENNDAUER);
   hostPruefen(raum);
-  anAlle(raum, { t:'start', strecke:raum.strecke, stufe:raum.stufe, cup:raum.cupLauf ? { id:raum.cup, nr:raum.cupLauf.nr } : null, slots:raum.slots.map(s => ({ id:s.id, name:s.name, fahrer:s.fahrer, bot:!s.id })) });
+  // Wetter: 0–4 Sonne, 5–6 Regen, 7 Gewitter, 8–9 Sturm (in der Olympiade immer Sonne)
+  anAlle(raum, { t:'start', strecke:raum.strecke, stufe:raum.stufe, wetter:raum.olymp ? 0 : crypto.randomInt(10), cup:raum.cupLauf ? { id:raum.cup, nr:raum.cupLauf.nr } : null, slots:raum.slots.map(s => ({ id:s.id, name:s.name, fahrer:s.fahrer, teile:s.teile, bot:!s.id })) });
   raumSenden(raum);
 }
 
@@ -320,7 +366,7 @@ wss.on('connection', ws => {
         if (raum) hostPruefen(raum);
         break;
       case 'fahrer':
-        if (raum){ raum.spieler.get(ws.id).fahrer = ganz(m.fahrer, 0, ANZAHL_FAHRER - 1, 0); raumSenden(raum); }
+        if (raum){ const sp = raum.spieler.get(ws.id); sp.fahrer = ganz(m.fahrer, 0, ANZAHL_FAHRER - 1, 0); sp.teile = teileOk(m.teile); raumSenden(raum); }
         break;
       case 'einst':
         if (istHost && raum.phase !== 'rennen' && !raum.olymp){

@@ -119,6 +119,13 @@
   .reihe{display:flex;flex-wrap:wrap;gap:8px}
   .reihe .wahl{flex:1 1 0;min-width:120px;padding:10px 8px;text-align:center}
   .reihe .wahl b{font-size:1.05rem}
+  .konto{float:right;color:#ffd75a;font-size:.95rem;letter-spacing:0}
+  .garageZeile{display:grid;grid-template-columns:52px 1fr;gap:8px;align-items:center;margin-bottom:8px}
+  .garageZeile>span{font-size:.85rem;color:var(--text-weich);font-weight:700}
+  .reihe.klein .wahl{min-width:84px;padding:6px 4px}
+  .reihe.klein .wahl b{font-size:.9rem}
+  .wahl small.zuTeuer{color:#ff8a7a}
+  .garageHinweis{font-size:.8rem;margin:2px 0 0}
   #fahrerinfo{margin-top:12px;display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:.9rem;color:var(--text-weich);font-weight:500}
   .balken{height:8px;align-self:center;border-radius:4px;background:rgba(255,255,255,.12);overflow:hidden}
   .balken i{display:block;height:100%;background:linear-gradient(90deg,var(--akzent-2),var(--akzent));border-radius:4px;transition:width .25s}
@@ -167,6 +174,9 @@
   #liste b{width:1.2em;text-align:right}
   #tempo{position:absolute;right:calc(26px + env(safe-area-inset-right));bottom:calc(122px + env(safe-area-inset-bottom));padding:4px 14px;border-radius:99px;font-size:1.1rem;color:var(--text)}
   #tempo:empty{display:none}
+  #muenzen{position:absolute;left:50%;top:calc(108px + env(safe-area-inset-top));transform:translateX(-50%);padding:3px 12px;border-radius:99px;font-size:1rem;font-weight:800;color:#ffd75a;background:var(--chip);border:1px solid rgba(255,214,120,.2)}
+  #muenzen.voll{color:#fff3b0;box-shadow:0 0 14px rgba(255,200,40,.6)}
+  body.touch #muenzen{top:calc(10px + env(safe-area-inset-top))}
   #blitzFlash{position:fixed;inset:0;z-index:15;pointer-events:none;opacity:0;background:radial-gradient(circle at 50% 30%,#fffbe0,rgba(200,220,255,.55) 60%,rgba(120,140,255,.25))}
   #blitzFlash.an{animation:blitz .7s ease-out}
   @keyframes blitz{0%{opacity:0}8%{opacity:.95}20%{opacity:.2}30%{opacity:.7}100%{opacity:0}}
@@ -246,6 +256,12 @@
   tr.ich td:first-child{box-shadow:inset 1px 1px 0 rgba(255,198,41,.5),inset 0 -1px 0 rgba(255,198,41,.5)}
   tr.ich td:last-child{box-shadow:inset -1px 1px 0 rgba(255,198,41,.5),inset 0 -1px 0 rgba(255,198,41,.5)}
   .neu{color:var(--erfolg);font-weight:800;margin:8px 0 0}
+  .muenzGewinn{color:#ffd75a;font-weight:800;margin:10px 0 0}
+  .knopf.klein{padding:3px 10px;font-size:.8rem;min-height:0}
+  .geistCode{font-size:1.2rem;letter-spacing:2px;color:#ffd75a}
+  #liste div.raus{opacity:.45;text-decoration:line-through}
+  #liste .ballons{font-size:.75em;letter-spacing:-2px}
+  .muenzGewinn small{color:var(--text);opacity:.75;font-weight:600}
   #ergebnisText h2{display:block;background:none;-webkit-text-fill-color:currentColor;color:var(--akzent);font-size:1rem!important;margin:20px 0 8px!important}
   .feld{display:block;color:var(--text-weich);font-size:.9rem;font-weight:500}
   input{font:inherit;font-size:1.1rem;width:100%;min-height:44px;margin-top:4px;padding:10px 12px;border-radius:12px;border:1px solid var(--rand-stark);
@@ -325,6 +341,12 @@
     </section>
 
     <section class="sektion">
+    <h2>Garage <span id="kontoAnzeige" class="konto"></span></h2>
+    <div id="garagewahl"></div>
+    <p class="leise garageHinweis">Münzen sammelst du in Rennen. Die Teile ändern nur das Aussehen, nicht das Tempo.</p>
+    </section>
+
+    <section class="sektion">
     <h2>Modus</h2>
     <div id="moduswahl" class="reihe" role="radiogroup" aria-label="Modus"></div>
     </section>
@@ -332,6 +354,14 @@
     <div id="streckenBlock" class="sektion">
       <h2>Strecke</h2>
       <div id="streckenwahl" class="reihe" role="radiogroup" aria-label="Strecke"></div>
+      <div id="geistCodeZeile" hidden>
+        <div class="codezeile">
+          <label class="sr" for="geistCodeFeld">Geist-Code</label>
+          <input id="geistCodeFeld" maxlength="5" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="GEIST-CODE">
+          <button id="geistLaden" class="knopf haupt">Geist laden</button>
+        </div>
+        <p id="geistInfo" class="leise"></p>
+      </div>
     </div>
 
     <div id="cupBlock" class="sektion" hidden>
@@ -342,6 +372,8 @@
     <div id="stufenBlock" class="sektion">
       <h2>Klasse</h2>
       <div id="stufenwahl" class="reihe" role="radiogroup" aria-label="Klasse"></div>
+      <h2 style="margin-top:12px">Wetter</h2>
+      <div id="wetterwahl" class="reihe klein" role="radiogroup" aria-label="Wetter"></div>
       <button id="losknopf" class="gross">Los geht's!</button>
     </div>
 
@@ -370,6 +402,14 @@
       <p><b>Handy/Tablet:</b> Gas geht von allein. Links den Daumen auf den Lenkbalken legen – je weiter nach außen, desto stärker lenkst du. Rechts: <b>DRIFT</b> halten + lenken, <b>BREMSE</b> (gehalten = rückwärts), darüber das Item. Du kannst den Daumen zwischen den Knöpfen hin- und herrutschen lassen. Starttrick: bei der <b>2</b> DRIFT drücken.</p>
       <p>Items: ⚡ Turbo · ⚡³ Dreifach-Turbo · 🍌 Banane (fällt hinter dich) · 🚀 Rakete (sucht den Kart vor dir, mit gehaltener Bremse fliegt sie nach hinten) · ⭐ Stern (unverwundbar &amp; schnell) · 🌩️ Blitz (nur weiter hinten: alle vor dir schrumpfen und werden langsamer)</p>
       <p>Windschatten: Bleib dicht hinter einem anderen Kart, dann bekommst du einen kleinen Turbo.</p>
+      <p><b>Schanzen:</b> Fahr über die Rampe und drück in der Luft <kbd>Leertaste</kbd> (Handy: DRIFT) für einen <b>Trick</b> – bei der Landung gibt es einen Turbo.</p>
+      <p><b>Streckengefahren:</b> Im Vulkankrater regnet es Meteore (rote Kreise = gleich schlägt einer ein), im Kaktus-Canyon rollen Steppenläufer über die Straße, auf dem Frostgipfel rutschst du auf Glatteis.</p>
+      <p><b>Abkürzungen:</b> Auf jeder Strecke gibt es Schotterwege quer durchs Gelände (Schild „ABKÜRZUNG“, gestrichelt auf der Minikarte). Der Untergrund ist langsam – mit einem Turbo lohnt es sich richtig. Im <b>Wolkenreich</b> führt eine Regenbogenbrücke ohne Geländer über den Abgrund: wer runterfällt, landet wieder vor der Brücke.</p>
+      <p><b>Wolkenreich:</b> Achterbahn über den Wolken mit Überführung und Kuppen – oben abheben und in der Luft einen Trick machen!</p>
+      <p><b>Münzen &amp; Garage:</b> Jede Münze macht dich ein bisschen schneller (höchstens 10), bei einem Treffer verlierst du 3. Nach dem Rennen landen sie auf deinem Konto – damit kaufst du in der Garage Reifen, Heckteile und Lacke.</p>
+      <p><b>Wetter:</b> Bei Regen glänzt die Straße und Pfützen bremsen, bei Gewitter blitzt es, im Sturm drücken Böen dein Kart zur Seite.</p>
+      <p><b>Ballon-Battle:</b> In der Löwen-Arena hat jedes Kart 3 Ballons. Jeder Treffer (Rakete, Banane, Stern) kostet einen. Wer keine mehr hat, ist raus – gewonnen hat, wer zuletzt übrig ist oder nach 2:30 die meisten Ballons hat.</p>
+      <p><b>Zeitfahren:</b> Allein auf der Strecke mit drei Turbos. Deine Bestzeit fährt als Geist mit – schlag sie! Nach dem Rennen kannst du deinen Geist teilen: Freunde tippen den 5-stelligen Code bei Zeitfahren ein und fahren gegen dich.</p>
     </details>
     <p class="fuss"><a href="/datenschutz">Datenschutz</a> · Ein Spiel der Swimming Lions</p>
   </div>
@@ -383,6 +423,7 @@
   <div id="itemSlot" aria-label="Item"><span id="itemIcon"></span><small id="itemAnzahl"></small></div>
   <canvas id="minikarte" width="380" height="380"></canvas>
   <div id="tempo" class="schild"></div>
+  <div id="muenzen" class="schild"></div>
   <div id="platz" class="schild">1<small>.</small></div>
   <div id="mitte" class="schild"></div>
   <div id="driftAnzeige" class="schild">✦</div>
