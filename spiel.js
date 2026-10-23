@@ -90,6 +90,13 @@ const THEMEN = {
     hemi:['#8090d8', '#1d2a3a'], hemiKraft:0.9, gras:['#2c5a3a', '#264f33', '#336843'], auslauf:'#5a5a66',
     strasse:'#3d4250', wand:[0xb35cff, 0xf0f0ff], berge:0x1f2c4a, staub:[0.4, 0.42, 0.5], deko:'laternen', wolken:false, sterne:true,
     neon:0xc45aff, kulisse:['feuerwerk'], skyline:true
+  },
+  himmel: {
+    himmelWolke:['#fff0f8', 0.55],
+    himmel:['#3b2f86', '#ffb59a'], nebel:'#f3c4c8', nebelWeit:[300, 1500], sonne:'#ffd8b0', sonnenKraft:2.0,
+    hemi:['#ffe9f4', '#8f7cc4'], hemiKraft:1.1, gras:['#8fdc72', '#7ccf62', '#a3e886'], auslauf:'#cfc6e8',
+    strasse:'#4d4b66', wand:[0xff5fa8, 0xf6f2ff], berge:0xffffff, staub:[0.96, 0.92, 1], deko:'himmel', wolken:true,
+    neon:0xff6ad5, schwebend:true, kulisse:['ballons']
   }
 };
 // Strecken nach F1-Vorbildern: Ecken [x, z, Kurvenradius]; Radius 0 = Punkt auf einer Geraden
@@ -105,12 +112,18 @@ const STRECKEN = [
   { id:'vulkan', name:'Vulkankrater', info:'Kurvenwechsel wie in Interlagos', thema:'vulkan', breite:16, saat:55,
     ecken:[[0,0,0],[170,0,16],[185,40,16],[140,70,28],[200,140,30],[150,210,18],[70,170,22],[100,110,14],[30,90,14],[-30,170,30],[-120,140,16],[-90,80,14],[-160,40,30],[-110,0,40]] },
   { id:'nacht', name:'Sternenpark', info:'Stadtkurs bei Nacht wie in Las Vegas', thema:'nacht', breite:16, saat:66,
-    ecken:[[0,0,0],[240,0,12],[240,90,12],[170,90,12],[150,120,12],[170,150,12],[170,220,14],[-40,220,12],[-40,170,12],[-100,150,12],[-100,60,12],[-60,40,12],[-60,0,12]] }
+    ecken:[[0,0,0],[240,0,12],[240,90,12],[170,90,12],[150,120,12],[170,150,12],[170,220,14],[-40,220,12],[-40,170,12],[-100,150,12],[-100,60,12],[-60,40,12],[-60,0,12]] },
+  // Achterbahn über den Wolken: kreuzt sich selbst (oben die Überführung), Kuppen zum Abheben, Regenbogenbrücke als Abkürzung
+  { id:'himmel', name:'Wolkenreich', info:'Achterbahn über den Wolken mit Überführung', thema:'himmel', breite:16, saat:77,
+    ecken:[[0,0,0],[200,0,35],[260,70,40],[230,140,30],[-20,320,35],[-30,420,40],[100,480,45],[230,420,40],[220,320,35],[-30,140,30],[-70,60,35],[-50,0,25]],
+    profil:[[0,0],[0.08,0],[0.2,14],[0.28,22],[0.365,22],[0.39,8],[0.45,7],[0.53,24],[0.64,30],[0.665,13],[0.72,4],[0.8,2],[0.86,10],[0.92,4],[0.97,0]],
+    abk:[[0.41, 0.5, 0.69, 0.78, 'bruecke']] }
 ];
 const CUPS = [
   { id:'loewe',  name:'Löwen-Cup',  info:'Wiese, Canyon, Frost',    strecken:[0, 1, 2] },
   { id:'vulkan', name:'Vulkan-Cup', info:'Bucht, Krater, Nacht',    strecken:[3, 4, 5] },
-  { id:'meister', name:'Meister-Cup', info:'Alle 6 Strecken am Stück', strecken:[0, 3, 1, 4, 2, 5] }
+  { id:'meister', name:'Meister-Cup', info:'Alle 7 Strecken am Stück', strecken:[0, 3, 1, 4, 2, 5, 6] },
+  { id:'himmel', name:'Himmels-Cup', info:'Nacht, Frost, Wolken',      strecken:[5, 2, 6] }
 ];
 const ITEM_ICON = { turbo:'⚡', turbo3:'⚡', banane:'🍌', rakete:'🚀', stern:'⭐', blitz:'🌩️' };
 const RUNDEN = 3;
@@ -843,7 +856,8 @@ const Ton = (() => {
     frost:  { bpm:134, akkorde:[[53, 57, 60], [62, 65, 69], [58, 62, 65], [60, 64, 67]] },
     strand: { bpm:126, akkorde:[[65, 69, 72], [62, 65, 69], [58, 62, 65], [60, 64, 67]] },
     vulkan: { bpm:150, akkorde:[[57, 60, 64], [53, 57, 60], [55, 58, 62], [52, 56, 59]] },
-    nacht:  { bpm:118, akkorde:[[57, 60, 64], [60, 64, 67], [55, 59, 62], [53, 57, 60]] }
+    nacht:  { bpm:118, akkorde:[[57, 60, 64], [60, 64, 67], [55, 59, 62], [53, 57, 60]] },
+    himmel: { bpm:136, akkorde:[[64, 67, 71], [60, 64, 67], [62, 65, 69], [59, 62, 67]] }
   };
   const MELODIE = [0, -1, 2, -1, 1, -1, 2, 3, -1, 2, -1, 1, 0, -1, -1, -1];
 
@@ -1243,11 +1257,13 @@ function bodenHoehe(S, x, z, i){
 function bodenAn(x, z){
   const S = strecke;
   if (!S || !S.hoch) return 0;
+  // An Kreuzungen liegen zwei Ebenen übereinander: die auf Höhe des eigenen Karts gewinnt
+  const f = spieler || vorschau, hint = f ? f.boden : 0;
   let best = 0, bd = Infinity;
   const cx = Math.floor(x / 16), cz = Math.floor(z / 16);
   for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++){
     const liste = S.gitter.get((cx + a) * 100003 + cz + b);
-    if (liste) for (const [px, pz, h] of liste){ const d = (px - x) ** 2 + (pz - z) ** 2; if (d < bd){ bd = d; best = h; } }
+    if (liste) for (const [px, pz, h] of liste){ const d = (px - x) ** 2 + (pz - z) ** 2 + (h - hint) ** 2 * 0.5; if (d < bd){ bd = d; best = h; } }
   }
   return best;
 }
@@ -1399,7 +1415,7 @@ function streckeLaden(nr){
   };
   const boden = new THREE.Mesh(new THREE.PlaneGeometry(4000, 4000), bodenMat);
   boden.rotation.x = -Math.PI / 2; boden.receiveShadow = true;
-  gruppe.add(boden);
+  if (!th.schwebend) gruppe.add(boden);
   if (th.meer) meerBauen(S, gruppe);
 
   // Rennstrecke wie in der F1: Asphalt-Auslauf, Kiesbett und Curbs in den Kurven, kein Mittelstreifen
@@ -1414,7 +1430,10 @@ function streckeLaden(nr){
     for (let n = 0; n < 500; n++){ c.fillStyle = `rgba(${n % 2 ? '255,255,255' : '0,0,0'},.18)`; c.fillRect(Math.random() * w, Math.random() * h, 2, 2); }
   }, true);
   const kiesMat = new THREE.MeshLambertMaterial({ map:kiesTex, side:THREE.DoubleSide, polygonOffset:true, polygonOffsetFactor:-1, polygonOffsetUnits:-1 });
-  for (const [von, laenge] of abschnitte(S, S.kies)){
+  if (th.schwebend){
+    gruppe.add(band(S, S.hw + S.auslauf + 1.4, S.hw + ASPHALT_AUSLAUF - 0.1, 0.02, 10, auslaufMat));
+    gruppe.add(band(S, -S.hw - ASPHALT_AUSLAUF + 0.1, -S.hw - S.auslauf - 1.4, 0.02, 10, auslaufMat));
+  } else for (const [von, laenge] of abschnitte(S, S.kies)){
     gruppe.add(band(S, S.hw + S.auslauf + 0.8, S.hw + ASPHALT_AUSLAUF, 0.025, 6, kiesMat, von, laenge));
     gruppe.add(band(S, -S.hw - ASPHALT_AUSLAUF, -S.hw - S.auslauf - 0.8, 0.025, 6, kiesMat, von, laenge));
   }
@@ -1616,7 +1635,7 @@ function streckeLaden(nr){
   dekoBauen(S, th, gruppe, rnd, freiDeko);
   // Streckenrand mit Grasbuescheln, Steinen oder Eiskristallen, gebuendelt gezeichnet.
   const details = new Instanzen();
-  for (let n = 0; n < 520; n++){
+  for (let n = 0; n < (th.schwebend ? 0 : 520); n++){
     const i = Math.floor(rnd() * S.N), sg = rnd() < 0.5 ? -1 : 1;
     const [x, z] = punktBei(S, i, sg * (S.hw + S.auslauf + 2.5 + rnd() * 15));
     if (!freiDeko(x, z, S.hw + S.auslauf + 1.7) || imMeer(S, x, z)) continue;
@@ -1644,7 +1663,7 @@ function streckeLaden(nr){
   const pfad = () => { kc.beginPath(); for (let i = 0; i <= S.N; i += 4){ const j = i % S.N; kc.lineTo(S.px[j] * S.kSkala + S.kOx, S.pz[j] * S.kSkala + S.kOz); } kc.closePath(); };
   // Abkürzungen gestrichelt unter der Strecke
   kc.setLineDash([10, 8]); kc.strokeStyle = 'rgba(255,214,90,.9)'; kc.lineWidth = 7;
-  for (const c of S.abk){ kc.beginPath(); kc.moveTo(c.ax * S.kSkala + S.kOx, c.az * S.kSkala + S.kOz); kc.lineTo(c.bx * S.kSkala + S.kOx, c.bz * S.kSkala + S.kOz); kc.stroke(); }
+  for (const c of S.abk){ kc.beginPath(); for (let m = 0; m <= c.n; m += 2) kc.lineTo(c.px[m] * S.kSkala + S.kOx, c.pz[m] * S.kSkala + S.kOz); kc.stroke(); }
   kc.setLineDash([]);
   pfad(); kc.strokeStyle = 'rgba(0,0,0,.55)'; kc.lineWidth = 22; kc.stroke();
   pfad(); kc.strokeStyle = 'rgba(255,255,255,.92)'; kc.lineWidth = 12; kc.stroke();
@@ -1810,20 +1829,112 @@ function skylineBauen(S, gruppe, cx, cz, R, rnd){
   lichter.bauen(gruppe, false);
 }
 
+// Wolkenreich: Wolkenmeer tief unten, Startinsel, Stützpfeiler, Unterseite der Fahrbahn, schwebende Inseln und Regenbögen
+function schwebendBauen(S, gruppe, cx, cz, R, rnd){
+  const wolkenTex = canvasTex(256, 256, (c, w, h) => {
+    c.fillStyle = '#f6e6f2'; c.fillRect(0, 0, w, h);
+    for (let n = 0; n < 160; n++){
+      const x = Math.random() * w, y = Math.random() * h, r = 10 + Math.random() * 40;
+      for (const [dx, dy] of [[0, 0], [-w, 0], [w, 0], [0, -h], [0, h]]){
+        const g = c.createRadialGradient(x + dx, y + dy, 0, x + dx, y + dy, r);
+        g.addColorStop(0, Math.random() < 0.5 ? 'rgba(255,255,255,.7)' : 'rgba(225,200,235,.5)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+        c.fillStyle = g; c.fillRect(x + dx - r, y + dy - r, r * 2, r * 2);
+      }
+    }
+  }, true);
+  wolkenTex.repeat.set(30, 30);
+  const meer = new THREE.Mesh(new THREE.PlaneGeometry(6000, 6000), new THREE.MeshLambertMaterial({ map:wolkenTex, emissive:lin(0x40303c) }));
+  meer.rotation.x = -Math.PI / 2; meer.position.set(cx, -55, cz);
+  gruppe.add(meer);
+  S.wolkenMeer = wolkenTex;
+  // Dicke Wolkenballen knapp über dem Meer
+  const ballen = new Instanzen(), wMat = new THREE.MeshLambertMaterial({ color:0xffffff, emissive:lin(0x6a5a70) });
+  for (let n = 0; n < 90; n++){
+    const w = rnd() * TAU, r = rnd() * (R + 500), x = cx + Math.cos(w) * r, z = cz + Math.sin(w) * r, s = 14 + rnd() * 26;
+    ballen.add('ballen', GEO.kugelGrob, wMat, [x, -52 + rnd() * 6, z], [s * 1.6, s * 0.55, s], [0, rnd() * TAU, 0]);
+  }
+  ballen.bauen(gruppe, false);
+  // Startinsel: trägt Startgerade, Tribüne und Boxengebäude
+  const insel = new Instanzen(), grasMat = new THREE.MeshLambertMaterial({ color:lin(0x7ccf62) }), felsMat = new THREE.MeshLambertMaterial({ color:lin(0x8a6f7e), flatShading:true });
+  for (let d = -110; d <= 70; d += 18){
+    const i = idxBei(S, d), [x, z] = punktBei(S, i, 0);
+    insel.add('oben', GEO.zyl16, grasMat, [x, -0.3, z], [48, 0.5, 48]);
+    insel.add('unten', GEO.kegelGrob, felsMat, [x, -18.5, z], [46, 36, 46], [Math.PI, rnd() * TAU, 0]);
+  }
+  insel.bauen(gruppe, false);
+  // Fahrbahn: Unterseite, Seitenblenden und Pfeiler bis in die Wolken
+  const unterMat = new THREE.MeshLambertMaterial({ color:lin(0xe9e4f6), side:THREE.DoubleSide });
+  const breit = S.hw + S.auslauf + 1.4;
+  gruppe.add(band(S, breit, -breit, -0.7, 10, unterMat));
+  for (const sg of [1, -1]){
+    const n = S.N + 1, pos = new Float32Array(n * 6), nor = new Float32Array(n * 6), uv = new Float32Array(n * 4);
+    for (let j = 0; j < n; j++){
+      const i = j % S.N, x = S.px[i] + S.tz[i] * sg * breit, z = S.pz[i] - S.tx[i] * sg * breit, h = S.hy[i];
+      pos.set([x, h + 0.03, z, x, h - 0.7, z], j * 6); nor.set([S.tz[i] * sg, 0, -S.tx[i] * sg, S.tz[i] * sg, 0, -S.tx[i] * sg], j * 6); uv.set([0, j, 1, j], j * 4);
+    }
+    const index = [];
+    for (let j = 0; j < S.N; j++){ const a = 2 * j; index.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.BufferAttribute(nor, 3)); g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+    g.setIndex(index);
+    gruppe.add(new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color:lin(S.th.neon), side:THREE.DoubleSide })));
+  }
+  const pfeiler = new Instanzen(), pfeilerMat = new THREE.MeshLambertMaterial({ color:lin(0xf4f0ff) });
+  const schritt = Math.round(32 / S.ds);
+  for (let i = 0; i < S.N; i += schritt){
+    if (S.hy[i] < 2 && ringAbstand(S, i, 0) < 120) continue;
+    // Nicht durch eine tiefer liegende Fahrbahn hindurch
+    let frei = true;
+    for (let j = 0; j < S.N && frei; j += 2){
+      if (S.hy[j] < S.hy[i] - 3 && Math.hypot(S.px[j] - S.px[i], S.pz[j] - S.pz[i]) < breit + 4) frei = false;
+    }
+    if (!frei) continue;
+    const h = S.hy[i] + 55;
+    pfeiler.add('pfeiler', GEO.zyl16, pfeilerMat, [S.px[i], S.hy[i] - 0.7 - h / 2, S.pz[i]], [1.6, h, 1.6]);
+    pfeiler.add('kopf', GEO.box, pfeilerMat, [S.px[i], S.hy[i] - 1.1, S.pz[i]], [breit * 1.2, 0.8, 2.4], [0, yawBei(S, i), 0]);
+  }
+  pfeiler.bauen(gruppe);
+  // Regenbögen weit draußen
+  const farben = [0xff4d6d, 0xff9f1c, 0xffd23f, 0x3fd17a, 0x3aa0ff, 0x8a5cff];
+  for (const [w, r] of [[0.9, R + 380], [3.6, R + 460]]){
+    const g = new THREE.Group();
+    g.position.set(cx + Math.cos(w) * r, -40, cz + Math.sin(w) * r);
+    g.lookAt(cx, -40, cz);
+    farben.forEach((f, n) => {
+      const m = new THREE.Mesh(new THREE.TorusGeometry(260 - n * 9, 4.5, 6, 48, Math.PI), new THREE.MeshBasicMaterial({ color:lin(f), transparent:true, opacity:0.55, fog:false, depthWrite:false }));
+      g.add(m);
+    });
+    gruppe.add(g);
+  }
+}
+// Schwebende Inseln mit Bäumchen und Fels darunter
+function inselSetzen(inst, x, y, z, s, rnd, farbe){
+  inst.add('inselGras', GEO.kugelGrob, MAT.laub, [x, y, z], [6 * s, 1.4 * s, 6 * s], [0, rnd() * TAU, 0], farbe(0.28 + rnd() * 0.05, 0.5, 0.45));
+  inst.add('inselFels', GEO.kegelGrob, MAT.laub, [x, y - 5 * s, z], [5.6 * s, 10 * s, 5.6 * s], [Math.PI, rnd() * TAU, 0], farbe(0.85 + rnd() * 0.08, 0.15, 0.45));
+  for (let n = 0; n < 3; n++){
+    const a = rnd() * TAU, r = rnd() * 3.5 * s, tx = x + Math.cos(a) * r, tz = z + Math.sin(a) * r;
+    inst.add('stamm', GEO.zylGrob, MAT.stamm, [tx, y + 1.6 * s, tz], [0.25 * s, 2.4 * s, 0.25 * s]);
+    inst.add('krone', GEO.kugelGrob, MAT.laub, [tx, y + 3.4 * s, tz], [1.5 * s, 1.5 * s, 1.5 * s], [0, rnd() * TAU, 0], farbe(rnd() < 0.5 ? 0.92 : 0.3, 0.6, 0.72));
+  }
+}
+
 function dekoBauen(S, th, gruppe, rnd, frei){
   const inst = new Instanzen();
   const rand = 150;
-  const ziel = th.deko === 'kakteen' ? 170 : th.deko === 'palmen' ? 150 : th.deko === 'vulkan' ? 190 : 280;
+  const ziel = th.deko === 'kakteen' ? 170 : th.deko === 'palmen' ? 150 : th.deko === 'vulkan' ? 190 : th.deko === 'himmel' ? 45 : 280;
   const lava = new Instanzen();
   const farbe = (h, s, l) => new THREE.Color().setHSL(h, s, l).convertSRGBToLinear();
   let gesetzt = 0;
   for (let versuch = 0; versuch < ziel * 6 && gesetzt < ziel; versuch++){
     const x = S.minX - rand + rnd() * (S.maxX - S.minX + 2 * rand);
     const z = S.minZ - rand + rnd() * (S.maxZ - S.minZ + 2 * rand);
-    if (!frei(x, z, S.hw + S.auslauf + 4) || imMeer(S, x, z)) continue;
+    if (!frei(x, z, S.hw + S.auslauf + (th.deko === 'himmel' ? 30 : 4)) || imMeer(S, x, z)) continue;
     gesetzt++;
     const s = 0.7 + rnd() * 0.9, dreh = rnd() * TAU;
-    if (th.deko === 'palmen'){
+    if (th.deko === 'himmel'){
+      // Unter oder neben der Strecke, nie im Weg
+      inselSetzen(inst, x, -12 - rnd() * 30 + (rnd() < 0.3 ? 40 : 0), z, 0.8 + rnd() * 1.2, rnd, farbe);
+    } else if (th.deko === 'palmen'){
       if (rnd() < 0.25){
         inst.add('busch', GEO.kugelGrob, MAT.laub, [x, 0.45 * s, z], [1.3 * s, 0.9 * s, 1.3 * s], [0, dreh, 0], farbe(0.27 + rnd() * 0.05, 0.5, 0.32));
       } else palmeSetzen(inst, x, z, s, dreh, rnd, farbe);
@@ -1922,7 +2033,8 @@ function dekoBauen(S, th, gruppe, rnd, frei){
   const R = Math.max(S.maxX - S.minX, S.maxZ - S.minZ) / 2 + 300;
   const bergMat = new THREE.MeshPhongMaterial({ color:0xffffff, flatShading:true, shininess:0, specular:0x000000 });
   if (th.skyline) skylineBauen(S, gruppe, cx, cz, R, rnd);
-  for (let n = 0; n < (th.skyline ? 0 : 22); n++){
+  if (th.schwebend) schwebendBauen(S, gruppe, cx, cz, R, rnd);
+  for (let n = 0; n < (th.skyline || th.schwebend ? 0 : 22); n++){
     const w = n / 22 * TAU + rnd() * 0.2, r = R + rnd() * 260;
     const x = cx + Math.cos(w) * r, z = cz + Math.sin(w) * r;
     const h = 90 + rnd() * 150, b = h * (0.9 + rnd() * 0.5);
@@ -2036,7 +2148,7 @@ function rampenBauen(S, gruppe, th){
   for (let i = 0; i < S.N; i += 2){
     if (i * S.ds < 70 || i * S.ds > S.L - 50) continue;
     let gerade = true;
-    for (let d = -vor; d <= nach && gerade; d++) if (Math.abs(S.kurv[(i + d + S.N) % S.N]) > 0.012) gerade = false;
+    for (let d = -vor; d <= nach && gerade; d++){ const j = (i + d + S.N) % S.N; if (Math.abs(S.kurv[j]) > 0.012 || Math.abs(S.steig[j]) > 0.02) gerade = false; }
     if (!gerade || belegt.some(b => ringAbstand(S, i, b) < 22 || ringAbstand(S, (i + landung) % S.N, b) < 14)) continue;
     kandidaten.push(i);
   }
@@ -2172,17 +2284,19 @@ function abkuerzungenFinden(S){
   const kand = [];
   const st = Math.max(1, Math.round(5 / S.ds));
   if (vorgabe){
-    for (const [von, bis, art] of vorgabe){
-      const i = Math.round(von * S.N), j = Math.round(bis * S.N);
-      for (const sg of [1, -1]) kand.push(abkKandidat(S, i, j, sg, art));
+    // Vorgabe: Bereiche für Anfang und Ende, darin der Weg mit dem größten Gewinn
+    for (const [i0, i1, j0, j1, art] of vorgabe){
+      for (let i = Math.round(i0 * S.N); i <= i1 * S.N; i += st) for (let j = Math.round(j0 * S.N); j <= j1 * S.N; j += st)
+        for (const sg of [1, -1]){ const c = abkKandidat(S, i, j, sg, art); if (c.d / c.D <= 0.8 && c.d / c.D >= 0.42 && c.d > 50) kand.push(c); }
     }
+    kand.sort((a, b) => (b.D - b.d) - (a.D - a.d));
   } else {
     const lo = Math.round(0.1 * S.N), hi = Math.round(0.88 * S.N);
     for (let i = lo; i < hi; i += st){
       for (let j = i + Math.round(80 / S.ds); j < Math.min(hi, i + Math.round(330 / S.ds)); j += st){
         for (const sg of [1, -1]){
           const c = abkKandidat(S, i, j, sg, 'erde');
-          if (c.d / c.D >= 0.38 && c.d / c.D <= 0.65 && c.d > 50) kand.push(c);
+          if (c.d / c.D >= 0.38 && c.d / c.D <= 0.72 && c.d > 50) kand.push(c);
         }
       }
     }
@@ -2195,23 +2309,34 @@ function abkuerzungenFinden(S){
     S.abk.push(abkFertig(S, c));
   }
 }
+// Geschwungener Weg (Bézier), der tangential aus der Strecke heraus- und wieder hineinläuft
 function abkKandidat(S, i, j, sg, art){
   const [ax, az] = punktBei(S, i, sg * S.hw * 0.6), [bx, bz] = punktBei(S, j, sg * S.hw * 0.6);
-  return { i, j, sg, art, ax, az, bx, bz, d:Math.hypot(bx - ax, bz - az), D:(j - i) * S.ds };
+  const sehne = Math.hypot(bx - ax, bz - az), l = sehne * 0.38;
+  const c = { i, j, sg, art, ax, az, bx, bz, D:(j - i) * S.ds,
+    k1x:ax + S.tx[i] * l, k1z:az + S.tz[i] * l, k2x:bx - S.tx[j] * l, k2z:bz - S.tz[j] * l };
+  let d = 0, [px, pz] = abkPunkt(c, 0);
+  for (let m = 1; m <= 12; m++){ const [x, z] = abkPunkt(c, m / 12); d += Math.hypot(x - px, z - pz); px = x; pz = z; }
+  c.d = d;
+  return c;
+}
+function abkPunkt(c, t){
+  const u = 1 - t, a = u * u * u, b = 3 * u * u * t, e = 3 * u * t * t, f = t * t * t;
+  return [a * c.ax + b * c.k1x + e * c.k2x + f * c.bx, a * c.az + b * c.k1z + e * c.k2z + f * c.bz];
 }
 const abkHoehe = (S, c, t) => S.hy[c.i] + (S.hy[c.j] - S.hy[c.i]) * t + (c.art === 'bruecke' ? Math.sin(t * Math.PI) * 6 : 0);
 // Der Weg muss die Strecke schnell verlassen und darf sonst nirgends in ihre Nähe kommen
 function abkPruefen(S, c){
   const n = Math.ceil(c.d / 3), rand = S.hw + S.auslauf + 4;
   for (let m = 1; m < n; m++){
-    const t = m / n, s = t * c.d, x = c.ax + (c.bx - c.ax) * t, z = c.az + (c.bz - c.az) * t, h = abkHoehe(S, c, t);
+    const t = m / n, s = t * c.d, [x, z] = abkPunkt(c, t), h = abkHoehe(S, c, t);
     if (Math.hypot(x - S.px[0], z - S.pz[0]) < 60) return false;
     if (S.sperre && Math.hypot(x - S.sperre.x, z - S.sperre.z) < S.sperre.r + 6) return false;
-    const amEnde = s < 26 || c.d - s < 26;
+    const ende = Math.min(60, c.d * 0.3), amEnde = s < ende || c.d - s < ende;
     for (let k = 0; k < S.N; k += 2){
       const dx = x - S.px[k], dz = z - S.pz[k];
       if (dx * dx + dz * dz > rand * rand || Math.abs(S.hy[k] - h) > 7) continue;
-      if (amEnde && (ringAbstand(S, k, c.i) < s + 14 || ringAbstand(S, k, c.j) < c.d - s + 14)) continue;
+      if (amEnde && (ringAbstand(S, k, c.i) < s + 20 || ringAbstand(S, k, c.j) < c.d - s + 20)) continue;
       return false;
     }
   }
@@ -2222,20 +2347,32 @@ function abkFertig(S, c){
   c.px = new Float32Array(n + 1); c.pz = new Float32Array(n + 1); c.ph = new Float32Array(n + 1);
   for (let m = 0; m <= n; m++){
     const t = m / n;
-    c.px[m] = c.ax + (c.bx - c.ax) * t; c.pz[m] = c.az + (c.bz - c.az) * t; c.ph[m] = abkHoehe(S, c, t);
+    [c.px[m], c.pz[m]] = abkPunkt(c, t); c.ph[m] = abkHoehe(S, c, t);
     gitterEintragen(S, c.px[m], c.pz[m], c.ph[m]);
   }
-  c.n = n; c.hb = ABK_BREITE; c.fx = (c.bx - c.ax) / c.d; c.fz = (c.bz - c.az) / c.d;
-  c.box = [Math.min(c.ax, c.bx) - 12, Math.max(c.ax, c.bx) + 12, Math.min(c.az, c.bz) - 12, Math.max(c.az, c.bz) + 12];
+  c.n = n; c.hb = ABK_BREITE;
+  // Richtung quer zum Weg an jedem Punkt
+  c.lx = new Float32Array(n + 1); c.lz = new Float32Array(n + 1);
+  for (let m = 0; m <= n; m++){
+    const a = Math.max(0, m - 1), b = Math.min(n, m + 1), dx = c.px[b] - c.px[a], dz = c.pz[b] - c.pz[a], l = Math.hypot(dx, dz) || 1;
+    c.lx[m] = dz / l; c.lz[m] = -dx / l;
+  }
+  let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+  for (let m = 0; m <= n; m++){ x0 = Math.min(x0, c.px[m]); x1 = Math.max(x1, c.px[m]); z0 = Math.min(z0, c.pz[m]); z1 = Math.max(z1, c.pz[m]); }
+  c.box = [x0 - 12, x1 + 12, z0 - 12, z1 + 12];
   c.nr = S.abk.length;
   return c;
 }
 // Abstand zum Weg, Anteil t (0 = Anfang, 1 = Ende) und nächster Punkt auf dem Weg
 function abkLage(c, x, z){
   if (x < c.box[0] || x > c.box[1] || z < c.box[2] || z > c.box[3]) return [Infinity, 0, 0, 0];
-  const t = klemm(((x - c.ax) * c.fx + (z - c.az) * c.fz) / c.d, 0, 1);
-  const nx = c.ax + (c.bx - c.ax) * t, nz = c.az + (c.bz - c.az) * t;
-  return [Math.hypot(x - nx, z - nz), t, nx, nz];
+  let best = Infinity, bt = 0, bx = 0, bz = 0;
+  for (let m = 0; m < c.n; m++){
+    const ax = c.px[m], az = c.pz[m], sx = c.px[m + 1] - ax, sz = c.pz[m + 1] - az, l2 = sx * sx + sz * sz || 1;
+    const u = klemm(((x - ax) * sx + (z - az) * sz) / l2, 0, 1), nx = ax + sx * u, nz = az + sz * u, d2 = (x - nx) ** 2 + (z - nz) ** 2;
+    if (d2 < best){ best = d2; bt = (m + u) / c.n; bx = nx; bz = nz; }
+  }
+  return [Math.sqrt(best), bt, bx, bz];
 }
 const abkPunktH = (c, t) => { const f = t * c.n, m = Math.min(c.n - 1, Math.floor(f)); return c.ph[m] + (c.ph[m + 1] - c.ph[m]) * (f - m); };
 // Ist das Kart auf einer Abkürzung? Dann folgen Index, Fortschritt und Boden dem Weg.
@@ -2245,10 +2382,10 @@ function abkFolgen(S, k){
   if (k.faellt) return;
   for (const c of S.abk){
     const [d, t] = abkLage(c, k.x, k.z);
-    if (d > c.hb + 0.6) continue;
+    if (d > c.hb + (t < 0.25 || t > 0.75 ? 2.5 : 0.6)) continue;
     // An den Enden gilt die normale Strecke, solange man noch auf der Straße ist
     if (Math.abs(k.seite) < S.hw + 1 && (t < 0.2 || t > 0.8) && war !== c) continue;
-    if (t > 0.97 && Math.abs(k.seite) < S.hw + 1) continue;
+    if ((t > 0.97 || (d > c.hb && (t < 0.2 || t > 0.8))) && Math.abs(k.seite) < S.hw + S.auslauf) continue;
     k.aufAbk = c; k.abkT = t;
     const idx = (c.i + Math.round(t * (c.j - c.i))) % S.N;
     k.idx = idx;
@@ -2259,9 +2396,8 @@ function abkFolgen(S, k){
 // Pfad als Band auf dem Boden (oder als Brücke in der Luft)
 function abkBand(c, breite, y, mat){
   const n = c.n, pos = new Float32Array((n + 1) * 6), uv = new Float32Array((n + 1) * 4), nor = new Float32Array((n + 1) * 6);
-  const lx = c.fz, lz = -c.fx;
   for (let m = 0; m <= n; m++){
-    const x = c.px[m], z = c.pz[m], h = c.ph[m] + y;
+    const x = c.px[m], z = c.pz[m], h = c.ph[m] + y, lx = c.lx[m], lz = c.lz[m];
     pos.set([x + lx * breite, h, z + lz * breite, x - lx * breite, h, z - lz * breite], m * 6);
     uv.set([0, m * 2 / 6, 1, m * 2 / 6], m * 4); nor.set([0, 1, 0, 0, 1, 0], m * 6);
   }
@@ -2296,9 +2432,8 @@ function abkuerzungenBauen(S, gruppe, th){
       ? new THREE.MeshStandardMaterial({ map:brueckeTex, roughness:0.4, emissive:lin(0x222222), side:THREE.DoubleSide })
       : new THREE.MeshLambertMaterial({ map:erdeTex, polygonOffset:true, polygonOffsetFactor:-1, polygonOffsetUnits:-1 });
     gruppe.add(abkBand(c, c.hb, bruecke ? 0 : 0.03, mat));
-    const lx = c.fz, lz = -c.fx, yaw = Math.atan2(c.fx, c.fz);
     for (let m = 2; m < c.n - 1; m += bruecke ? 4 : 3){
-      const x = c.px[m], z = c.pz[m], h = c.ph[m];
+      const x = c.px[m], z = c.pz[m], h = c.ph[m], lx = c.lx[m], lz = c.lz[m];
       if (bruecke){
         // Stützen hinunter in die Wolken, Leuchtpunkte am Rand
         if (m % 12 === 2) inst.add('stuetze', GEO.zylGrob, MAT.weiss, [x, h - 40, z], [0.5, 80, 0.5]);
@@ -2319,8 +2454,8 @@ function abkuerzungenBauen(S, gruppe, th){
       cx.fillStyle = '#ffd23f'; cx.fillText(bruecke ? '🌈 BRÜCKE ➜' : 'ABKÜRZUNG ➜', w / 2, h / 2 + 2);
     });
     const schild = new THREE.Group();
-    const m0 = Math.min(c.n, 8), sx = c.px[m0] + lx * (c.hb + 1.6), sz = c.pz[m0] + lz * (c.hb + 1.6);
-    schild.position.set(sx, c.ph[m0], sz); schild.rotation.y = yaw + Math.PI / 2;
+    const m0 = Math.min(c.n, 8), sx = c.px[m0] + c.lx[m0] * (c.hb + 1.6), sz = c.pz[m0] + c.lz[m0] * (c.hb + 1.6);
+    schild.position.set(sx, c.ph[m0], sz); schild.rotation.y = Math.atan2(c.px[m0 + 1] - c.px[m0], c.pz[m0 + 1] - c.pz[m0]) + Math.PI / 2;
     teil(GEO.box, pfostenMat, schild, 0, 1.4, 0, 0.18, 2.8, 0.18);
     const brett = teil(GEO.box, new THREE.MeshBasicMaterial({ map:schildTex }), schild, 0, 3.0, 0, 3.2, 1.2, 0.12);
     brett.material.map.wrapS = THREE.ClampToEdgeWrapping;
@@ -2338,9 +2473,14 @@ function abkZiel(S, k){
   if (!S.abk.length) return null;
   if (k.aufAbk){
     const c = k.aufAbk, t = Math.min(1, k.abkT + 12 / c.d);
-    return [c.ax + (c.bx - c.ax) * t, c.az + (c.bz - c.az) * t];
+    return abkPunkt(c, t);
   }
   for (const c of S.abk){
+    // Schon auf dem Anfang des Wegs (der läuft erst neben der Strecke her): dem Weg folgen
+    if (k.abkJa && k.abkPlan === `${c.nr}:${k.runde}`){
+      const [d, t] = abkLage(c, k.x, k.z);
+      if (d < c.hb + 3 && t < 0.6) return abkPunkt(c, Math.min(1, t + 12 / c.d));
+    }
     let vor = c.i - k.idx; if (vor < -S.N / 2) vor += S.N;
     vor *= S.ds;
     if (vor < -6 || vor > 55) continue;
@@ -2351,8 +2491,8 @@ function abkZiel(S, k){
       k.abkJa = Math.random() < (c.art === 'bruecke' ? 0.55 : turbo ? 0.85 : 0.3);
     }
     if (!k.abkJa) return null;
-    const t = vor > 8 ? 0.02 : 0.15;
-    return [c.ax + (c.bx - c.ax) * t, c.az + (c.bz - c.az) * t];
+    if (c.art === 'bruecke' && vor < 45) k.abkLangsam = true;
+    return abkPunkt(c, vor > 8 ? 0.02 : 0.15);
   }
   return null;
 }
@@ -3075,14 +3215,14 @@ function kartBewegen(k, dt){
   const daempf = Math.exp(-5 * dt);
   k.kx *= daempf; k.kz *= daempf;
   const bewegt = Math.hypot(vx + k.kx, vz + k.kz) * dt;
-  streckeFolgen(k);
-  abkFolgen(S, k);
-  // Von der Brücke gefallen: in die Tiefe, dann zurück auf die Strecke
+  // Von der Brücke gefallen: in die Tiefe, dann zurück auf die Strecke (ohne Streckenrechnung, damit keine Runde falsch zählt)
   if (k.faellt){
     k.faellt += dt; k.vy -= 28 * dt; k.y += k.vy * dt;
     if (k.faellt > 1.6) zurueckSetzen(k);
     return;
   }
+  streckeFolgen(k);
+  abkFolgen(S, k);
   // Höhe: k.y ist die Höhe über der Straße, k.boden die Straßenhöhe darunter, k.vy die echte Steiggeschwindigkeit
   const bAlt = k.boden, b = k.aufAbk ? abkPunktH(k.aufAbk, k.abkT) : bodenHoehe(S, k.x, k.z, k.idx), vb = klemm((b - bAlt) / Math.max(dt, 1e-4), -40, 40);
   k.boden = b;
@@ -3113,7 +3253,7 @@ function kartBewegen(k, dt){
   if (k.aufAbk){
     const c = k.aufAbk, [d, , nx, nz] = abkLage(c, k.x, k.z);
     if (c.art === 'bruecke'){
-      if (d > c.hb + 0.3 && k.y < 0.6){ k.faellt = 0.001; k.abkFall = c; k.vy = Math.min(k.vy, 0); if (k.spieler) meldung('Abgestürzt!', 1.4, true); }
+      if (d > c.hb + 0.3 && k.y < 0.6 && Math.abs(k.seite) > wand + 1){ k.faellt = 0.001; k.abkFall = c; k.vy = Math.min(k.vy, 0); if (k.spieler) meldung('Abgestürzt!', 1.4, true); }
     } else if (d > c.hb){
       const f = (d - c.hb) / d;
       k.x -= (k.x - nx) * f; k.z -= (k.z - nz) * f;
@@ -3520,7 +3660,10 @@ function kiSteuern(k, dt){
   }
   seite = klemm(seite, -S.hw * 0.85, S.hw * 0.85);
   let [zx, zz] = punktBei(S, j, seite);
+  k.abkLangsam = false;
   const abkZ = abkZiel(S, k);
+  // Vor und auf der Brücke vorsichtig
+  if ((k.abkLangsam || (k.aufAbk && k.aufAbk.art === 'bruecke')) && k.v > 24) e.gas = false;
   if (abkZ) [zx, zz] = abkZ;
   const diff = winkelDiff(Math.atan2(zx - k.x, zz - k.z), k.yaw);
   e.lenk = klemm(diff * 2.6, -1, 1);
@@ -4469,7 +4612,7 @@ Netz.on('z', m => {
     const k = karts.find(x => x.slot === e[0]);
     if (!k || !k.fern) continue;
     const n = {
-      x:e[1], z:e[2], y:klemm(e[3], 0, 20), yaw:e[4], v:klemm(e[5], -20, 80), drift:e[6], driftStufe:e[7], dreh:e[8],
+      x:e[1], z:e[2], y:klemm(e[3], -60, 60), yaw:e[4], v:klemm(e[5], -20, 80), drift:e[6], driftStufe:e[7], dreh:e[8],
       boost:e[9], stern:e[10], lenk:e[11], runde:e[12], fortschritt:e[13], off:e[14], drehDauer:klemm(e[15], 0.2, 3), trick:e[16] ? 1 : 0
     };
     if (!k.netz || Math.hypot(n.x - k.x, n.z - k.z) > 20){ k.x = n.x; k.z = n.z; k.yaw = n.yaw; k.idx = naechsterGlobal(strecke, k.x, k.z); }
@@ -4710,6 +4853,7 @@ function schritt(dt){
   kulisseUpdate(dt);
   wetterUpdate(dt);
   if (S.wolken) S.wolken.rotation.y += dt * 0.004;
+  if (S.wolkenMeer) S.wolkenMeer.offset.x = (zeit * 0.002) % 1;
   himmelUni.zeit.value = zeit;
   if (S.schnee){
     const p = S.schnee.geometry.attributes.position, a = p.array, cx = camera.position.x, cz = camera.position.z;

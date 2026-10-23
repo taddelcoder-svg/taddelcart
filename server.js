@@ -13,9 +13,9 @@ const olymp = require('./olymp')({ spiel:'loewenkart' });
 const PORT = Number(process.env.PORT) || 10100;
 const MAX_RAEUME = 200;
 const MAX_SPIELER = 8;
-const ANZAHL_FAHRER = 9, ANZAHL_STRECKEN = 6, ANZAHL_STUFEN = 3;
+const ANZAHL_FAHRER = 9, ANZAHL_STRECKEN = 7, ANZAHL_STUFEN = 3;
 // Cups: Streckenfolge wie CUPS in spiel.js, Punkte wie PUNKTE in spiel.js
-const CUP_STRECKEN = [[0, 1, 2], [3, 4, 5], [0, 3, 1, 4, 2, 5]];
+const CUP_STRECKEN = [[0, 1, 2], [3, 4, 5], [0, 3, 1, 4, 2, 5, 6], [5, 2, 6]];
 const PUNKTE = [15, 12, 10, 8, 6, 4, 2, 1];
 const NACH_ERSTEM_ZIEL = 40_000;   // ms, dann ist das Rennen für alle vorbei
 const MAX_RENNDAUER = 10 * 60_000;
