@@ -4474,7 +4474,8 @@ function kameraUpdate(dt){
    ========================================================= */
 const GEIST_TAKT = 0.05;
 const geistZeiten = lesen('geistzeiten', {});
-const geist = { aufnahme:[], naechste:0, marken:[], daten:null, kart:null };
+const geist = { aufnahme:[], naechste:0, marken:[], daten:null, kart:null, fremd:false };
+let geistFremd = lesen('geistfremd', null);
 const geistSchluessel = () => `${strecke.def.id}|${wahl.stufe}`;
 function geistEntfernen(){
   if (geist.kart){ geist.kart.entfernen(); geist.kart = null; }
@@ -4483,10 +4484,12 @@ function geistEntfernen(){
 function geistStarten(){
   geistEntfernen();
   geist.aufnahme = []; geist.naechste = 0; geist.marken = [];
-  const d = lesen('geist:' + geistSchluessel(), null);
+  // Ein geladener Geist von Freunden hat Vorrang vor dem eigenen
+  const fremd = geistFremd && geistFremd.strecke === strecke.def.id && geistFremd.stufe === wahl.stufe ? geistFremd : null;
+  const d = fremd || lesen('geist:' + geistSchluessel(), null);
   if (!d || !Array.isArray(d.d) || d.d.length < 10 || !d.d.every(zahlOk)) return;
-  geist.daten = d;
-  const k = new Kart(FAHRER[d.fahrer] || FAHRER[0], false, { name:'Geist', schild:true, teile:d.teile });
+  geist.daten = d; geist.fremd = !!fremd;
+  const k = new Kart(FAHRER[d.fahrer] || FAHRER[0], false, { name:fremd ? `Geist ${d.name}` : 'Geist', schild:true, teile:d.teile });
   // Durchsichtig und ohne Schatten: jedes Teil bekommt eine eigene Materialkopie
   k.m.gruppe.traverse(o => {
     if (!o.isMesh && !o.isSprite) return;
@@ -4551,18 +4554,62 @@ function zeitfahrErgebnis(){
     schreiben('geist:' + schluessel, { zeit:k.zielzeit, fahrer:wahl.fahrer, teile:garage.wahl, runden:geist.marken, d:geist.aufnahme });
     html += `<p class="neu">${alt ? `Neue Bestzeit, ${(alt - k.zielzeit).toFixed(2).replace('.', ',')} s schneller!` : 'Erste Zeit gesetzt!'} Ab jetzt fährt dieser Geist mit.</p>`;
   } else html += `<p class="rekord" style="margin-top:10px">Dein Geist war ${(k.zielzeit - alt).toFixed(2).replace('.', ',')} s schneller · Bestzeit ${zeitText(alt)}</p>`;
+  if (geist.fremd){
+    const d = k.zielzeit - geist.daten.zeit;
+    html += `<p class="${d < 0 ? 'neu' : 'rekord'}">${d < 0 ? `Du hast den Geist von ${esc(geist.daten.name)} um ${(-d).toFixed(2).replace('.', ',')} s geschlagen!` : `Der Geist von ${esc(geist.daten.name)} war ${d.toFixed(2).replace('.', ',')} s schneller.`}</p>`;
+  }
+  html += '<p id="geistTeilenInfo" class="leise"></p>';
   $('ergebnisTitel').textContent = `⏱️ Zeitfahren · ${zeitText(k.zielzeit)}`;
   $('ergebnisText').innerHTML = html + muenzenGutschreiben(0);
   const knoepfe = $('ergebnisKnoepfe');
   knoepfe.innerHTML = '';
   const knopf = (text, haupt, fn) => { const b = document.createElement('button'); b.className = 'knopf' + (haupt ? ' haupt' : ''); b.textContent = text; b.onclick = () => { Ton.effekt('klick'); fn(); }; knoepfe.appendChild(b); };
   knopf('Nochmal', true, rennenStarten);
+  knopf('👻 Geist teilen', false, geistTeilen);
   knopf('Nächste Strecke', false, () => { wahl.strecke = (wahl.strecke + 1) % STRECKEN.length; schreiben('wahl', wahl); rennenStarten(); });
   knopf('Menü', false, menueZeigen);
   $('ergebnis').hidden = false;
   $('touch').hidden = true;
   knoepfe.querySelector('button').focus();
 }
+// Eigenen besten Geist hochladen und den Code zeigen
+async function geistTeilen(){
+  const info = $('geistTeilenInfo'), d = lesen('geist:' + geistSchluessel(), null);
+  if (!d){ info.textContent = 'Auf dieser Strecke hast du noch keinen Geist.'; return; }
+  info.textContent = 'Lade hoch …';
+  try {
+    const antwort = await fetch('/geist', { method:'POST', headers:{ 'Content-Type':'application/json' },
+      body:JSON.stringify({ ...d, strecke:strecke.def.id, stufe:wahl.stufe, name:lesen('name', '') || FAHRER[d.fahrer].name }) });
+    const j = await antwort.json();
+    if (!antwort.ok || !j.code) throw new Error(j.fehler || 'Fehler');
+    info.innerHTML = `Geist-Code: <b class="geistCode">${j.code}</b> – gib ihn deinen Freunden. Sie tippen ihn bei Zeitfahren ein. <button class="knopf klein" id="codeKopieren">Kopieren</button>`;
+    $('codeKopieren').onclick = () => { try { navigator.clipboard.writeText(j.code); $('codeKopieren').textContent = 'Kopiert ✓'; } catch (e) { /* egal */ } };
+  } catch (e) { info.textContent = 'Hochladen hat nicht geklappt. Bist du online?'; }
+}
+// Geist von Freunden per Code laden
+async function geistCodeLaden(){
+  const code = $('geistCodeFeld').value.trim().toUpperCase(), info = $('geistInfo');
+  if (!/^[A-Z0-9]{5}$/.test(code)){ info.textContent = 'Der Geist-Code hat 5 Zeichen.'; return; }
+  info.textContent = 'Lade …';
+  try {
+    const antwort = await fetch('/geist/' + code), d = await antwort.json();
+    if (!antwort.ok) throw new Error(d.fehler || 'Fehler');
+    const nr = STRECKEN.findIndex(s => s.id === d.strecke);
+    if (nr < 0 || !Array.isArray(d.d) || !d.d.every(zahlOk)) throw new Error('Diesen Geist kann das Spiel nicht lesen.');
+    geistFremd = d; schreiben('geistfremd', d);
+    wahl.strecke = nr; wahl.stufe = klemm(d.stufe | 0, 0, STUFEN.length - 1); schreiben('wahl', wahl);
+    streckeLaden(nr); vorschauZeigen(); menueBauen();
+  } catch (e) { info.textContent = e.message === 'Failed to fetch' ? 'Keine Verbindung zum Server.' : e.message; }
+}
+function geistInfoZeigen(){
+  const zeile = $('geistCodeZeile');
+  zeile.hidden = wahl.modus !== 'zeit';
+  const f = geistFremd, s = f && STRECKEN.find(x => x.id === f.strecke);
+  $('geistInfo').innerHTML = f && s ? `👻 Geist von <b>${esc(f.name)}</b> (${zeitText(f.zeit)}) auf ${esc(s.name)}, ${STUFEN[f.stufe] ? STUFEN[f.stufe].name : ''} geladen. <button class="knopf klein" id="geistWeg">Entfernen</button>` : '';
+  if ($('geistWeg')) $('geistWeg').onclick = () => { geistFremd = null; schreiben('geistfremd', null); geistInfoZeigen(); };
+}
+$('geistLaden').onclick = () => { Ton.start(); Ton.effekt('klick'); geistCodeLaden(); };
+$('geistCodeFeld').addEventListener('keydown', e => { if (e.key === 'Enter') geistCodeLaden(); });
 
 /* =========================================================
    Menü
@@ -4623,6 +4670,7 @@ function menueBauen(){
       if ((war === 'battle') !== (id === 'battle')){ streckeLaden(id === 'battle' ? ARENA_NR : wahl.strecke); vorschauZeigen(); }
     })));
   $('streckenBlock').hidden = wahl.modus !== 'einzel' && wahl.modus !== 'zeit';
+  if (typeof geistInfoZeigen === 'function') geistInfoZeigen();
   $('cupBlock').hidden = wahl.modus !== 'cup';
   const cw = $('cupwahl'); cw.innerHTML = '';
   CUPS.forEach((c, i) => {

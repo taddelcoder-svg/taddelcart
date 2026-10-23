@@ -47,9 +47,51 @@ const server = http.createServer((req, res) => {
   const vendor = /^\/vendor\/([\w-]+(?:\.[\w-]+)*\.(js|woff2|txt))$/.exec(url.pathname);
   if (req.method === 'GET' && vendor) return senden(res, path.join('vendor', vendor[1]), 'public, max-age=604800');
   if (req.method === 'GET' && DATEIEN.has(url.pathname)) return senden(res, DATEIEN.get(url.pathname), 'no-cache');
+  if (url.pathname === '/geist' && req.method === 'POST') return geistSpeichern(req, res);
+  const geistCode = /^\/geist\/([A-Z0-9]{5})$/.exec(url.pathname);
+  if (geistCode && req.method === 'GET') return geistLaden(geistCode[1], res);
   res.writeHead(404, { 'Content-Type':'text/plain; charset=utf-8' });
   res.end('Nicht gefunden');
 });
+
+/* ---------- Geister teilen ----------
+   Ein Zeitfahren (Positionen des Karts, Zeit, Name) wird unter einem kurzen Code abgelegt,
+   damit Freunde gegen diesen Geist fahren können. Nur im Arbeitsspeicher, höchstens 30 Tage. */
+const geister = new Map();
+const MAX_GEISTER = 500, GEIST_TAGE = 30;
+function json(res, status, daten){ res.writeHead(status, { 'Content-Type':'application/json; charset=utf-8', 'Cache-Control':'no-store' }); res.end(JSON.stringify(daten)); }
+function geistOk(g){
+  if (!g || typeof g !== 'object') return null;
+  const zahl = v => typeof v === 'number' && isFinite(v);
+  if (typeof g.strecke !== 'string' || !/^[a-z]{2,12}$/.test(g.strecke)) return null;
+  if (!zahl(g.zeit) || g.zeit < 10 || g.zeit > 1200) return null;
+  if (!Array.isArray(g.d) || g.d.length < 50 || g.d.length > 60000 || g.d.length % 5 || !g.d.every(zahl)) return null;
+  const runden = Array.isArray(g.runden) ? g.runden.filter(zahl).slice(0, 10) : [];
+  return { strecke:g.strecke, stufe:ganz(g.stufe, 0, ANZAHL_STUFEN - 1, 1), zeit:g.zeit, fahrer:ganz(g.fahrer, 0, ANZAHL_FAHRER - 1, 0),
+    teile:teileOk(g.teile), runden, d:g.d, name:nameOk(g.name) };
+}
+function geistSpeichern(req, res){
+  let roh = '', zuGross = false;
+  req.on('data', teil => { roh += teil; if (roh.length > 400_000){ zuGross = true; req.destroy(); } });
+  req.on('end', () => {
+    if (zuGross) return;
+    let g;
+    try { g = geistOk(JSON.parse(roh)); } catch (e) { g = null; }
+    if (!g) return json(res, 400, { fehler:'Der Geist ist ungültig.' });
+    let code;
+    do { code = ''; for (let i = 0; i < 5; i++) code += RAUM_ZEICHEN[crypto.randomInt(RAUM_ZEICHEN.length)]; } while (geister.has(code));
+    geister.set(code, { ...g, bis:Date.now() + GEIST_TAGE * 86_400_000 });
+    // Älteste zuerst weg, wenn es zu viele werden
+    while (geister.size > MAX_GEISTER) geister.delete(geister.keys().next().value);
+    json(res, 200, { code });
+  });
+}
+function geistLaden(code, res){
+  const g = geister.get(code);
+  if (!g || g.bis < Date.now()){ geister.delete(code); return json(res, 404, { fehler:'Diesen Geist-Code gibt es nicht (mehr).' }); }
+  const { bis, ...daten } = g;
+  json(res, 200, daten);
+}
 
 /* ---------- Online-Räume ---------- */
 const RAUM_ZEICHEN = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
