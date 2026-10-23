@@ -117,7 +117,7 @@ const STRECKEN = [
   { id:'himmel', name:'Wolkenreich', info:'Achterbahn über den Wolken mit Überführung', thema:'himmel', breite:16, saat:77,
     ecken:[[0,0,0],[200,0,35],[260,70,40],[230,140,30],[-20,320,35],[-30,420,40],[100,480,45],[230,420,40],[220,320,35],[-30,140,30],[-70,60,35],[-50,0,25]],
     profil:[[0,0],[0.08,0],[0.2,14],[0.28,22],[0.365,22],[0.39,8],[0.45,7],[0.53,24],[0.64,30],[0.665,13],[0.72,4],[0.8,2],[0.86,10],[0.92,4],[0.97,0]],
-    abk:[[0.41, 0.5, 0.69, 0.78, 'bruecke']] }
+    abk:[[0.1, 0.6, 0.3, 0.9, 'bruecke']] }
 ];
 const CUPS = [
   { id:'loewe',  name:'Löwen-Cup',  info:'Wiese, Canyon, Frost',    strecken:[0, 1, 2] },
@@ -125,7 +125,7 @@ const CUPS = [
   { id:'meister', name:'Meister-Cup', info:'Alle 7 Strecken am Stück', strecken:[0, 3, 1, 4, 2, 5, 6] },
   { id:'himmel', name:'Himmels-Cup', info:'Nacht, Frost, Wolken',      strecken:[5, 2, 6] }
 ];
-const ITEM_ICON = { turbo:'⚡', turbo3:'⚡', banane:'🍌', rakete:'🚀', stern:'⭐', blitz:'🌩️' };
+const ITEM_ICON = { turbo:'⚡', turbo3:'⚡', banane:'🍌', rakete:'🚀', stern:'⭐', blitz:'🌩️', bombe:'💣', tornado:'🌪️', gebruell:'🦁', mega:'🍄', spuk:'👻', kanone:'☄️' };
 const RUNDEN = 3;
 const PUNKTE = [15, 12, 10, 8, 6, 4, 2, 1];
 const SPIELER_STARTPLATZ = 5;
@@ -929,6 +929,11 @@ const Ton = (() => {
     ziel:() => [523, 659, 784, 1047, 784, 1047].forEach((f, i) => ton(f, i === 5 ? 0.8 : 0.16, 'square', 0.14, null, [0, .12, .24, .36, .6, .72][i])),
     klick:() => ton(900, 0.05, 'triangle', 0.08),
     blitz:() => { geraeusch(0.9, 2400, 0.4, 0, 'highpass'); ton(1800, 0.5, 'sawtooth', 0.08, 120); geraeusch(1.2, 120, 0.5, 0.15, 'lowpass'); },
+    gebruell:() => { ton(110, 0.9, 'sawtooth', 0.22, 55); ton(165, 0.7, 'sawtooth', 0.12, 70); geraeusch(0.9, 400, 0.35, 0, 'lowpass'); },
+    mega:() => [262, 330, 392, 523, 659].forEach((f, i) => ton(f, 0.14, 'square', 0.11, null, i * 0.07)),
+    kanone:() => { geraeusch(0.6, 180, 0.6, 0, 'lowpass'); ton(70, 0.6, 'sine', 0.4, 35); geraeusch(1.2, 1200, 0.18, 0.1, 'bandpass'); },
+    spuk:() => { ton(600, 0.8, 'sine', 0.1, 300); ton(605, 0.8, 'sine', 0.08, 900); },
+    ring:() => [880, 1320, 1760].forEach((f, i) => ton(f, 0.1, 'triangle', 0.12, null, i * 0.04)),
     platzen:() => { geraeusch(0.12, 2200, 0.4, 0, 'highpass'); ton(900, 0.12, 'triangle', 0.1, 200); },
     donner:() => { geraeusch(2.2, 70, 0.7, 0, 'lowpass'); geraeusch(0.5, 300, 0.35, 0.05, 'lowpass'); },
     muenze:() => { ton(988, 0.07, 'square', 0.09); ton(1319, 0.18, 'square', 0.09, null, 0.06); },
@@ -2126,6 +2131,7 @@ function streckenExtras(S, gruppe, th){
   const rnd = zufallsGen(S.def.saat * 7 + 3);
   rampenBauen(S, gruppe, th);
   boegenBauen(S, gruppe, th);
+  ringeBauen(S, gruppe, th);
   S.muenzen = [];
   abkuerzungenBauen(S, gruppe, th);
   muenzenBauen(S, gruppe);
@@ -2342,9 +2348,27 @@ function abkPunkt(c, t){
   const u = 1 - t, a = u * u * u, b = 3 * u * u * t, e = 3 * u * t * t, f = t * t * t;
   return [a * c.ax + b * c.k1x + e * c.k2x + f * c.bx, a * c.az + b * c.k1z + e * c.k2z + f * c.bz];
 }
-const abkHoehe = (S, c, t) => S.hy[c.i] + (S.hy[c.j] - S.hy[c.i]) * t + (c.art === 'bruecke' ? Math.sin(t * Math.PI) * 6 : 0);
+// Höhe des Wegs: an den Enden genau wie die Straße daneben, dazwischen gleichmäßig, Brücken in der Mitte gewölbt
+function abkHoehe(S, c, t){
+  const sm = f => { f = klemm(f, 0, 1); return f * f * (3 - 2 * f); };
+  const hA = S.hy[(c.i + Math.round(t * c.d / S.ds)) % S.N], hB = S.hy[(c.j - Math.round((1 - t) * c.d / S.ds) + S.N) % S.N];
+  const linear = S.hy[c.i] + (S.hy[c.j] - S.hy[c.i]) * t;
+  let h = t < 0.5 ? hA + (linear - hA) * sm(t / 0.25) : hB + (linear - hB) * sm((1 - t) / 0.25);
+  if (c.art === 'bruecke') h += Math.sin(Math.PI * sm((t - 0.2) / 0.6)) * 6;
+  return h;
+}
 // Der Weg muss die Strecke schnell verlassen und darf sonst nirgends in ihre Nähe kommen
 function abkPruefen(S, c){
+  // Fahrbar: nicht zu spitz abzweigen, keine engen Kehren
+  const sehne = Math.atan2(c.bx - c.ax, c.bz - c.az);
+  const maxWinkel = c.art === 'bruecke' ? 1.22 : 1.45;
+  if (Math.abs(winkelDiff(sehne, yawBei(S, c.i))) > maxWinkel || Math.abs(winkelDiff(sehne, yawBei(S, c.j))) > maxWinkel) return false;
+  let [x0, z0] = abkPunkt(c, 0), [x1, z1] = abkPunkt(c, 0.02), a0 = Math.atan2(x1 - x0, z1 - z0);
+  for (let m = 2; m <= 50; m++){
+    const [x2, z2] = abkPunkt(c, m / 50), a1 = Math.atan2(x2 - x1, z2 - z1), l = Math.hypot(x2 - x1, z2 - z1);
+    if (Math.abs(winkelDiff(a1, a0)) / Math.max(l, 0.01) > 1 / (c.art === 'bruecke' ? 35 : 26)) return false;
+    x1 = x2; z1 = z2; a0 = a1;
+  }
   const n = Math.ceil(c.d / 3), rand = S.hw + S.auslauf + 4;
   for (let m = 1; m < n; m++){
     const t = m / n, s = t * c.d, [x, z] = abkPunkt(c, t), h = abkHoehe(S, c, t);
@@ -2368,7 +2392,7 @@ function abkFertig(S, c){
     [c.px[m], c.pz[m]] = abkPunkt(c, t); c.ph[m] = abkHoehe(S, c, t);
     gitterEintragen(S, c.px[m], c.pz[m], c.ph[m]);
   }
-  c.n = n; c.hb = ABK_BREITE;
+  c.n = n; c.hb = c.art === 'bruecke' ? 6.5 : ABK_BREITE;
   // Richtung quer zum Weg an jedem Punkt
   c.lx = new Float32Array(n + 1); c.lz = new Float32Array(n + 1);
   for (let m = 0; m <= n; m++){
@@ -2403,11 +2427,15 @@ function abkFolgen(S, k){
     if (d > c.hb + (t < 0.25 || t > 0.75 ? 2.5 : 0.6)) continue;
     // An den Enden gilt die normale Strecke, solange man noch auf der Straße ist
     if (Math.abs(k.seite) < S.hw + 1 && (t < 0.2 || t > 0.8) && war !== c) continue;
-    if ((t > 0.97 || (d > c.hb && (t < 0.2 || t > 0.8))) && Math.abs(k.seite) < S.hw + S.auslauf) continue;
-    k.aufAbk = c; k.abkT = t;
-    const idx = (c.i + Math.round(t * (c.j - c.i))) % S.N;
-    k.idx = idx;
-    k.fortschritt = k.runde * S.L + idx * S.ds;
+    if (t > 0.97 && Math.abs(k.seite) < S.hw + S.auslauf) continue;
+    k.aufAbk = c; k.abkT = t; k.abkD = d;
+    // Erst wenn das Kart wirklich weg von der Straße ist, folgen Index und Fortschritt dem Weg
+    // (sonst verliert die Spurerkennung die Straße, an der es noch entlangfährt)
+    if (Math.abs(k.seite) > S.hw + S.auslauf + 2 || (t > 0.3 && t < 0.7)){
+      const idx = (c.i + Math.round(t * (c.j - c.i))) % S.N;
+      k.idx = idx;
+      k.fortschritt = k.runde * S.L + idx * S.ds;
+    }
     break;
   }
 }
@@ -2819,6 +2847,7 @@ function kulisseUpdate(dt){
     b.hofMat.opacity = 0.08 + 0.22 * p;
   }
   for (const r of S.rampen) r.kante.color.copy(r.basis).multiplyScalar(0.7 + 0.5 * Math.sin(zeit * 6));
+  for (const r of S.ringe || []){ const p = 0.5 + 0.5 * Math.sin(zeit * 5); r.mat.color.copy(r.basis).multiplyScalar(0.8 + 0.6 * p); r.hof.material.opacity = 0.15 + 0.25 * p; }
   if (!K) return;
   for (const b of K.ballons){
     b.w += b.tempo * dt;
@@ -3060,6 +3089,7 @@ function arenaBauen(S, gruppe, th, rnd){
     const a = q / 4 * TAU + 0.4;
     return { i:0, x:Math.cos(a) * 34, z:Math.sin(a) * 34, h:0, fx:-Math.sin(a), fz:Math.cos(a) };
   }), 3.4);
+  ringeBauen(S, gruppe, th);
   // Item-Boxen auf zwei Ringen
   S.boxen = [];
   for (const [r, anzahl, versatz] of [[18, 4, 0.4], [48, 8, 0]]){
@@ -3199,7 +3229,9 @@ function kiBattle(k, dt){
         if ((hinten && k.itemTimer > 0.5) || k.itemTimer > 6) e.item = true;
         break;
       }
-      case 'stern': if (k.itemTimer > 0.3) e.item = true; break;
+      case 'stern': case 'mega': case 'spuk': if (k.itemTimer > 0.3) e.item = true; break;
+      case 'gebruell': if (d < 15 || k.itemTimer > 8) e.item = true; break;
+      case 'bombe': if ((vorn && d < 28 && d > 7) || k.itemTimer > 7) e.item = true; break;
       default: if (k.itemTimer > 0.6 && (d > 25 || (vorn && d < 12))) e.item = true;
     }
   }
@@ -3279,7 +3311,7 @@ class Kart {
       item:null, itemNeu:null, itemAnzahl:0, roulette:0, itemTimer:0, fertig:false, zielzeit:Infinity, rundeStart:0, rundenzeiten:[],
       platz:1, lenkAnzeige:0, lenkSanft:0, stand:0, offroad:false, falsch:0, steckt:0, wandZeit:0, padZeit:0, hatteStern:false,
       spur:zufall(-0.5, 0.5), spurZiel:zufall(-0.5, 0.5), spurTimer:zufall(1, 3), gummi:1, camYaw:0, autopilot:false,
-      klein:0, kleinSkala:1, windschatten:0, aufAbk:null, abkT:0, faellt:0, abkPlan:'', abkJa:false, rampe:0, sprung:false, trick:0, trickOk:false, netzTrick:0, eis:false, bewegYaw:0, muenzen:0, boden:0, vb:0, neig:0
+      klein:0, kleinSkala:1, windschatten:0, mega:0, spuk:0, kanone:0, salto:0, ringZeit:0, aufAbk:null, abkT:0, faellt:0, abkPlan:'', abkJa:false, rampe:0, sprung:false, trick:0, trickOk:false, netzTrick:0, eis:false, bewegYaw:0, muenzen:0, boden:0, vb:0, neig:0
     });
   }
   entfernen(){
@@ -3312,10 +3344,13 @@ function boost(k, dauer){
 }
 
 function treffer(k, art){
-  if (k.stern > 0 || k.dreh > 0 || k.schutz > 0) return;
+  if (k.stern > 0 || k.dreh > 0 || k.schutz > 0 || k.kanone > 0 || k.spuk > 0) return;
+  if (k.mega > 0 && art !== 'bombe' && art !== 'tornado') return;
   ballonVerlieren(k);
-  k.dreh = k.drehDauer = art === 'rakete' ? 1.4 : art === 'stoss' ? 0.8 : art === 'blitz' ? 0.7 : 1.1;
-  if (art === 'rakete') k.vy = 7 + (k.y > 0.001 ? 0 : k.vb);
+  k.dreh = k.drehDauer = art === 'rakete' ? 1.4 : art === 'bombe' ? 1.5 : art === 'tornado' ? 1.7 : art === 'stoss' ? 0.8 : art === 'blitz' ? 0.7 : 1.1;
+  // Harte Treffer: hoch in die Luft mit Salto
+  const hoch = { rakete:7, bombe:10, tornado:12 }[art];
+  if (hoch){ k.vy = hoch + (k.y > 0.001 ? 0 : k.vb); k.salto = 0.9; k.mega = 0; }
   k.drift = 0; k.boost = 0; k.driftStufe = 0;
   muenzenVerlieren(k, 3);
   for (let n = 0; n < 14; n++){
@@ -3366,8 +3401,15 @@ function kartBewegen(k, dt){
   k.boost = Math.max(0, k.boost - dt);
   k.stern = Math.max(0, k.stern - dt);
   k.klein = Math.max(0, k.klein - dt);
+  k.mega = Math.max(0, k.mega - dt); k.spuk = Math.max(0, k.spuk - dt); k.salto = Math.max(0, k.salto - dt); k.ringZeit -= dt;
+  if (k.kanone > 0){ k.kanone -= dt; if (k.kanone <= 0) boost(k, 0.6); }
   k.padZeit -= dt; k.wandZeit -= dt;
   let lenk = e.lenk, gas = e.gas && !e.bremse && aktiv, bremse = e.bremse && aktiv;
+  if (k.kanone > 0){
+    // Löwenkanone: fliegt von selbst die Strecke entlang
+    const j = (k.idx + Math.round(20 / S.ds)) % S.N, [zx, zz] = punktBei(S, j, 0);
+    lenk = klemm(winkelDiff(Math.atan2(zx - k.x, zz - k.z), k.yaw) * 3, -1, 1); gas = true; bremse = false;
+  }
   if (k.spieler && !k.autopilot && !zustand.autopilot){
     k.lenkSanft += (lenk - k.lenkSanft) * (1 - Math.exp(-18 * dt));
     lenk = k.lenkSanft;
@@ -3394,6 +3436,8 @@ function kartBewegen(k, dt){
   if (k.klein > 0) maxV *= 0.72;
   if (k.stern > 0) maxV = w.maxV * 1.2;
   if (k.boost > 0) maxV = w.maxV * 1.4;
+  if (k.mega > 0) maxV = Math.max(maxV, w.maxV * 1.12);
+  if (k.kanone > 0) maxV = w.maxV * 1.9;
   // Gas und Bremse
   if (gas){
     if (k.v < 0) k.v += w.beschl * 2.2 * dt;
@@ -3453,7 +3497,7 @@ function kartBewegen(k, dt){
   streckeFolgen(k);
   abkFolgen(S, k);
   // Höhe: k.y ist die Höhe über der Straße, k.boden die Straßenhöhe darunter, k.vy die echte Steiggeschwindigkeit
-  const bAlt = k.boden, b = k.aufAbk ? abkPunktH(k.aufAbk, k.abkT) : bodenHoehe(S, k.x, k.z, k.idx), vb = klemm((b - bAlt) / Math.max(dt, 1e-4), -40, 40);
+  const bAlt = k.boden, b = k.aufAbk && k.abkD <= k.aufAbk.hb + 0.5 ? abkPunktH(k.aufAbk, k.abkT) : bodenHoehe(S, k.x, k.z, k.idx), vb = klemm((b - bAlt) / Math.max(dt, 1e-4), -40, 40);
   k.boden = b;
   if (k.y > 0.001 || k.vy > 0){ k.vy -= 28 * dt; k.y += k.vy * dt - (b - bAlt); }
   else if (S.hoch && vb < k.vb - 28 * dt * 1.4 && k.v > 12){
@@ -3481,9 +3525,10 @@ function kartBewegen(k, dt){
   const wand = S.hw + S.auslauf;
   if (k.aufAbk){
     const c = k.aufAbk, [d, , nx, nz] = abkLage(c, k.x, k.z);
-    if (c.art === 'bruecke'){
-      if (d > c.hb + 0.3 && k.y < 0.6 && Math.abs(k.seite) > wand + 1){ k.faellt = 0.001; k.abkFall = c; k.vy = Math.min(k.vy, 0); if (k.spieler) meldung('Abgestürzt!', 1.4, true); }
-    } else if (d > c.hb){
+    const mitte = c.art === 'bruecke' && k.abkT > 0.15 && k.abkT < 0.85;
+    if (mitte){
+      if (d > c.hb + 0.6 && k.y < 0.6 && Math.abs(k.seite) > wand + 1){ k.faellt = 0.001; k.abkFall = c; k.vy = Math.min(k.vy, 0); if (k.spieler) meldung('Abgestürzt!', 1.4, true); }
+    } else if (d > c.hb && Math.abs(k.seite) > wand - 0.5){
       const f = (d - c.hb) / d;
       k.x -= (k.x - nx) * f; k.z -= (k.z - nz) * f;
       k.v *= 1 - 0.6 * dt * 10 * Math.min(1, d - c.hb);
@@ -3514,9 +3559,12 @@ function kartStoesse(){
       if (A.fern && B.fern) continue;
       if (d2 > 6.25 || d2 < 1e-6 || Math.abs(A.boden + A.y - B.boden - B.y) > 1.5) continue;
       const d = Math.sqrt(d2), nx = dx / d, nz = dz / d, ueber = 2.5 - d;
-      if (A.stern > 0 && B.stern <= 0 && !B.fern) treffer(B, 'stoss');
-      else if (B.stern > 0 && A.stern <= 0 && !A.fern) treffer(A, 'stoss');
-      const ma = A.werte.masse, mb = B.werte.masse;
+      if (A.spuk > 0 || B.spuk > 0) continue;
+      // Stern, Mega und Kanone walzen andere um
+      const wucht = q => q.kanone > 0 ? 3 : q.mega > 0 ? 2 : q.stern > 0 ? 1 : 0, wa0 = wucht(A), wb0 = wucht(B);
+      if (wa0 > wb0 && !B.fern) treffer(B, A.kanone > 0 ? 'rakete' : 'stoss');
+      else if (wb0 > wa0 && !A.fern) treffer(A, B.kanone > 0 ? 'rakete' : 'stoss');
+      const ma = A.werte.masse * (A.mega > 0 ? 4 : 1), mb = B.werte.masse * (B.mega > 0 ? 4 : 1);
       let wa = mb / (ma + mb), wb = ma / (ma + mb);
       if (A.fern){ wa = 0; wb = 1; } else if (B.fern){ wa = 1; wb = 0; }
       A.x -= nx * ueber * wa; A.z -= nz * ueber * wa;
@@ -3532,10 +3580,206 @@ function kartStoesse(){
   }
 }
 
+/* ---------- Verrückte Items: Bombe, Tornado, Löwengebrüll, Mega, Spuk, Löwenkanone ---------- */
+const bomben = [], tornados = [], wellen = [];
+const BOMBE = {
+  kugel:geteilt(new THREE.SphereGeometry(0.75, 18, 12)),
+  mat:geteilt(new THREE.MeshStandardMaterial({ color:lin(0x1c1d22), roughness:0.3, metalness:0.6, envMapIntensity:0.8 })),
+  blink:geteilt(new THREE.MeshBasicMaterial({ color:0xff2a10 })),
+  funke:geteilt(new THREE.SpriteMaterial({ map:partikelTex, color:0xffc040, transparent:true, blending:THREE.AdditiveBlending, depthWrite:false })),
+  wolke:geteilt(new THREE.MeshLambertMaterial({ color:0xd8dde6, transparent:true, opacity:0.42, depthWrite:false, side:THREE.DoubleSide })),
+  welle:geteilt(new THREE.MeshBasicMaterial({ color:0xffd060, transparent:true, opacity:0.8, blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide }))
+};
+const TORNADO_GEO = geteilt(new THREE.CylinderGeometry(1, 0.35, 1, 14, 1, true));
+const WELLE_GEO = geteilt((() => { const g = new THREE.RingGeometry(0.85, 1, 48); g.rotateX(-Math.PI / 2); return g; })());
+
+// Bombe: im Bogen nach vorne (mit Bremse nach hinten), zündet nach 2,2 s oder wenn jemand nahe kommt
+function bombeWerfen(k, rueck){
+  const fx = Math.sin(k.yaw), fz = Math.cos(k.yaw), s = rueck ? -1 : 1;
+  const tempo = rueck ? 5 : Math.max(0, k.v) + 13;
+  const b = { id:neueId(), x:k.x + fx * 2.6 * s, z:k.z + fz * 2.6 * s, y:k.boden + k.y + 1.5, vx:fx * tempo * s, vz:fz * tempo * s, vy:rueck ? 3 : 8, besitzer:k };
+  bombeBauen(b);
+  ereignis({ a:'bo', id:b.id, von:k.slot, x:rund(b.x), z:rund(b.z), y:rund(b.y), vx:rund(b.vx), vz:rund(b.vz), vy:rund(b.vy) });
+  if (k.spieler) Ton.effekt('banane');
+}
+function bombeBauen(b){
+  const g = new THREE.Group();
+  const kugel = new THREE.Mesh(BOMBE.kugel, BOMBE.mat); kugel.castShadow = true;
+  const lampe = new THREE.Mesh(GEO.kugelGrob, BOMBE.blink); lampe.scale.setScalar(0.22); lampe.position.set(0, 0.55, 0.45);
+  const lunte = new THREE.Mesh(GEO.zylGrob, MAT.braun); lunte.scale.set(0.07, 0.45, 0.07); lunte.position.y = 0.85;
+  const funke = new THREE.Sprite(BOMBE.funke); funke.scale.set(0.9, 0.9, 1); funke.position.y = 1.1;
+  g.add(kugel, lampe, lunte, funke);
+  g.position.set(b.x, b.y, b.z);
+  scene.add(g);
+  Object.assign(b, { mesh:g, lampe, funke, t:0, knall:false });
+  bomben.push(b);
+}
+function bombenUpdate(dt){
+  for (let n = bomben.length - 1; n >= 0; n--){
+    const b = bomben[n];
+    b.t += dt;
+    const boden = bodenAn(b.x, b.z);
+    b.vy -= 28 * dt; b.x += b.vx * dt; b.z += b.vz * dt; b.y += b.vy * dt;
+    if (b.y < boden + 0.75){ b.y = boden + 0.75; b.vy = Math.abs(b.vy) > 4 ? -b.vy * 0.35 : 0; b.vx *= Math.exp(-3 * dt); b.vz *= Math.exp(-3 * dt); }
+    b.mesh.position.set(b.x, b.y, b.z);
+    b.mesh.rotation.x += Math.hypot(b.vx, b.vz) * dt * 0.8;
+    // Je näher der Knall, desto schneller blinkt es
+    b.lampe.visible = Math.floor(b.t * (4 + b.t * 6)) % 2 === 0;
+    b.funke.scale.setScalar(0.7 + Math.random() * 0.5);
+    let knall = b.t > 2.2;
+    if (!knall && b.t > 0.5) for (const k of karts){
+      if (k.fern || (k === b.besitzer && b.t < 1)) continue;
+      if (Math.hypot(k.x - b.x, k.z - b.z) < 3.6 && Math.abs(k.boden + k.y + 0.7 - b.y) < 2.5){ knall = true; ereignis({ a:'bx', id:b.id }); break; }
+    }
+    if (knall) bombeKnall(n);
+  }
+}
+function bombeKnall(n){
+  const b = bomben[n];
+  bomben.splice(n, 1);
+  scene.remove(b.mesh);
+  const boden = bodenAn(b.x, b.z), y = b.y - boden;
+  explosion(b.x, y, b.z, 80);
+  for (let m = 0; m < 50; m++){ const w = Math.random() * TAU, s = zufall(8, 22); funken.neu(b.x, y, b.z, Math.cos(w) * s, zufall(2, 9), Math.sin(w) * s, zufall(0.4, 0.8), 1, zufall(0.5, 0.9), 0.2, zufall(0.8, 1.4), 10); }
+  welleStarten(b.x, b.z, boden, 9, 0xff7a20);
+  if (nahAmSpieler(b.x, b.z, 80)) Ton.effekt('explosion');
+  if (spieler && Math.hypot(spieler.x - b.x, spieler.z - b.z) < 35) zustand.wackeln = Math.max(zustand.wackeln, 0.7);
+  for (const k of karts) if (!k.fern && Math.hypot(k.x - b.x, k.z - b.z) < 8 && Math.abs(k.boden + k.y - boden) < 4) treffer(k, 'bombe');
+  for (let m = bananen.length - 1; m >= 0; m--) if (Math.hypot(bananen[m].x - b.x, bananen[m].z - b.z) < 8) bananeWeg(m);
+}
+// Leuchtende Druckwelle am Boden
+function welleStarten(x, z, h, radius, farbe){
+  const m = new THREE.Mesh(WELLE_GEO, BOMBE.welle.clone());
+  m.material.color.set(farbe);
+  m.position.set(x, h + 0.3, z);
+  scene.add(m);
+  wellen.push({ m, t:0, radius });
+}
+function wellenUpdate(dt){
+  for (let n = wellen.length - 1; n >= 0; n--){
+    const w = wellen[n];
+    w.t += dt;
+    const f = w.t / 0.55;
+    w.m.scale.setScalar(0.5 + w.radius * f);
+    w.m.material.opacity = 0.85 * (1 - f);
+    if (f >= 1){ scene.remove(w.m); w.m.material.dispose(); wellen.splice(n, 1); }
+  }
+}
+
+// Tornado: erscheint vor dem Kart, das vor dir liegt, und wandert schlingernd rückwärts durchs Feld
+function tornadoStarten(k){
+  const S = strecke, rang = rangliste(), p = rang.indexOf(k), vor = p > 0 ? rang[p - 1] : k;
+  const i = (vor.idx + Math.round((vor === k ? 70 : 35) / S.ds)) % S.N;
+  const t = { id:neueId(), s:i * S.ds, phase:Math.random() * TAU, besitzer:k };
+  tornadoBauen(t);
+  ereignis({ a:'t', id:t.id, von:k.slot, s:rund(t.s), phase:rund(t.phase) });
+  if (k.spieler) meldung('🌪️ Tornado!', 1, true);
+}
+function tornadoBauen(t){
+  const g = new THREE.Group();
+  for (let n = 0; n < 6; n++){
+    const m = new THREE.Mesh(TORNADO_GEO, BOMBE.wolke);
+    const r = 0.9 + n * 0.55;
+    m.scale.set(r, 1.6, r); m.position.y = 0.8 + n * 1.45;
+    g.add(m);
+  }
+  scene.add(g);
+  Object.assign(t, { mesh:g, t:0, getroffen:new Set() });
+  tornados.push(t);
+}
+function tornadosUpdate(dt){
+  const S = strecke;
+  for (let n = tornados.length - 1; n >= 0; n--){
+    const o = tornados[n];
+    o.t += dt;
+    o.s -= 15 * dt;
+    const i = ((Math.round(o.s / S.ds) % S.N) + S.N) % S.N;
+    const [x, z] = punktBei(S, i, Math.sin(o.t * 0.9 + o.phase) * S.hw * 0.75);
+    o.x = x; o.z = z;
+    const h = S.hy[i];
+    o.mesh.position.set(x, h, z);
+    o.mesh.children.forEach((m, q) => { m.rotation.y += dt * (5 + q); m.position.x = Math.sin(o.t * 3 + q) * 0.25 * q; });
+    if (nahAmSpieler(x, z, 90) && Math.random() < 0.8){
+      const [r, g, b] = S.th.staub, w = Math.random() * TAU;
+      staub.neu(x + Math.cos(w) * 2.5, zufall(0.2, 6), z + Math.sin(w) * 2.5, -Math.sin(w) * 8, zufall(2, 5), Math.cos(w) * 8, zufall(0.5, 0.9), r, g, b, 1.1, -1, 1.5, 0.6);
+    }
+    for (const k of karts){
+      if (k.fern || k === o.besitzer || o.getroffen.has(k)) continue;
+      if (Math.hypot(k.x - x, k.z - z) < 3.4 && Math.abs(k.boden - h) < 4){ o.getroffen.add(k); treffer(k, 'tornado'); }
+    }
+    if (o.t > 7){ scene.remove(o.mesh); tornados.splice(n, 1); }
+  }
+}
+
+// Löwengebrüll: Druckwelle, wirft alle im Umkreis um und räumt Bananen und Bomben ab
+function gebruellAusloesen(k){
+  gebruellWirkung(k);
+  ereignis({ a:'g', von:k.slot });
+}
+function gebruellWirkung(k){
+  welleStarten(k.x, k.z, k.boden, 24, 0xffc040);
+  welleStarten(k.x, k.z, k.boden, 16, 0xff6a20);
+  if (nahAmSpieler(k.x, k.z, 90)) Ton.effekt('gebruell');
+  if (spieler && Math.hypot(spieler.x - k.x, spieler.z - k.z) < 40) zustand.wackeln = Math.max(zustand.wackeln, 0.5);
+  for (const o of karts) if (o !== k && !o.fern && Math.hypot(o.x - k.x, o.z - k.z) < 22) treffer(o, 'stoss');
+  for (let m = bananen.length - 1; m >= 0; m--) if (Math.hypot(bananen[m].x - k.x, bananen[m].z - k.z) < 22) bananeWeg(m);
+  for (let m = bomben.length - 1; m >= 0; m--) if (Math.hypot(bomben[m].x - k.x, bomben[m].z - k.z) < 22){ scene.remove(bomben[m].mesh); bomben.splice(m, 1); }
+}
+
+// Spuk: unsichtbar und unverwundbar, dazu das Item vom Kart davor klauen
+function spukStarten(k){
+  k.spuk = 5;
+  const rang = rangliste(), p = rang.indexOf(k);
+  let beute = null;
+  for (let q = p - 1; q >= 0 && !beute; q--){
+    const o = rang[q];
+    if (!o.fern && o.item && o.roulette <= 0 && k.fortschritt - o.fortschritt > -120){ beute = o.item; o.item = null; o.itemAnzahl = 0; if (o.spieler) meldung('👻 Dein Item wurde geklaut!', 1.4, true); }
+  }
+  const neu = beute || ['rakete', 'bombe', 'turbo3', 'stern'][Math.floor(Math.random() * 4)];
+  if (k.spieler){ Ton.effekt('spuk'); meldung(`👻 Geklaut: ${ITEM_ICON[neu]}`, 1.4, true); }
+  return neu;
+}
+function itemsLeerenNeu(){
+  while (bomben.length) scene.remove(bomben.pop().mesh);
+  while (tornados.length) scene.remove(tornados.pop().mesh);
+  while (wellen.length){ const w = wellen.pop(); scene.remove(w.m); w.m.material.dispose(); }
+}
+
+/* ---------- Turbo-Ringe über den Schanzen ---------- */
+const RING_GEO = geteilt(new THREE.TorusGeometry(2.7, 0.24, 10, 40));
+function ringeBauen(S, gruppe, th){
+  S.ringe = [];
+  for (const r of S.rampen){
+    const x = r.x + r.fx * 20, z = r.z + r.fz * 20, y = r.h + 5.5;
+    const mat = new THREE.MeshBasicMaterial({ color:lin(th.neon) });
+    const ring = new THREE.Mesh(RING_GEO, mat);
+    ring.position.set(x, y, z); ring.rotation.y = Math.atan2(r.fx, r.fz);
+    const hof = new THREE.Mesh(RING_GEO, new THREE.MeshBasicMaterial({ color:lin(th.neon), transparent:true, opacity:0.25, blending:THREE.AdditiveBlending, depthWrite:false }));
+    hof.position.copy(ring.position); hof.rotation.copy(ring.rotation); hof.scale.set(1.08, 1.08, 3);
+    gruppe.add(ring, hof);
+    S.ringe.push({ x, y, z, fx:r.fx, fz:r.fz, mat, hof, basis:lin(th.neon) });
+  }
+}
+function ringePruefen(k){
+  const S = strecke;
+  if (!S.ringe || k.ringZeit > 0) return;
+  for (const r of S.ringe){
+    const dx = k.x - r.x, dz = k.z - r.z, dy = k.boden + k.y + 0.8 - r.y;
+    const entlang = dx * r.fx + dz * r.fz, quer = Math.hypot(dx - r.fx * entlang, dz - r.fz * entlang);
+    if (Math.abs(entlang) < 1.8 && Math.hypot(quer, dy) < 2.9){
+      k.ringZeit = 1;
+      boost(k, 1.5);
+      if (nahAmSpieler(r.x, r.z, 80)) for (let n = 0; n < 30; n++){ const w = n / 30 * TAU; funken.neu(r.x + Math.cos(w) * r.fz * 2.7, r.y - bodenAn(r.x, r.z) + Math.sin(w) * 2.7, r.z - Math.cos(w) * r.fx * 2.7, r.fx * 10, 0, r.fz * 10, 0.5, 1, 0.9, 0.4, 0.7, 0); }
+      if (k.spieler){ Ton.effekt('ring'); meldung('Turbo-Ring!', 0.8, true); }
+      return;
+    }
+  }
+}
+
 /* ---------- Items ---------- */
 function itemZiehen(k){
   if (zustand.battle){
-    const t = [['banane', 0.38], ['rakete', 0.22], ['turbo', 0.27], ['stern', 0.13]];
+    const t = [['banane', 0.2], ['rakete', 0.17], ['bombe', 0.16], ['turbo', 0.1], ['stern', 0.08], ['gebruell', 0.1], ['mega', 0.08], ['tornado', 0.05], ['spuk', 0.06]];
     let r = Math.random();
     for (const [n, w] of t){ r -= w; if (r <= 0) return n; }
     return 'rakete';
@@ -3544,7 +3788,9 @@ function itemZiehen(k){
   const tabelle = [
     ['banane', 0.55 - 0.45 * f], ['rakete', 0.3], ['turbo', 0.15 + 0.15 * f],
     ['turbo3', Math.max(0, f - 0.3) * 0.6], ['stern', Math.max(0, f - 0.45) * 0.5],
-    ['blitz', karts.length > 2 ? Math.max(0, f - 0.6) * 0.35 : 0]
+    ['blitz', karts.length > 2 ? Math.max(0, f - 0.6) * 0.35 : 0],
+    ['bombe', 0.14 + 0.06 * f], ['tornado', karts.length > 2 ? 0.05 + 0.1 * f : 0], ['gebruell', 0.05 + 0.1 * f],
+    ['mega', Math.max(0, f - 0.25) * 0.35], ['spuk', karts.length > 2 ? 0.07 : 0], ['kanone', Math.max(0, f - 0.55) * 0.6]
   ];
   let summe = tabelle.reduce((s, [, w]) => s + w, 0), r = Math.random() * summe;
   for (const [n, w] of tabelle){ r -= w; if (r <= 0) return n; }
@@ -3561,6 +3807,12 @@ function itemBenutzen(k){
     case 'rakete': raketeStarten(k, !!k.eingabe.rueck || (k.mensch && k.eingabe.bremse)); break;
     case 'stern': k.stern = 7; if (k.spieler) Ton.effekt('stern'); break;
     case 'blitz': blitzAusloesen(k); break;
+    case 'bombe': bombeWerfen(k, !!k.eingabe.rueck || (k.mensch && k.eingabe.bremse)); break;
+    case 'tornado': tornadoStarten(k); break;
+    case 'gebruell': gebruellAusloesen(k); break;
+    case 'mega': k.mega = 7; if (k.spieler){ Ton.effekt('mega'); meldung('🍄 MEGA!', 1, true); } break;
+    case 'kanone': k.kanone = 4.5; k.v = Math.max(k.v, k.werte.maxV * 1.5); if (k.spieler){ Ton.effekt('kanone'); meldung('☄️ Löwenkanone!', 1, true); } break;
+    case 'spuk': { const neu = spukStarten(k); k.item = neu; k.itemAnzahl = neu === 'turbo3' ? 3 : 1; k.itemTimer = 0; return; }
   }
   k.item = null; k.itemAnzahl = 0; k.itemTimer = 0;
 }
@@ -3808,6 +4060,7 @@ function itemsLeeren(){
   while (bananen.length) bananeWeg(0);
   while (raketen.length){ scene.remove(raketen[0].mesh); raketen.shift(); }
   gefahrenLeeren();
+  itemsLeerenNeu();
 }
 
 function boxenUpdate(dt){
@@ -3871,6 +4124,7 @@ function bananenPruefen(k){
     const b = bananen[n], dx = k.x - b.x, dz = k.z - b.z;
     if (dx * dx + dz * dz < 3.4 && Math.abs(k.boden + k.y - b.h) < 1){
       bananeWeg(n, true);
+      if (k.mega > 0 || k.kanone > 0){ buntStoss(b.x, 0.5, b.z); continue; }
       treffer(k, 'banane');
       if (k.spieler || nahAmSpieler(k.x, k.z, 30)) Ton.effekt('banane');
     }
@@ -3936,6 +4190,15 @@ function kiSteuern(k, dt){
         break;
       }
       case 'banane': if ((hinter && k.fortschritt - hinter.fortschritt < 16 && k.itemTimer > 0.6) || k.itemTimer > 6) e.item = true; break;
+      case 'bombe': {
+        if (vor && vor.fortschritt - k.fortschritt < 35 && vor.fortschritt - k.fortschritt > 8 && k.itemTimer > 0.6) e.item = true;
+        else if (hinter && k.fortschritt - hinter.fortschritt < 14 && k.itemTimer > 0.6){ e.item = true; e.rueck = true; }
+        else if (k.itemTimer > 7) e.item = true;
+        break;
+      }
+      case 'tornado': case 'mega': case 'spuk': if (k.itemTimer > 1) e.item = true; break;
+      case 'kanone': if (k.itemTimer > 0.6 && maxKr < 0.03) e.item = true; break;
+      case 'gebruell': if (karts.some(o => o !== k && Math.hypot(o.x - k.x, o.z - k.z) < 16) || k.itemTimer > 8) e.item = true; break;
     }
   }
 }
@@ -3960,8 +4223,12 @@ function kartDarstellen(k, dt){
     : S.hoch ? -Math.atan(S.steig[k.idx] * Math.cos(k.yaw - yawBei(S, k.idx))) : 0;
   k.neig += (neigZiel - k.neig) * Math.min(1, dt * 10);
   g.rotation.x = k.neig;
-  k.kleinSkala += ((k.klein > 0 ? 0.55 : 1) - k.kleinSkala) * Math.min(1, dt * 6);
+  k.kleinSkala += ((k.klein > 0 ? 0.55 : k.mega > 0 ? 1.9 : 1) - k.kleinSkala) * Math.min(1, dt * 6);
   g.scale.setScalar(k.kleinSkala);
+  // Salto nach einem harten Treffer
+  if (k.salto > 0) g.rotation.x = k.neig - (1 - k.salto / 0.9) * TAU;
+  // Spuk: für die anderen fast unsichtbar, das eigene Kart flackert
+  g.visible = !(k.spuk > 0) || Math.floor(zeit * (k.spieler ? 12 : 20)) % (k.spieler ? 2 : 5) === 0;
   k.driftVisuell += (k.drift * 0.4 - k.driftVisuell) * Math.min(1, dt * 8);
   const trick = k.trick > 0 ? 1 - k.trick / TRICK_DAUER : 0;
   g.rotation.y = k.yaw + k.driftVisuell + k.drehWinkel + trick * TAU;
@@ -3980,7 +4247,7 @@ function kartDarstellen(k, dt){
   m.kopf.rotation.z = -k.lenkAnzeige * 0.12;
   // Namensschild aus der Nähe ausblenden, damit es nicht die Sicht versperrt
   if (k.schild) k.schild.material.opacity = klemm((camera.position.distanceTo(g.position) - 7) / 6, 0, 1);
-  const flamme = k.boost > 0;
+  const flamme = k.boost > 0 || k.kanone > 0;
   for (const f of m.flammen){
     f.visible = flamme;
     if (!flamme) continue;
@@ -4051,6 +4318,12 @@ function kartEffekte(k){
       staub.neu(x + zufall(-0.15, 0.15), 0.2, z + zufall(-0.15, 0.15), -fx * 1.5 + zufall(-0.6, 0.6), zufall(0.5, 1.4), -fz * 1.5 + zufall(-0.6, 0.6), zufall(0.7, 1.2), g, g, g * 1.02, zufall(0.5, 0.8), -0.3, 2.4, 0.5);
     }
   }
+  if (k.kanone > 0){
+    // Feuerball und Rauchschweif
+    for (let n = 0; n < 4; n++){ const w = Math.random() * TAU; funken.neu(k.x + Math.cos(w) * 1.4, 1 + k.y + Math.sin(w) * 1.2, k.z + Math.sin(w) * 1.4, -fx * 12 + zufall(-2, 2), zufall(-1, 2), -fz * 12 + zufall(-2, 2), zufall(0.2, 0.4), 1, zufall(0.3, 0.7), 0.1, zufall(0.8, 1.5), 0, -1); }
+    staub.neu(k.x - fx * 2, 1 + k.y, k.z - fz * 2, -fx * 4, 1, -fz * 4, 1.2, 0.25, 0.22, 0.22, 1.4, -0.5, 3, 0.6);
+  }
+  if (k.mega > 0 && Math.abs(k.v) > 8 && Math.random() < 0.5){ const [x, z] = hinten(zufall(-1.5, 1.5)); staub.neu(x, 0.3, z, zufall(-2, 2), zufall(1, 3), zufall(-2, 2), 0.8, 0.8, 0.75, 0.7, 1.4, 1, 2.5, 0.6); }
   if (k.boost > 0){
     for (const s of [-0.3, 0.3]){
       const [x, z] = hinten(s);
@@ -4229,6 +4502,7 @@ function rennenUpdate(dt){
     kartBewegen(k, dt);
     windschattenPruefen(k, dt);
     padsPruefen(k);
+    ringePruefen(k);
     bananenPruefen(k);
   }
   kartStoesse();
@@ -4771,7 +5045,7 @@ function netzSenden(dt){
   const k = karts.filter(k => !k.fern).map(k => [
     k.slot, rund(k.x), rund(k.z), rund(k.y), rund(k.yaw, 1000), rund(k.v, 10), k.drift, k.driftStufe,
     k.dreh > 0 ? rund(k.dreh) : 0, k.boost > 0 ? 1 : 0, k.stern > 0 ? 1 : 0, rund(k.lenkAnzeige), k.runde,
-    rund(k.fortschritt, 10), k.offroad ? 1 : 0, rund(k.drehDauer), k.trick > 0 ? 1 : 0
+    rund(k.fortschritt, 10), k.offroad ? 1 : 0, rund(k.drehDauer), k.trick > 0 ? 1 : 0, (k.mega > 0 ? 1 : 0) + (k.spuk > 0 ? 2 : 0) + (k.kanone > 0 ? 4 : 0) + (k.salto > 0 ? 8 : 0)
   ]);
   if (k.length) Netz.senden({ t:'z', k });
 }
@@ -4805,6 +5079,9 @@ function fernBewegen(k, dt){
   }
   k.trick = Math.max(0, k.trick - dt);
   if (n.trick && !k.netzTrick) k.trick = TRICK_DAUER;
+  k.mega = n.flags & 1 ? 0.3 : 0; k.spuk = n.flags & 2 ? 0.3 : 0; k.kanone = n.flags & 4 ? 0.3 : 0;
+  if (n.flags & 8 && !k.netzSalto) k.salto = 0.9;
+  k.netzSalto = n.flags & 8; k.salto = Math.max(0, k.salto - dt);
   k.netzTrick = n.trick;
   k.runde = n.runde; k.fortschritt = n.fortschritt;
   const S = strecke;
@@ -4907,7 +5184,7 @@ Netz.on('z', m => {
     if (!k || !k.fern) continue;
     const n = {
       x:e[1], z:e[2], y:klemm(e[3], -60, 60), yaw:e[4], v:klemm(e[5], -20, 80), drift:e[6], driftStufe:e[7], dreh:e[8],
-      boost:e[9], stern:e[10], lenk:e[11], runde:e[12], fortschritt:e[13], off:e[14], drehDauer:klemm(e[15], 0.2, 3), trick:e[16] ? 1 : 0
+      boost:e[9], stern:e[10], lenk:e[11], runde:e[12], fortschritt:e[13], off:e[14], drehDauer:klemm(e[15], 0.2, 3), trick:e[16] ? 1 : 0, flags:e[17] | 0
     };
     if (!k.netz || Math.hypot(n.x - k.x, n.z - k.z) > 20){ k.x = n.x; k.z = n.z; k.yaw = n.yaw; k.idx = naechsterGlobal(strecke, k.x, k.z); }
     k.netz = n;
@@ -4933,6 +5210,16 @@ Netz.on('e', m => {
     case 'rw': { const i = raketen.findIndex(r => r.id === m.id); if (i >= 0) raketeWeg(i); break; }
     case 'x': { const b = S.boxen[m.i]; if (b && b.aus <= 0) boxWeg(b); break; }
     case 'm': { const mu = S.muenzen[m.i]; if (mu && mu.aus <= 0) muenzeWeg(mu); break; }
+    case 'bo':
+      if ([m.x, m.z, m.y, m.vx, m.vz, m.vy].every(zahlOk) && typeof m.id === 'string' && !bomben.some(b => b.id === m.id))
+        bombeBauen({ id:m.id, x:m.x, z:m.z, y:m.y, vx:klemm(m.vx, -80, 80), vz:klemm(m.vz, -80, 80), vy:klemm(m.vy, -20, 20), besitzer:karts.find(k => k.slot === m.von) || null });
+      break;
+    case 'bx': { const i = bomben.findIndex(b => b.id === m.id); if (i >= 0) bombeKnall(i); break; }
+    case 't':
+      if (zahlOk(m.s) && zahlOk(m.phase) && typeof m.id === 'string' && !tornados.some(t => t.id === m.id))
+        tornadoBauen({ id:m.id, s:m.s, phase:m.phase, besitzer:karts.find(k => k.slot === m.von) || null });
+      break;
+    case 'g': { const von = karts.find(k => k.slot === m.von); if (von) gebruellWirkung(von); break; }
   }
 });
 
@@ -5145,6 +5432,7 @@ function schritt(dt){
   funken.update(dt); staub.update(dt);
   blitzUpdate(dt);
   gefahrenUpdate(dt);
+  bombenUpdate(dt); tornadosUpdate(dt); wellenUpdate(dt);
   kulisseUpdate(dt);
   wetterUpdate(dt);
   if (S.wolken) S.wolken.rotation.y += dt * 0.004;
